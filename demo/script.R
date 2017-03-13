@@ -1,3 +1,4 @@
+par(mfrow=c(1,1))
 # load("~/Dropbox/sparselong/allprojections.Rda")
 
 get_errors = function(pred){
@@ -59,9 +60,8 @@ d = 6
 basis.fd = fda::create.bspline.basis(c(0,1), d)
 basis = fda::eval.basis(evalarg = 0:(nbins-1)/(nbins-1), basisobj = basis.fd) / sqrt(nbins)
 
-D1 = functionalImpute(D.train,basis,K=2,maxIter=i*1)
+D1 = functionalImpute(D.train,basis,K=3,maxIter=20)
 
-matplot(t(D.train)[,1:100],t='p',pch=20)
 matplot(t(D1[1:10,]),t='l')
 print(sqrt(mean(get_errors(D1)^2)))
 
@@ -99,17 +99,40 @@ fpca.score = function (data.m, grids.u, muhat, eigenvals, eigenfuncs, sig2hat, K
 }
 
 R = as.matrix(data.train)
+R = R[order(R[,3]), ]
+R = R[order(R[,1]), ]
 model = fpca.mle(R, M, K, ini.method="EM")
 fpcs = fpca.score(R, model$grid,model$fitted_mean,model$eigenvalues,model$eigenfunctions,model$error_var,K)
 pred.tmp = t(fpca.pred(fpcs, model$fitted_mean, model$eigenfunctions))
 #pred = t(t(pred.tmp) - colMeans(pred.tmp))
 pred = pred.tmp
 
-matplot(t(pred[1:10,]),t='l')
+plotids = unique(R[,1])
+
+plot.points = function(){
+  for (i in 1:5){
+    pid = plotids[i]
+    X = R[R[,1] == pid,3]
+    Y = R[R[,1] == pid,2]
+    # if (i == 1)
+    #   plot(X,Y,xlim=c(0,1), ylim = c(5,35),col=i, t='o')
+    # else
+    lines(X,Y,xlim=c(0,1), col=i, t='o')
+  }
+}
+
+matplot(1:501 / 501,t(pred[1:5,]),t='l',ylim=c(-15,35))
+title("Sparse Functional PCA")
+plot.points()
+matplot(1:51 / 51,t(D1[1:5,]),t='l',ylim=c(-15,35))
+title("Soft Impute")
+plot.points()
 # matplot(t(D2[1:100,]),t='l')
 # points(data.train$age*51, data.train$pc1)
 
 errors = get_errors(D1)
 sqrt(mean(errors^2))
+C1 = c(C1,mean(errors^2))
 errors = get_errors((pred))
 sqrt(mean(errors^2))
+C2 = c(C2,mean(errors^2))

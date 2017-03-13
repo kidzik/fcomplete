@@ -4,6 +4,7 @@
 
 library("fpca")
 library("fcomplete")
+library("clusterGeneration")
 library("fda")
 
 d = 7
@@ -69,9 +70,14 @@ mean((Ytrue[idx,] - (Yhat[idx,]))^2) / mean(Ytrue^2)
 
 # Plots
 par(mfrow=c(2,3))
-matplot(t(Ytrue[idx,])[,1:10],t='l',ylim = c(min(Ynoise),max(Ynoise)))
-matplot(t(Ynoise[idx,])[,1:10],t='l',ylim = c(min(Ynoise),max(Ynoise)))
-matplot(t(Y[idx,])[,1:10],t='p',pch=20,ylim = c(min(Ynoise),max(Ynoise)))
-matplot(t(Yhat[idx,])[,1:10],t='l',ylim = c(min(Ynoise),max(Ynoise)))
-matplot((pred)[,1:10],t='l',ylim = c(min(Ynoise),max(Ynoise)))
+matplot(t(Ytrue[idx,])[,1:5],t='l',ylim = c(min(Ynoise),max(Ynoise)))
+title("TRUE")
+matplot(t(Ynoise[idx,])[,1:5],t='l',ylim = c(min(Ynoise),max(Ynoise)))
+title("TRUE + NOISE")
+matplot(t(Y[idx,])[,1:5],t='p',pch=20,ylim = c(min(Ynoise),max(Ynoise)))
+title("SAMPLED TRUE + NOISE")
+matplot(t(Yhat[idx,])[,1:5],t='l',ylim = c(min(Ynoise),max(Ynoise)))
+title("SOFT-IMPUTE")
+matplot((pred)[,1:5],t='l',ylim = c(min(Ynoise),max(Ynoise)))
+title("SPARSE FUNC.")
 frame()
