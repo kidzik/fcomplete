@@ -1,4 +1,4 @@
-functionalImpute = function(Y, basis, K = NULL, maxIter = 100){
+functionalImpute = function(Y, basis, K = NULL, maxIter = 1000, lambda = 0.5){
   basis = svd(basis)$u
   ynas = is.na(Y)
   Yfill = Y
@@ -11,9 +11,14 @@ functionalImpute = function(Y, basis, K = NULL, maxIter = 100){
   for (i in 1:maxIter){
     Yfill[ynas] = Yhat[ynas]
     Ysvd = svd(Yfill %*% basis)
-    Yhat.new = Ysvd$u[,dims] %*% (Ysvd$d[dims] * t(Ysvd$v[,dims])) %*% t(basis)
+    D = Ysvd$d[dims]
+    L = lambda * D[1]
+    D = max(D - L, 0)
+    Yhat.new = Ysvd$u[,dims] %*% (D * t(Ysvd$v[,dims])) %*% t(basis)
     ratio = norm(Yhat.new - Yhat,"F") / norm(Yhat,type = "F")
-    # if (ratio < 1e-3)
+    # if (i %% 10 == 0)
+    #   print(ratio)
+    # if (ratio < 1e-5)
     #   break
     Yhat = Yhat.new
   }

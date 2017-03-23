@@ -36,8 +36,12 @@ matplot(t(Y)[,1:10],t='l')
 Y[sample(nel)[1:nna]] = NA
 
 # Impute functions
-Yhat = functionalImpute(Y, S, 3, maxIter = 250)
-mean((Ytrue[idx,] - (Yhat[idx,]))^2) / mean(Ytrue^2)
+Yhat = functionalImpute(Y, S, 3, lambda= 0.001)
+install.packages("ssvd")
+library("ssvd")
+Ytmp = ssvd(Y)
+Yhat
+mean((Ytrue - (Yhat))^2) / mean(Ytrue^2)
 matplot(t(Yhat)[,1:10],t='l')
 
 # See unbelievable results
