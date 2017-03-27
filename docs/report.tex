@@ -1,0 +1,98 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb} 
+
+\newcommand{\cN}{\mathcal{N}}
+\newcommand{\R}{\mathbb{R}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\title{Equivalence of structured SVD\\ and sparse functional PCA}
+\author{Lukasz, Trevor}
+\begin{document}
+\maketitle
+
+\section*{Plan}
+
+\begin{enumerate}
+  \item Fully observed reduced-rank model
+  \item Sparse reduced-rank rank
+\end{enumerate}
+
+\section{Fully observed reduced rank model}
+Assume we measure on some equidistributed grid $G$ of $d$ points on $[0,1]$. Let $b_1, b_2, ..., b_p$ be the first $p$ elements of some orthonormal basis of $L_2([0,1])$ evaluated on the $G$, i.e. $b_i \in \R^d$ and $b_i \perp b_j$ for $i \neq j$. Let $B = [b_1,b_2,...,b_p]'$, i.e. $B \in \R^{p \times d}$. Let $\Theta \in \R^{k \times p}$ be a matrix of coefficients of $k$ components in the basis $(b_i)_{1 \leq i \leq p}$.
+
+We assume the model
+\begin{align}\label{eq:model}
+Y_i = \theta B + \alpha_i \Theta B + \varepsilon_i,
+\end{align}
+where $Y_i \in \R^{1 \times d}$, $\theta \in \R^{1 \times p}$ is the vector of coefficients of the population mean in a basis $B$, $\alpha_i \in \R^{1 \times k}$ such that $\alpha_i~\sim~\cN(0, D)$ is 'random effect' of subject $i$ with a diagonal $D \in \R^{k \times k}$ and $\varepsilon_i \sim \cN(0, \sigma I_d)$ is some observation noise.
+\subsection{Sparse functional PCA}
+Likelihood of $Y_i$ can be written as
+\[
+Y_i \sim \cN(\theta B, \sigma^2 I_d + B \Theta D \Theta' B').
+\]
+Our goal is to find $\sigma, \theta, \Theta, D$ maximizing
+\[
+\prod_{i=1}^N \frac{1}{(2\pi)^{d/2} |\sigma^2I_d + B \Theta D \Theta' B'|^{1/2}} \exp\left\{ -(Y_i - \theta B)'(\sigma^2 I_d + B \Theta D \Theta'B' )^{-1} (Y_i -  \theta B) / 2\right\}.
+\]
+Assume $\alpha_i$ are known. Then the likelihood is
+\[
+\prod_{i=1}^N \frac{1}{(2\pi)^{d/2} \sigma^d |D|^{1/2}} \exp\left\{ -(Y_i - \theta B - \alpha_i\Theta B)'(Y_i -  \theta B - \alpha_i\Theta B) / 2\sigma^2 - \frac{1}{2}\alpha_i' D^{-1} \alpha_i \right\}.
+\]
+Maxmizing this expression is equivalent (TODO: check) to minimizing
+\begin{align*}
+\sum_{i=1}^N \left\{ (Y_i - \theta B - \alpha_i\Theta B)'(Y_i -  \theta B - \alpha_i\Theta B) + \sigma^2 \sum_{j=1}^k \frac{\alpha_{i,j}^2}{D_{jj}}\right\} =&\\
+\sum_{i=1}^N \| Y_i - \theta B - \alpha_i\Theta B\|^2 + \sigma^2 \sum_{j=1}^k \frac{1}{D_{jj}}\sum_{i=1}^N\alpha_{i,j}^2 =&\\
+\| Y - (\mathbf{1}\theta B + A\Theta B)\|_F^2 + \sigma^2 \| A D^{-1/2} \|_F^2,
+\end{align*}
+where $A = [\alpha_1,\alpha_2,...,\alpha_N]'$.
+Thus, the algorithm solves
+\begin{align}\label{eq:optpca}
+\argmin_{\theta,A,\Theta}\| Y B' - ( \mathbf{1}\theta + A\Theta)\|_F^2 + \sigma^2 \| A D^{-1/2} \|_F^2.
+\end{align}
+
+\subsection{Structured SVD}
+Given $N$ observations, model \eqref{eq:model} can be written in the matrix form
+\[
+Y = \mathbf{1}\theta B + A \Theta B + \varepsilon.
+\]
+Consider the optimization problem
+\[
+\argmin_{\theta, A, \Theta} \| Y - (\mathbf{1}\theta B + A \Theta B)\|_F^2.
+\]
+Since $B$ is orthonormal, the problem is equivalent to 
+\[
+\argmin_{\theta, A, \Theta} \| YB' - (\mathbf{1}\theta + A \Theta)\|_F^2. 
+\]
+The solution is given by the reduced-rank SVD of $YB'$. We get $U,V$ such that
+\[
+\mathbf{1}\theta + A \Theta = UV'.
+\]
+We can decompose it to 
+\[
+\theta = U_0V' \text{ and } \Theta = U_1 V',
+\]
+where $U_0$ is the mean of rows of $U$ and $U_1 = U - \mathbf{1}U_0$.
+
+Now, suppose we don't know the rank of $A$ and we want to find a reduced-rank solution. We add the penalty term
+\[
+\argmin_{\theta, A, \Theta} \| YB' - (\mathbf{1}\theta + A \Theta)\|_F^2 + \lambda\|\mathbf{1}\theta + A \Theta\|_*
+\]
+which is equivalent to
+\begin{align}\label{eq:optsvd}
+\argmin_{\theta, A, \Theta} \| YB' - (\mathbf{1}\theta + A \Theta)\|_F^2 + \lambda\|A\|_*,
+\end{align}
+and again reduced-rank SVD gives solutions for different ranks depending on $\lambda$.
+Note that
+\[
+\|A\|_* = \sum_{i = 1}^k s_i = \| A D^{-1/2} \|_F^2,
+\]
+so the solutions \eqref{eq:optpca} and \eqref{eq:optsvd} should be (roughly) equivalent as long as $\lambda = \sigma^2$.
+
+\subsection{Simulation}
+
+\section{Sparse reduced-rank model}
+
+TODO: Should be similar.
+\end{document}
