@@ -65,7 +65,7 @@ D1 = functionalImpute(D.train,basis,K=3,maxIter=20)
 matplot(t(D1[1:10,]),t='l')
 print(sqrt(mean(get_errors(D1)^2)))
 
-K = 2
+K = 3
 M = 5
 
 ## Functiona PCA model
