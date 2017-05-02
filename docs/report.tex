@@ -6,6 +6,7 @@
 
 \newcommand{\cN}{\mathcal{N}}
 \newcommand{\R}{\mathbb{R}}
+\newcommand{\bX}{\mathbf{X}}
 \DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator*{\diag}{diag}
 
@@ -14,21 +15,44 @@
 \begin{document}
 \maketitle
 
-%% \section*{Plan}
+\section*{Plan}
 
-%% \begin{enumerate}
-%%   \item Fully observed reduced-rank model
-%%   \item Sparse reduced-rank rank
-%% \end{enumerate}
+\begin{enumerate}
+  \item Show that reduced-rank SVD approximates factor model
+  \item Sparse reduced-rank rank
+\end{enumerate}
 
 \section{Fully observed functional reduced-rank model}
-Assume we measure on some equidistributed grid $G$ of $d$ points on $[0,1]$. Let $b_1, b_2, ..., b_p$ be the first $p$ elements of some orthonormal basis of $L_2([0,1])$ evaluated on the $G$, i.e. $b_i \in \R^d$ and $b_i \perp b_j$ for $i \neq j$. Let $B = [b_1,b_2,...,b_p]'$, i.e. $B \in \R^{p \times d}$. Let $\Theta \in \R^{k \times p}$ be a matrix of coefficients of $k$ components in the basis $(b_i)_{1 \leq i \leq p}$.
+Assume we measure processes on some equidistributed grid $G$ of $d$ points on $[0,1]$. Let $b_1, b_2, ..., b_p$ be the first $p$ elements of some orthonormal basis of $L_2([0,1])$ evaluated on the $G$, i.e. $b_i \in \R^d$ and $b_i \perp b_j$ for $i \neq j$. Let $B = [b_1,b_2,...,b_p]$, i.e. $B \in \R^{d \times p}$. Let $\Theta \in \R^{p \times k}$ be a matrix of coefficients of $k$ components in the basis $(b_i)_{1 \leq i \leq p}$.
 
-We assume the model
+We assume 
 \begin{align}\label{eq:model}
-Y_i = \theta B + \alpha_i \Theta B + \varepsilon_i,
+  Y \sim \cN(B\theta, B \Theta \Theta' B' + \sigma^2 I_d),
 \end{align}
-where $Y_i \in \R^{1 \times d}$, $\theta \in \R^{1 \times p}$ is the vector of coefficients of the population mean in a basis $B$, $\alpha_i \in \R^{1 \times k}$ such that $\alpha_i~\sim~\cN(0, D)$ is 'random effect' of subject $i$ with a diagonal $D \in \R^{k \times k}$ and $\varepsilon_i \sim \cN(0, \sigma I_d)$ is some observation noise.
+where $Y_i \in \R^{d}$, $\theta \in \R^{p}$ is a vector of coefficients of a population mean in the basis $B$. %, $\alpha_i \in \R^{1 \times k}$ such that $\alpha_i~\sim~\cN(0, D)$ is 'random effect' of subject $i$ with a diagonal $D \in \R^{k \times k}$ and $\varepsilon_i \sim \cN(0, \sigma I_d)$ is some observation noise.
+\subsection{Factor model}
+Let
+\begin{equation}
+X = B'Y \sim \cN(\theta, \Theta \Theta' + \sigma^2 I_p).\label{model:x}
+\end{equation}
+Let $X_1,X_2,...,X_n$ be observations from this distribution.
+Let $S$ be the sample estimate of the covariance matrix of $X$. Assume the spectral decomposition $S = V \Lambda V'$.
+Theorem 9.4.1 in Marida states that for a fixed $\sigma$, the likelihood is maximized by
+\[
+ \Theta = \Lambda_{\sigma^2} ^{1/2}V,
+\]
+where $\Lambda_{\sigma^2}$ is a diagonal matrix ``truncated'' by $\sigma^2$, i.e. $d_{ii} = \max(\lambda_{ii} - \sigma^2,0)$. We find the best $\sigma$ numerically.
+
+\subsection{Truncated SVD}
+Let $X_1,X_2,...,X_n$ be observations from \eqref{model:x} and $S$ be the sample covariance. Let $\bX = [X_1',X_2',...,X_n']'$. Then we can write the SVD as
+\[
+\bX = U\Lambda^{1/2}V'.
+\]
+Let
+\[
+\hat\bX = U\Lambda^{1/2}_{\sigma^2}V'.
+\]
+
 \subsection{Sparse functional PCA}
 Likelihood of $Y_i$ can be written as
 \[
