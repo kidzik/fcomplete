@@ -23,13 +23,13 @@
 \end{enumerate}
 
 \section{Fully observed functional reduced-rank model}
-Assume we measure processes on some equidistributed grid $G$ of $d$ points on $[0,1]$. Let $b_1, b_2, ..., b_p$ be the first $p$ elements of some orthonormal basis of $L_2([0,1])$ evaluated on the $G$, i.e. $b_i \in \R^d$ and $b_i \perp b_j$ for $i \neq j$. Let $B = [b_1,b_2,...,b_p]$, i.e. $B \in \R^{d \times p}$. Let $\Theta \in \R^{p \times k}$ be a matrix of coefficients of $k$ components in the basis $(b_i)_{1 \leq i \leq p}$.
+Let $B = [b_1,b_2,...,b_p] \in \R^{d \times p}$, where $b_1, b_2, ..., b_p$ are the first $p$ elements of some orthonormal basis of $\R^d$, i.e. $b_i \in \R^d$ and $b_i \perp b_j$ for $i \neq j$. Let $\Theta \in \R^{p \times k}$ be $k$ factor loadings in the basis $(b_i)_{1 \leq i \leq p}$.
 
 We assume 
 \begin{align}\label{eq:model}
   Y \sim \cN(B\theta, B \Theta \Theta' B' + \sigma^2 I_d),
 \end{align}
-where $Y_i \in \R^{d}$, $\theta \in \R^{p}$ is a vector of coefficients of a population mean in the basis $B$. %, $\alpha_i \in \R^{1 \times k}$ such that $\alpha_i~\sim~\cN(0, D)$ is 'random effect' of subject $i$ with a diagonal $D \in \R^{k \times k}$ and $\varepsilon_i \sim \cN(0, \sigma I_d)$ is some observation noise.
+where $\theta \in \R^{p}$ is a vector of coefficients of a population mean in the basis $B$. %, $\alpha_i \in \R^{1 \times k}$ such that $\alpha_i~\sim~\cN(0, D)$ is 'random effect' of subject $i$ with a diagonal $D \in \R^{k \times k}$ and $\varepsilon_i \sim \cN(0, \sigma I_d)$ is some observation noise.
 \subsection{Factor model}
 Let
 \begin{equation}
@@ -41,7 +41,7 @@ Theorem 9.4.1 in Marida states that for a fixed $\sigma$, the likelihood is maxi
 \[
  \Theta = \Lambda_{\sigma^2} ^{1/2}V,
 \]
-where $\Lambda_{\sigma^2}$ is a diagonal matrix ``truncated'' by $\sigma^2$, i.e. $d_{ii} = \max(\lambda_{ii} - \sigma^2,0)$. We find the best $\sigma$ numerically.
+where $\Lambda_{\sigma^2}$ is a diagonal matrix ``truncated'' by $\sigma^2$, i.e. $\Lambda_{\sigma^2} = \diag(d_1,...,d_p)$, where $d_{i} = \max(\lambda_{ii} - \sigma^2,0)$. We find the best $\sigma$ numerically.
 
 \subsection{Truncated SVD}
 Let $X_1,X_2,...,X_n$ be observations from \eqref{model:x} and $S$ be the sample covariance. Let $\bX = [X_1',X_2',...,X_n']'$. Then we can write the SVD as
