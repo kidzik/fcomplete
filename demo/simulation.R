@@ -44,7 +44,7 @@ par(mfrow=c(1,1))
 # matplot(t(Ytrue)[,1:10],t='l')
 matplot(t(Y)[,1:10],t='l')
 # scores = mm.scores(M, Y)
-#Y[sample(nel)[1:nna]] = NA
+# Y[sample(nel)[1:nna]] = NA
 
 library("psych")
 facta = fa(Y %*%B, 3, scores = "regression", rotate = "none", covar = TRUE)

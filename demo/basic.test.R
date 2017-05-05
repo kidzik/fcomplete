@@ -8,15 +8,16 @@ library("clusterGeneration")
 library("fda")
 library("fMultivar")
 source("R/mixedmodel.R")
+library("zoo")
 
 ntrials = 1
 RES = array(0,c(2,2,ntrials))
 
 set.seed(120)
 d = 9
-dgrid = 11
-n = 100000
-missing = 0
+dgrid = 51
+n = 1000
+missing = 0.99
 grid = 0:(dgrid-1)/(dgrid-1)
 
 # Set up basis
