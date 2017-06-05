@@ -8,3 +8,6 @@
 *~
 *.aux
 *.gz
+*.png
+*.bbl
+*.blg

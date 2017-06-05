@@ -1,5 +1,5 @@
+#' @export
 functionalImpute = function(Y, basis, K = NULL, maxIter = 1000, lambda = 0){
-  basis = svd(basis)$u
   ynas = is.na(Y)
   Yfill = Y
   Yhat = Y
