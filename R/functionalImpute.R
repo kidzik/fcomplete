@@ -1,5 +1,5 @@
 #' @export
-functionalImpute = function(Y, basis, K = NULL, maxIter = 1000, lambda = 0){
+functionalImpute = function(Y, basis, K = NULL, maxIter = 10e3, thresh = 10e-4, lambda = 0){
   ynas = is.na(Y)
   Yfill = Y
   Yhat = Y
@@ -15,11 +15,12 @@ functionalImpute = function(Y, basis, K = NULL, maxIter = 1000, lambda = 0){
     D[D<0] = 0
     Yhat.new = Ysvd$u[,dims] %*% (D * t(Ysvd$v[,dims])) %*% t(basis)
     ratio = norm(Yhat.new - Yhat,"F") / norm(Yhat,type = "F")
-    # if (i %% 10 == 0)
-    #   print(ratio)
-    # if (ratio < 1e-5)
-    #   break
+    print(ratio)
+    if (ratio < thresh)
+     break
     Yhat = Yhat.new
+
   }
+  print(i)
   list(fit=Yhat, D=D, U=Ysvd$u[,dims], v=(t(Ysvd$v[,dims])) %*% t(basis))
 }

@@ -16,13 +16,18 @@ wide = fc.long2wide(data$Patient_ID, data$age, data$bmi,bins = dgrid)
 smp = fc.sample(wide)
 
 basis = fc.basis(11,type = "splines",norder = 4, dgrid = dgrid)
-R = functionalImpute(smp$train, basis, K=2, maxIter = 100)
+R = functionalImpute(smp$train, basis, K=2)
 
 # Plot
 matplot(t(R$fit[smp$test.rows[20:25],]),t='l')
 matplot(t(smp$test[smp$test.rows[20:25],]),t='p',pch = 'X',add=T)
 
-sqrt(mean((smp$test - R$fit)[smp$test.mask]**2))
+m1 = sqrt(mean((smp$test - R$fit)[smp$test.mask]**2))
 
-sqrt(mean((smp$test - fc.mean(smp$train))[smp$test.mask]**2))
+m0 = sqrt(mean((smp$test - fc.mean(smp$train))[smp$test.mask]**2))
+cat(paste("Variance explained:",(1 - m1/m0)*100,"%"))
 
+long.train = fc.wide2long(smp$train)
+#long.test = fc.wide2long(smp$test)
+
+model = fc.fpca(long.train)
