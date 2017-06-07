@@ -9,6 +9,8 @@ fc.wide2long = function(X)
 
   for (i in 1:length(ids)){
     observed = X[i,!is.na(X[i,])]
+    if (length(observed) == 0)
+      stop(paste("Empty row",ids[i]))
     id = rep(ids[i], length(observed))
     tm = time[!is.na(X[i,])]
     toadd = data.frame(id=id,

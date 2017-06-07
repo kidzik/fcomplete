@@ -8,7 +8,7 @@ fpca.score.fixed<-function(data.m,grids.u,muhat,eigenvals,eigenfuncs,sig2hat,K){
   ##     muhat,eigenvals, eigenfuncs, sig2hat -- (estimated) mean, eigenvalues, eigenfunctions and noise variance; (returned by fpca.mle)
   ##     K -- number of eigenfunctions used in the model, i.e., (estimated) dimension of the process
   ##return: first K conditional PC scores (the BLUP estimates): n by K
-  temp<-table(data.m[,1])
+  temp<-table(as.numeric(data.m[,1]))
   n<-length(temp)             ##     number of curves;
   m.l<-as.vector(temp)        ##     m.l -- number of time points per curve
   result<-matrix(0,n,K)       ##First K FPC scores for each subject
@@ -18,7 +18,7 @@ fpca.score.fixed<-function(data.m,grids.u,muhat,eigenvals,eigenfuncs,sig2hat,K){
   current <- 0  ## current index
   eigenfuncs.u<-t(eigenfuncs)   ## dimmension: grid_length by K
 
-  data.u<-matrix(as.numeric(as.vector(data.m[,-1])),nrow=nrow(data.m[,-1]),ncol=ncol(data.m[,-1]))     ##convert obs matrix to be numierc
+  data.u<-matrix(as.numeric(as.vector(as.matrix(data.m[,-1]))),nrow=nrow(data.m[,-1]),ncol=ncol(data.m[,-1]))     ##convert obs matrix to be numierc
 
   for (i in 1:n){
     Y <- as.vector(data.u[(current+1):(current+m.l[i]),1])  ## observed  measurements of ith curve
@@ -32,23 +32,36 @@ fpca.score.fixed<-function(data.m,grids.u,muhat,eigenvals,eigenfuncs,sig2hat,K){
     result[i,] <- evalmat %*% t(Phiy) %*% solve(Sigy,temp.y)
     current <- current + m.l[i]
   }
-  return(result)
+  row.names(result) = levels(data.m[,1])[as.numeric(names(temp))]
+  result
+#  list(scores = result, ids = ] )
 }
 
 
 #' @export
 fc.fpca = function(X){
+  X[is.na(X[,3]),3] = mean(X[,3],na.rm = TRUE)
+
+  mint = min(X[,2])
+  maxt = max(X[,2])
+
+  mapto01 = function(time) { (time - mint) / (maxt - mint) }
+  mapfrom01 = function(time) {  mint + time * (maxt - mint) }
+
+  X[,2] = mapto01(X[,2])
+
   ## candidate models for fitting
 #  M.set<-c(4,5,6)
   M.set<-c(5)
 #  r.set<-c(2,3,4)
-  r.set<-c(3)
+  r.set<-c(2)
   ##parameters for fpca.mle
   ini.method="EM"
   basis.method="bs"
   sl.v=rep(0.5,10)
   max.step=50
-  grid.l=0:99/99
+#  grid.l= min(X[,2]) + (max(X[,2]) - min(X[,2])) * 0:99/99
+  grid.l= 0:99/99
   grids=grid.l #seq(0,1,0.002)
   ##fit candidate models by fpca.mle
   result=fpca.mle(X[,c(1,3,2)], M.set,r.set,ini.method, basis.method,sl.v,max.step,grid.l,grids)
@@ -64,5 +77,5 @@ fc.fpca = function(X){
   eigenfest<-result$eigenfunctions
 
   fpcs<-fpca.score.fixed(X[,c(1,3,2)],grids.new,muest,evalest,eigenfest,sig2est,r)
-  fpca.pred(fpcs, muest, eigenfest)
+  list(fit = t(fpca.pred(fpcs, muest, eigenfest)), sigma.est = sqrt(sig2est), mu.est = muest)
 }
