@@ -39,7 +39,7 @@ fpca.score.fixed<-function(data.m,grids.u,muhat,eigenvals,eigenfuncs,sig2hat,K){
 
 
 #' @export
-fc.fpca = function(X){
+fc.fpca = function(X, d=5, K=2){
   X[is.na(X[,3]),3] = mean(X[,3],na.rm = TRUE)
 
   mint = min(X[,2])
@@ -52,9 +52,9 @@ fc.fpca = function(X){
 
   ## candidate models for fitting
 #  M.set<-c(4,5,6)
-  M.set<-c(5)
+  M.set<-d
 #  r.set<-c(2,3,4)
-  r.set<-c(2)
+  r.set<-K
   ##parameters for fpca.mle
   ini.method="EM"
   basis.method="bs"

@@ -1,7 +1,7 @@
 #' @export
 fc.basis = function(d = 11, type=c("fourier","splines"), norder = 4, dgrid = 100){
-#  if (is.vector(type))
-#    type = "splines"
+  if (length(type) > 1)
+    type = "splines"
 
   if (type == "fourier")
     basis = fda::create.fourier.basis(c(0,1), d)
