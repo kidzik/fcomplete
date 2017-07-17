@@ -1,4 +1,4 @@
-# library("devtools") ; library("roxygen2") ; library("fpca")
+library("devtools") ; library("roxygen2") ; library("fpca")
 roxygenise() ; install(".")
 library("fcomplete")
 all.data = read.csv("/media/lukasz/DATA/alldata.csv")
@@ -7,7 +7,7 @@ tb = table(all.data$Patient_ID)
 #tb = tb[tb >= 3]
 all.data = all.data[all.data$Patient_ID %in% names(tb),]
 
-data = all.data[all.data$side=="L",c("Patient_ID","age","cadence")]
+data = all.data[all.data$side=="L",c("Patient_ID","age","bmi")]
 data = na.omit(data)
 data = data[data$age < 20,]
 dgrid = 100
@@ -37,7 +37,7 @@ if (!("fpca.model" %in% ls())){
   long.train = fc.wide2long(smp$train)
   fpca.model = fc.fpca(long.train[,],d = 5, K = 2:4)
 }
-func.impute = functionalImpute(smp$train, fc.basis(5, "splines",norder = 4, dgrid = dgrid), maxIter = 1e4, thresh= 1e-5, lambda = fpca.model$sigma.est * c(0.1, 0.5, 0.7, 1, 1.5, 2) )
+func.impute = functionalImpute(smp$train, fc.basis(5, "splines",norder = 4, dgrid = dgrid), maxIter = 1e4, thresh= 1e-4, lambda = fpca.model$sigma.est * c(0.1, 0.5, 0.7, 1, 1.5, 2) )
 
 # Plot
 matplot(t(mean.impute[smp$test.rows[20:25],]),t='l')
