@@ -39,7 +39,7 @@ fpca.score.fixed<-function(data.m,grids.u,muhat,eigenvals,eigenfuncs,sig2hat,K){
 
 
 #' @export
-fc.fpca = function(X, d=5, K=2){
+fc.fpca = function(X, d=5, K=2, grid.l=0:99/99){
   X[is.na(X[,3]),3] = mean(X[,3],na.rm = TRUE)
 
   mint = min(X[,2])
@@ -61,8 +61,7 @@ fc.fpca = function(X, d=5, K=2){
   sl.v=rep(0.5,10)
   max.step=50
 #  grid.l= min(X[,2]) + (max(X[,2]) - min(X[,2])) * 0:99/99
-  grid.l= 0:99/99
-  grids=grid.l #seq(0,1,0.002)
+  grids = (grid.l - (min(grid.l))) / (max(grid.l) - min(grid.l)) #seq(0,1,0.002)
   ##fit candidate models by fpca.mle
   result=fpca.mle(X[,c(1,3,2)], M.set,r.set,ini.method, basis.method,sl.v,max.step,grid.l,grids)
   muest<-result$fitted_mean
@@ -77,5 +76,5 @@ fc.fpca = function(X, d=5, K=2){
   eigenfest<-result$eigenfunctions
 
   fpcs<-fpca.score.fixed(X[,c(1,3,2)],grids.new,muest,evalest,eigenfest,sig2est,r)
-  list(fit = t(fpca.pred(fpcs, muest, eigenfest)), sigma.est = sqrt(sig2est), mu.est = muest)
+  list(fit = t(fpca.pred(fpcs, muest, eigenfest)), sigma.est = sqrt(sig2est), mu.est = muest, selected_model = result$selected_model)
 }

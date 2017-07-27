@@ -28,6 +28,7 @@ functionalImpute.one = function(Y, basis, K, maxIter, thresh, lambda){
 functionalImpute = function(Y, basis = fc.basis(), K = ncol(basis), maxIter = 10e3, thresh = 10e-4, lambda = 0){
   err = 1e9
   best = NULL
+  bestK = K
 
   smpl = fc.sample(Y)
   for (l in lambda)
@@ -38,7 +39,8 @@ functionalImpute = function(Y, basis = fc.basis(), K = ncol(basis), maxIter = 10
       err = err.new
       best = model
       bestLambda = l
+      bestK = sum(model$D > 1e-10)
     }
   }
-  functionalImpute.one(Y, basis, K, maxIter, thresh, bestLambda)
+  functionalImpute.one(Y, basis, bestK, maxIter, thresh, bestLambda)
 }

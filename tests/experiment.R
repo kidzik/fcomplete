@@ -12,7 +12,7 @@ d = 7
 K = 3
 noise_mag = 1
 dgrid = 501
-clean = 0.99
+clean = 0.995
 n = 200
 
 # Set up a basis
@@ -32,7 +32,7 @@ Ycoef2 = rmvnorm(n = n, sigma = Sigma2, mean = rnorm(d))
 
 subst = runif(n) > 0.2
 Ycoef = Ycoef1
-Ycoef[subst,] = Ycoef2[subst,]
+#Ycoef[subst,] = Ycoef2[subst,]
 
 Ytrue = Ycoef %*% t(S)
 
@@ -66,7 +66,8 @@ smp = fc.sample(wide)
 long.train = fc.wide2long(smp$train)
 fpca.model = fc.fpca(long.train[,],d = 7,K=c(K-1,K,K+1))
 
-func.impute = functionalImpute(smp$train, basis = fc.basis(d, "splines"), maxIter = 1000, thresh= 1e-5, lambda = fpca.model$sigma.est * c(0.1, 0.5, 0.7, 1, 1.5, 2, 3, 5, 10))
+sigma.factors = c(0.1, 0.5, 0.7, 1, 1.5, 2, 3, 5, 10)
+func.impute = functionalImpute(smp$train, basis = fc.basis(d, "splines"), maxIter = 10e5, thresh= 1e-5, lambda = fpca.model$sigma.est * fpca.model$sigma.est * sigma.factors)
 mean.impute = fc.mean(smp$train)
 
 ind = 10:15
@@ -92,4 +93,4 @@ m0 = sqrt(mean((smp$test - mean.impute)[smp$test.mask]**2))
 m2 = sqrt(mean((smp$test - fpca.model$fit)[smp$test.mask]**2))
 m3 = sqrt(mean((smp$test - ensamble )[smp$test.mask]**2))
 
-cat("mean impute:",m0/m0,"\nfpca:",m2/m0,"\nours:",m1/m0,"\nensamble",m3/m0)
+cat("mean impute:\t",m0,"\nours:\t\t",m1,"\nfpca:\t\t",m2,"\nensamble:\t",m3)
