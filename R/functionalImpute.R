@@ -1,3 +1,128 @@
+project.on.basis = function(Y, basis){
+  ncol = dim(Y)[2]
+  nbas = dim(basis)[1]
+  res = c()
+
+  for (i in 1:(ncol / nbas)){
+    res = cbind(res, Y[,(i-1) * nbas + 1:nbas] %*% basis)
+  }
+  res
+}
+
+#' @export
+functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda){
+  args <- list(...)
+
+  Y = c()
+
+  for (i in 1:length(args)){
+    Y = cbind(Y, args[[i]])
+  }
+
+  ynas = is.na(Y)
+  Yfill = Y
+  Yhat = Y
+  Yhat[] = 0
+  err = 1e9
+
+
+  dims = 1:K
+  err = 0
+  for (i in 1:maxIter){
+    Yfill[ynas] = Yhat[ynas]
+    Ysvd = svd(project.on.basis(Yfill, basis))
+    D = Ysvd$d[dims]- lambda
+    D[D<0] = 0
+    Yhat.new = project.on.basis(Ysvd$u[,dims] %*% (D * t(Ysvd$v[,dims])), t(basis))
+    ratio = norm(Yhat.new - Yhat,"F") / (norm(Yhat,type = "F") + 1e-5)
+    print(ratio)
+    if (ratio < thresh)
+      break
+    Yhat = Yhat.new
+
+    err = sqrt(mean( ((Yhat - Y)[!ynas])**2))
+  }
+
+  fit= list()
+  ncol = dim(args[[1]])[2]
+  for (i in 1:length(args)){
+    fit[[i]] = Yhat[,(i-1)*ncol + 1:ncol]
+  }
+
+  list(fit=fit, D=D, U=Ysvd$u[,dims], err=err, lambda = lambda)
+}
+
+#' @export
+# functionalMultiImpute.one.old = function(..., basis, K, maxIter, thresh, lambda){
+#   args <- list(...)
+#   nas = list()
+#   fill = list()
+#   nas.all = c()
+#   hat = list()
+#   hat.c = c()
+#
+#   for (i in 1:length(args)){
+#     nas[[i]] = is.na(args[[i]])
+#     nas.all = cbind(nas[[i]])
+#     fill[[i]] = args[[i]]
+#     hat[[i]] = fill[[i]]
+#     hat[[i]][] = rnorm(prod(dim(hat[[i]])))
+#     hat.c = cbind(hat.c, hat[[i]])
+#   }
+#
+#   YX = hat.c
+#
+#   err = 1e9
+#
+#   dims = 1:K
+#   for (i in 1:maxIter){
+#     projected = c()
+#     nc.all = list()
+#
+#     for (i in 1:length(args)){
+#       fill[[ i ]][nas[[i]]] = hat[[ i ]][nas[[i]]]
+#       pr.new = fill[[ i ]] %*% basis
+#       nc.all[[i]] = ncol(pr.new)
+#       projected = cbind(projected, pr.new)
+#     }
+#
+#     YXsvd = svd(projected )
+#
+#     D = YXsvd$d[dims] - lambda
+#     D[D<0] = 0
+#     hat.new.proj = YXsvd$u[,dims] %*% (D * t(YXsvd$v[,dims]))
+#
+#     nc = 0
+#     hat.new = c()
+#     for (i in 1:length(args)){
+#       hat[[i]] = hat.new.proj[,(nc+1):(nc + nc.all[[i]])] %*% t(basis)
+#       hat.new = cbind(hat.new, hat[[i]])
+#       nc = nc + nc.all[[i]]
+#     }
+#
+#     ratio = norm(hat.new - hat.c, "F") / (norm(hat.c, type = "F") + 10e-10)
+#     print(ratio)
+#     if (ratio < thresh)
+#       break
+#     hat.c = hat.new
+#
+#     err = sqrt(mean( ((hat.c - YX)[!nas.all])**2))
+#     # cat(err,sum(D > 0),"\n")
+#   }
+#
+#   # v=(t(YXsvd$v[,dims])) %*% t(mbasis),
+#   res = list(D=D, U=YXsvd$u[,dims], err=err, lambda = lambda)
+#
+#   ncur = 0
+#   res$fit = list()
+#   for (i in 1:length(args)){
+#     res$fit[[i]] = hat.c[,(ncur+1):(ncur + ncol(args[[i]]))]
+#     ncur = ncur + ncol(args[[i]])
+#   }
+#   res
+# }
+
+#' @export
 functionalImpute.one = function(Y, basis, K, maxIter, thresh, lambda){
   ynas = is.na(Y)
   Yfill = Y
@@ -6,6 +131,7 @@ functionalImpute.one = function(Y, basis, K, maxIter, thresh, lambda){
   err = 1e9
 
   dims = 1:K
+  err = 0
   for (i in 1:maxIter){
     Yfill[ynas] = Yhat[ynas]
     Ysvd = svd(Yfill %*% basis)
@@ -25,6 +151,31 @@ functionalImpute.one = function(Y, basis, K, maxIter, thresh, lambda){
 }
 
 #' @export
+functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIter = 10e3, thresh = 10e-4, lambda = 0){
+  args <- list(...)
+  err = 1e9
+  best = NULL
+  bestK = K
+
+  for (l in lambda)
+  {
+    model = functionalMultiImpute.one(..., basis=basis, K=K, maxIter=maxIter, thresh=thresh, lambda=l)
+    err.new = model$err #0
+#    for (i in 1:length(args))
+#      err.new = err.new + sqrt(mean((smpl$test - model[[i]])[smpl$test.mask]**2))
+
+    if (err.new < err){
+      err = err.new
+      best = model
+      bestLambda = l
+      bestK = sum(model$D > 1e-10)
+    }
+  }
+  best
+#  functionalImpute.one(..., basis=basis, K=bestK, maxIter=maxIter, thresh=thresh, lambda=bestLambda)
+}
+
+#' @export
 functionalImpute = function(Y, basis = fc.basis(), K = ncol(basis), maxIter = 10e3, thresh = 10e-4, lambda = 0){
   err = 1e9
   best = NULL
@@ -34,7 +185,7 @@ functionalImpute = function(Y, basis = fc.basis(), K = ncol(basis), maxIter = 10
   for (l in lambda)
   {
     model = functionalImpute.one(smpl$train, basis, K, maxIter, thresh, l)
-    err.new = sqrt(mean((smp$test - model$fit)[smp$test.mask]**2))
+    err.new = sqrt(mean((smpl$test - model$fit)[smpl$test.mask]**2))
     if (err.new < err){
       err = err.new
       best = model
@@ -44,3 +195,16 @@ functionalImpute = function(Y, basis = fc.basis(), K = ncol(basis), maxIter = 10
   }
   functionalImpute.one(Y, basis, bestK, maxIter, thresh, bestLambda)
 }
+
+#' @export
+apply.mask = function(wide, mask){
+  smp.X = list(test.mask = mask$test.mask)
+  smp.X$train = wide
+  smp.X$test = wide
+  smp.X$test.rows = mask$test.rows
+  nas = is.na(smp.X$train)
+  smp.X$train[smp.X$test.mask] = NA
+  smp.X$test[!smp.X$test.mask] = NA
+  smp.X
+}
+

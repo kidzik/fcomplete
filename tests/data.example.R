@@ -7,7 +7,7 @@ tb = table(all.data$Patient_ID)
 #tb = tb[tb >= 3]
 all.data = all.data[all.data$Patient_ID %in% names(tb),]
 
-data = all.data[all.data$side=="L",c("Patient_ID","age","speed")]
+data = all.data[all.data$side=="L",c("Patient_ID","age","PelvicTilt_mean")]
 data = na.omit(data)
 data = data[(data$age < 15) & (data$age > 4),]
 dgrid = 50
@@ -36,12 +36,12 @@ nsplines = 6
 mean.impute = fc.mean(smp$train)
 if (!("fpca.model" %in% ls())){
   long.train = fc.wide2long(smp$train)
-  fpca.model = fc.fpca(long.train[,],d = nsplines, K = 2:4, grid)
+  fpca.model = fc.fpca(long.train[,],d = nsplines, K = 2, grid)
 }
 sigma.factors = c(0.1, 0.5, 0.7, 1, 1.5, 2, 2.5)
 func.impute = functionalImpute(smp$train,
                                fc.basis(nsplines, "splines",norder = 4, dgrid = dgrid),
-                               maxIter = 1e5, thresh= 1e-4,
+                               maxIter = 1e4, thresh= 1e-3,
                                lambda = fpca.model$sigma.est * fpca.model$sigma.est * sigma.factors)
 
 # Plot
