@@ -16,7 +16,7 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda){
   Y = c()
 
   for (i in 1:length(args)){
-    Y = cbind(Y, args[[i]])
+    Y = cbind(Y, args[[i]]$train)
   }
 
   ynas = is.na(Y)
@@ -35,7 +35,8 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda){
     D[D<0] = 0
     Yhat.new = project.on.basis(Ysvd$u[,dims] %*% (D * t(Ysvd$v[,dims])), t(basis))
     ratio = norm(Yhat.new - Yhat,"F") / (norm(Yhat,type = "F") + 1e-5)
-    print(ratio)
+    if (i %% 100 == 0)
+      print(ratio)
     if (ratio < thresh)
       break
     Yhat = Yhat.new
@@ -44,7 +45,7 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda){
   }
 
   fit= list()
-  ncol = dim(args[[1]])[2]
+  ncol = dim(args[[1]]$train)[2]
   for (i in 1:length(args)){
     fit[[i]] = Yhat[,(i-1)*ncol + 1:ncol]
   }
@@ -157,22 +158,40 @@ functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIt
   best = NULL
   bestK = K
 
+  args.smpl = args
+  args.smpl[[1]] = fc.sample(args.smpl[[1]])
+  nargs = length(args.smpl)
+  if (nargs > 1){
+    for (i in 2:nargs){
+      args.smpl[[i]] = fcomplete::apply.mask(args.smpl[[i]], args.smpl[[1]])
+    }
+  }
+  args.smpl[["basis"]] = basis
+  args.smpl[["K"]] = K
+  args.smpl[["maxIter"]] = maxIter
+  args.smpl[["thresh"]] = thresh
+
   for (l in lambda)
   {
-    model = functionalMultiImpute.one(..., basis=basis, K=K, maxIter=maxIter, thresh=thresh, lambda=l)
-    err.new = model$err #0
-#    for (i in 1:length(args))
-#      err.new = err.new + sqrt(mean((smpl$test - model[[i]])[smpl$test.mask]**2))
+    args.smpl[["lambda"]] = l
+    model = do.call(functionalMultiImpute.one, args.smpl)
+
+    err.new = 0
+    for (i in 1:nargs){
+      err.new = err.new + sqrt(mean((args.smpl[[i]]$test - model$fit[[i]])[args.smpl[[i]]$test.mask]**2))
+    }
 
     if (err.new < err){
       err = err.new
-      best = model
       bestLambda = l
       bestK = sum(model$D > 1e-10)
     }
   }
-  best
-#  functionalImpute.one(..., basis=basis, K=bestK, maxIter=maxIter, thresh=thresh, lambda=bestLambda)
+  args.smpl[["lambda"]] = bestLambda
+  for (i in 1:nargs){
+    args.smpl[[i]]$train = args[[i]]
+  }
+  do.call(functionalMultiImpute.one, args.smpl)
 }
 
 #' @export

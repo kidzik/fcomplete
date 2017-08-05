@@ -1,5 +1,5 @@
-# library("devtools")
-# devtools::install_git("https://github.com/kidzik/fpca.git",reload = TRUE)
+library("devtools")
+#devtools::install_git("https://github.com/kidzik/fpca.git",reload = TRUE)
 devtools::install(".")
 
 library("clusterGeneration")
@@ -8,12 +8,12 @@ library("fcomplete")
 library("fda")
 library("mvtnorm")
 
+noise_mag = 0.1
 d = 5
 K = 3
-noise_mag = 1
 dgrid = 51
 clean = 0.8
-n = 200
+n = 1000
 
 # Set up a basis
 #basis = fda::create.fourier.basis(c(0,1), d)
@@ -37,8 +37,10 @@ generate.matrix = function(){
 }
 B = matrix(rnorm(d**2),d,d)
 Xcoef = generate.matrix()
-Ycoef = Xcoef #+ generate.matrix()
+Zcoef = generate.matrix()
+Ycoef = Xcoef + Zcoef #+ generate.matrix() * 0.1
 
+Ztrue = Zcoef %*% t(S)
 Ytrue = Ycoef %*% t(S)
 Xtrue = Xcoef %*% t(S)
 
@@ -46,16 +48,20 @@ Xtrue = Xcoef %*% t(S)
 nel = prod(dim(Ytrue))
 nna = ceiling(nel*clean)
 SigmaBig = genPositiveDefMat(dgrid)$Sigma
-noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise_mag
+noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise_mag * 10
 Ynoise = Ytrue+noise
-noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise_mag * 0.5
+noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise_mag
 Xnoise = Xtrue+noise
+noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise_mag
+Znoise = Ztrue+noise
 
 Y = Ynoise
 remove.points = sample(nel)[1:nna]
 Y[remove.points] = NA
 X = Xnoise
 X[remove.points] = NA
+Z = Znoise
+Z[remove.points] = NA
 
 # model and predict
 Ms = d #5:10
@@ -86,6 +92,17 @@ idx = unique(R[,1])
 wide.X = fc.long2wide(R[,1],R[,3],R[,2],bins = dgrid)
 smp.X = fcomplete::apply.mask(wide.X, smp.Y)
 
+nonna = which(!is.na(Z),arr.ind = T)
+nonna = nonna[order(nonna[,1]),]
+vals = Z[nonna]
+R = cbind(nonna, vals)
+R[,2] = R[,2] / dgrid
+R = R[,c(1,3,2)]
+idx = unique(R[,1])
+
+wide.Z = fc.long2wide(R[,1],R[,3],R[,2],bins = dgrid)
+smp.Z = fcomplete::apply.mask(wide.Z, smp.Y)
+
 long.train = fc.wide2long(smp.Y$train)
 fpca.model = fc.fpca(long.train[,],d = 7,K=c(K-1,K,K+1),grid.l = 0:50/50)
 
@@ -94,7 +111,8 @@ sigma.factors = c(0.1, 0.5, 0.7, 1, 1.5)
 devtools::install(".")
 library("fcomplete")
 # fpca.model$sigma.est * fpca.model$sigma.est * sigma.factors
-func.impute = functionalMultiImpute.one(smp.Y$train, smp.X$train, basis = fc.basis(d, "splines", dgrid = dgrid), maxIter = 10e5, thresh= 1e-5, lambda = fpca.model$sigma.est * fpca.model$sigma.est * 1.2, K=2)
+func.impute = functionalMultiImpute(smp.Y$train, smp.X$train, smp.Z$train, basis = fc.basis(d, "splines", dgrid = dgrid), maxIter = 10e5, thresh= 1e-4, lambda = fpca.model$sigma.est * fpca.model$sigma.est * c(0.1,0.3,0.7,1,1.5,2,3), K=2)
+#func.impute = functionalMultiImpute.one(smp.Y, smp.X, basis = fc.basis(d, "splines", dgrid = dgrid), maxIter = 10e5, thresh= 1e-5, lambda = fpca.model$sigma.est * fpca.model$sigma.est * c(1.2), K=2)
 func.impute$fit = func.impute$fit[[1]]
 
 #func.impute = functionalImpute.one(smp.Y$train, basis = fc.basis(d, "splines", dgrid = dgrid), maxIter = 10e5, thresh= 1e-5, lambda = fpca.model$sigma.est * fpca.model$sigma.est *1.5, K=2)
@@ -135,7 +153,7 @@ m3 = sqrt(mean((Ytrue[idx,] - ensamble )**2))
 
 cat("TRUE:\nmean impute:\t",m0/m0,"\nours:\t\t",m1/m0,"\nfpca:\t\t",m2/m0,"\nensamble:\t",m3/m0)
 
-ind = 10:13
+ind = 1:3 + 20
 matplot(t(Ytrue[idx,][ind,]),t='l',lty=1,lwd=2)
 matplot(t(func.impute$fit[smp.Y$test.rows[ind],]),t='l',lty=2,add=T)
 
