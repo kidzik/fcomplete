@@ -152,7 +152,7 @@ functionalImpute.one = function(Y, basis, K, maxIter, thresh, lambda){
 }
 
 #' @export
-functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIter = 10e3, thresh = 10e-4, lambda = 0){
+functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIter = 10e3, thresh = 10e-4, lambda = 0, final="hard"){
   args <- list(...)
   err = 1e9
   best = NULL
@@ -181,6 +181,8 @@ functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIt
       err.new = err.new + sqrt(mean((args.smpl[[i]]$test - model$fit[[i]])[args.smpl[[i]]$test.mask]**2))
     }
 
+    cat(paste("Error with lambda=",l,"\t",err.new,"\n"))
+
     if (err.new < err){
       err = err.new
       bestLambda = l
@@ -191,6 +193,11 @@ functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIt
   for (i in 1:nargs){
     args.smpl[[i]]$train = args[[i]]
   }
+  if (final=="hard"){
+    args.smpl[["lambda"]] = 0
+    args.smpl[["K"]] = bestK
+  }
+
   do.call(functionalMultiImpute.one, args.smpl)
 }
 

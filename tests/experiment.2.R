@@ -8,12 +8,12 @@ library("fcomplete")
 library("fda")
 library("mvtnorm")
 
-noise_mag = 0.1
-d = 5
-K = 3
+noise_mag = 0.2
+d = 7
+K = 4
 dgrid = 51
-clean = 0.8
-n = 1000
+clean = 0.85
+n = 500
 
 # Set up a basis
 #basis = fda::create.fourier.basis(c(0,1), d)
@@ -30,7 +30,7 @@ generate.matrix = function(){
   Sigma2 = V %*% D %*% t(V)
   Ycoef1 = rmvnorm(n = n, sigma = Sigma1, mean = rnorm(d))
   Ycoef2 = rmvnorm(n = n, sigma = Sigma2, mean = rnorm(d))
-  subst = runif(n) > 0.2
+  subst = runif(n) > 0
   Ycoef = Ycoef1
   Ycoef[subst,] = Ycoef2[subst,]
   Ycoef
@@ -38,22 +38,25 @@ generate.matrix = function(){
 B = matrix(rnorm(d**2),d,d)
 Xcoef = generate.matrix()
 Zcoef = generate.matrix()
-Ycoef = Xcoef + Zcoef #+ generate.matrix() * 0.1
+Ycoef = Xcoef[,] + Zcoef[,] #+ generate.matrix() * 0.1
 
 Ztrue = Zcoef %*% t(S)
-Ytrue = Ycoef %*% t(S)
 Xtrue = Xcoef %*% t(S)
+# Ytrue = Ycoef %*% t(S)
+Ytrue = Xtrue #+ Ztrue
 
 # Remove 99% of points
 nel = prod(dim(Ytrue))
 nna = ceiling(nel*clean)
 SigmaBig = genPositiveDefMat(dgrid)$Sigma
-noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise_mag * 10
-Ynoise = Ytrue+noise
+
 noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise_mag
-Xnoise = Xtrue+noise
+Xnoise = Xtrue + noise
 noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise_mag
-Znoise = Ztrue+noise
+Znoise = Ztrue + noise
+noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise_mag
+# Ynoise = Xnoise + Znoise + noise * 5
+Ynoise = Xnoise + noise * 5
 
 Y = Ynoise
 remove.points = sample(nel)[1:nna]
@@ -104,14 +107,25 @@ wide.Z = fc.long2wide(R[,1],R[,3],R[,2],bins = dgrid)
 smp.Z = fcomplete::apply.mask(wide.Z, smp.Y)
 
 long.train = fc.wide2long(smp.Y$train)
-fpca.model = fc.fpca(long.train[,],d = 7,K=c(K-1,K,K+1),grid.l = 0:50/50)
-
-sigma.factors = c(0.1, 0.5, 0.7, 1, 1.5)
+fpca.model = fc.fpca(long.train[,],d = d,K=c(K-1,K,K+1),grid.l = 0:50/50)
 
 devtools::install(".")
 library("fcomplete")
 # fpca.model$sigma.est * fpca.model$sigma.est * sigma.factors
-func.impute = functionalMultiImpute(smp.Y$train, smp.X$train, smp.Z$train, basis = fc.basis(d, "splines", dgrid = dgrid), maxIter = 10e5, thresh= 1e-4, lambda = fpca.model$sigma.est * fpca.model$sigma.est * c(0.1,0.3,0.7,1,1.5,2,3), K=2)
+
+scales = c(0.1,0.5,1,2)
+func.impute = functionalMultiImpute(smp.Y$train,
+                                    smp.X$train * 5,
+#                                    smp.Z$train,
+                                    basis = fc.basis(d, "splines", dgrid = dgrid),
+                                    maxIter = 10e5, thresh= 1e-4,
+                                    lambda = fpca.model$sigma.est * fpca.model$sigma.est * scales,
+                                    K = fpca.model$selected_model[2],
+                                    final="soft")
+#scales = c(0.1, 0.3, 0.5, 0.7, 1, 1.3)
+#func.impute = functionalMultiImpute(smp.Y$train, basis = fc.basis(d, "splines", dgrid = dgrid), maxIter = 10e5, thresh= 1e-6, lambda = fpca.model$sigma.est * fpca.model$sigma.est * scales,K=3,final="soft")
+#func.impute = functionalMultiImpute(smp.Y$train, basis = fc.basis(d, "splines", dgrid = dgrid), maxIter = 10e5, thresh= 1e-10, lambda = fpca.model$sigma.est * fpca.model$sigma.est * c(1,1.5,2,3),K=4)
+#func.impute = functionalMultiImpute(smp.Y$train, basis = fc.basis(d, "splines", dgrid = dgrid), maxIter = 10e5, thresh= 1e-4, lambda = fpca.model$sigma.est * fpca.model$sigma.est * c(0.1,0.3,0.7,1,1.5,2,3), K=2)
 #func.impute = functionalMultiImpute.one(smp.Y, smp.X, basis = fc.basis(d, "splines", dgrid = dgrid), maxIter = 10e5, thresh= 1e-5, lambda = fpca.model$sigma.est * fpca.model$sigma.est * c(1.2), K=2)
 func.impute$fit = func.impute$fit[[1]]
 
@@ -144,7 +158,7 @@ m0 = sqrt(mean((smp.Y$test - mean.impute)[smp.Y$test.mask]**2))
 m2 = sqrt(mean((smp.Y$test - fpca.model$fit)[smp.Y$test.mask]**2))
 m3 = sqrt(mean((smp.Y$test - ensamble )[smp.Y$test.mask]**2))
 
-cat("SAMPLE:\nmean impute:\t",m0,"\nours:\t\t",m1,"\nfpca:\t\t",m2,"\nensamble:\t",m3)
+cat("SAMPLE:\nmean impute:\t",m0/m0,"\nours:\t\t",m1/m0,"\nfpca:\t\t",m2/m0,"\nensamble:\t",m3/m0)
 
 m1 = sqrt(mean((Ytrue[idx,] - func.impute$fit)**2))
 m0 = sqrt(mean((Ytrue[idx,] - mean.impute)**2))
@@ -153,9 +167,10 @@ m3 = sqrt(mean((Ytrue[idx,] - ensamble )**2))
 
 cat("TRUE:\nmean impute:\t",m0/m0,"\nours:\t\t",m1/m0,"\nfpca:\t\t",m2/m0,"\nensamble:\t",m3/m0)
 
-ind = 1:3 + 20
+ind = 1:3 + 30
 matplot(t(Ytrue[idx,][ind,]),t='l',lty=1,lwd=2)
-matplot(t(func.impute$fit[smp.Y$test.rows[ind],]),t='l',lty=2,add=T)
+matplot(t(func.impute$fit[ind,]),t='l',lty=2,add=T)
 
 matplot(t(Ytrue[idx,][ind,]),t='l',lty=1,lwd=2)
-matplot(t(fpca.model$fit[smp.Y$test.rows[ind],]),t='l',lty=3, add=T)
+matplot(t(fpca.model$fit[ind,]),t='l',lty=3, add=T)
+
