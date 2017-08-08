@@ -43,7 +43,7 @@ Ycoef = Xcoef[,] + Zcoef[,] #+ generate.matrix() * 0.1
 Ztrue = Zcoef %*% t(S)
 Xtrue = Xcoef %*% t(S)
 # Ytrue = Ycoef %*% t(S)
-Ytrue = Xtrue #+ Ztrue
+Ytrue = Xtrue + Ztrue
 
 # Remove 99% of points
 nel = prod(dim(Ytrue))
@@ -55,8 +55,8 @@ Xnoise = Xtrue + noise
 noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise_mag
 Znoise = Ztrue + noise
 noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise_mag
-# Ynoise = Xnoise + Znoise + noise * 5
-Ynoise = Xnoise + noise * 5
+Ynoise = Xnoise + Znoise + noise * 4
+#Ynoise = Xnoise + noise * 5
 
 Y = Ynoise
 remove.points = sample(nel)[1:nna]
@@ -113,12 +113,12 @@ devtools::install(".")
 library("fcomplete")
 # fpca.model$sigma.est * fpca.model$sigma.est * sigma.factors
 
-scales = c(0.1,0.5,1,2)
+scales = c(2,3.5,5,7.5,10)
 func.impute = functionalMultiImpute(smp.Y$train,
-                                    smp.X$train * 5,
-#                                    smp.Z$train,
+                                    smp.X$train,
+                                    smp.Z$train,
                                     basis = fc.basis(d, "splines", dgrid = dgrid),
-                                    maxIter = 10e5, thresh= 1e-4,
+                                    maxIter = 10e5, thresh= 1e-5,
                                     lambda = fpca.model$sigma.est * fpca.model$sigma.est * scales,
                                     K = fpca.model$selected_model[2],
                                     final="soft")
@@ -135,42 +135,62 @@ func.impute$fit = func.impute$fit[[1]]
 #func.impute = functionalMultiImpute(smp.Y$train, basis = fc.basis(d, "splines", dgrid = dgrid), maxIter = 10e5, thresh= 1e-3, lambda = fpca.model$sigma.est * fpca.model$sigma.est * sigma.factors)
 mean.impute = fc.mean(smp.Y$train)
 
-ind = 10:15
-matplot(t(smp.Y$train[smp.Y$test.rows[ind],]),t='p',pch = 'X')
-matplot(t(mean.impute[smp.Y$test.rows[ind],]),t='l',add=T)
-matplot(t(smp.Y$test[smp.Y$test.rows[ind],]),t='p',pch = 'O',add=T)
+par(cex=2)
+ind = 1:3 + 30
+matplot(t(smp.Y$train[ind,]),t='p',pch = 'X')
+matplot(t(mean.impute[ind,]),t='l',add=T,lwd=3)
+matplot(t(smp.Y$test[ind,]),t='p',pch = 'O',add=T)
 
-matplot(t(smp.Y$train[smp.Y$test.rows[ind],]),t='p',pch = 'X')
-matplot(t(func.impute$fit[smp.Y$test.rows[ind],]),t='l',add=T)
-matplot(t(smp.Y$test[smp.Y$test.rows[ind],]),t='p',pch = 'O',add=T)
+matplot(t(smp.Y$train[ind,]),t='p',pch = 'X')
+matplot(t(func.impute$fit[ind,]),t='l',add=T,lwd=3,lty=2)
+matplot(t(smp.Y$test[ind,]),t='p',pch = 'O',add=T)
 
-matplot(t(smp.Y$train[smp.Y$test.rows[ind],]),t='p',pch = 'X')
-matplot(t(fpca.model$fit[smp.Y$test.rows[ind],]),t='l',add=T)
-matplot(t(smp.Y$test[smp.Y$test.rows[ind],]),t='p',pch = 'O',add=T)
+matplot(t(smp.Y$train[ind,]),t='p',pch = 'X')
+matplot(t(fpca.model$fit[ind,]),t='l',add=T,lwd=3,lty=2)
+matplot(t(smp.Y$test[ind,]),t='p',pch = 'O',add=T)
 
 ensamble = (fpca.model$fit + func.impute$fit)/2
-matplot(t(ensamble[smp.Y$test.rows[ind],]),t='l')
-matplot(t(smp.Y$train[smp.Y$test.rows[ind],]),t='p',pch = 'X',add=T)
-matplot(t(smp.Y$test[smp.Y$test.rows[ind],]),t='p',pch = 'O',add=T)
+matplot(t(ensamble[ind,]),t='l',lwd=3)
+matplot(t(smp.Y$train[ind,]),t='p',pch = 'X',add=T)
+matplot(t(smp.Y$test[ind,]),t='p',pch = 'O',add=T)
 
 m1 = sqrt(mean((smp.Y$test - func.impute$fit)[smp.Y$test.mask]**2))
 m0 = sqrt(mean((smp.Y$test - mean.impute)[smp.Y$test.mask]**2))
 m2 = sqrt(mean((smp.Y$test - fpca.model$fit)[smp.Y$test.mask]**2))
 m3 = sqrt(mean((smp.Y$test - ensamble )[smp.Y$test.mask]**2))
 
-cat("SAMPLE:\nmean impute:\t",m0/m0,"\nours:\t\t",m1/m0,"\nfpca:\t\t",m2/m0,"\nensamble:\t",m3/m0)
+tbl.smp = rbind(
+  c(m0,100*(1-m0/m0)),
+  c(m1,100*(1-m1/m0)),
+  c(m2,100*(1-m2/m0)),
+  c(m3,100*(1-m3/m0))
+)
+colnames(tbl.smp) = c("MSE","% expl")
+
+cat("SAMPLE:\nmean impute:\t",m0,"\t",0,"%\nours:\t\t",m1,"\t",(100*m1/m0),"%\nfpca:\t\t",m2,"\t",(100*m2/m0),"%\nensamble:\t",m3,"\t",(100*m3/m0),"%")
 
 m1 = sqrt(mean((Ytrue[idx,] - func.impute$fit)**2))
 m0 = sqrt(mean((Ytrue[idx,] - mean.impute)**2))
 m2 = sqrt(mean((Ytrue[idx,] - fpca.model$fit)**2))
 m3 = sqrt(mean((Ytrue[idx,] - ensamble )**2))
 
-cat("TRUE:\nmean impute:\t",m0/m0,"\nours:\t\t",m1/m0,"\nfpca:\t\t",m2/m0,"\nensamble:\t",m3/m0)
+tbl.true = rbind(
+  c(m0,100*(1-m0/m0)),
+  c(m1,100*(1-m1/m0)),
+  c(m2,100*(1-m2/m0)),
+  c(m3,100*(1-m3/m0))
+)
+colnames(tbl.true) = c("MSE","% expl")
 
-ind = 1:3 + 30
-matplot(t(Ytrue[idx,][ind,]),t='l',lty=1,lwd=2)
-matplot(t(func.impute$fit[ind,]),t='l',lty=2,add=T)
+tbl.final = cbind(c(0, fpca.model$selected_model[2], sum(func.impute$D > 0.01), NA ), tbl.smp, tbl.true)
+colnames(tbl.final)[1] = "K"
+rownames(tbl.final) = c("mean","ours","fpca","ensamble")
 
-matplot(t(Ytrue[idx,][ind,]),t='l',lty=1,lwd=2)
-matplot(t(fpca.model$fit[ind,]),t='l',lty=3, add=T)
+cat("TRUE:\nmean impute:\t",m0,"\t",0,"%\nours:\t\t",m1,"\t",(100*m1/m0),"%\nfpca:\t\t",m2,"\t",(100*m2/m0),"%\nensamble:\t",m3,"\t",(100*m3/m0),"%")
+
+matplot(t(Ytrue[idx,][ind,]),t='l',lty=1,lwd=4)
+matplot(t(func.impute$fit[ind,]),t='l',lty=2,add=T,lwd=2)
+
+matplot(t(Ytrue[idx,][ind,]),t='l',lty=1,lwd=4)
+matplot(t(fpca.model$fit[ind,]),t='l',lty=2, add=T,lwd=2)
 
