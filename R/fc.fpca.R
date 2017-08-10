@@ -76,5 +76,5 @@ fc.fpca = function(X, d=5, K=2, grid.l=0:99/99){
   eigenfest<-result$eigenfunctions
 
   fpcs<-fpca.score.fixed(X[,c(1,3,2)],grids.new,muest,evalest,eigenfest,sig2est,r)
-  list(fit = t(fpca.pred(fpcs, muest, eigenfest)), sigma.est = sqrt(sig2est), mu.est = muest, selected_model = result$selected_model)
+  list(fit = t(fpca.pred(fpcs, muest, eigenfest)), sigma.est = sqrt(sig2est), mu.est = muest, selected_model = result$selected_model, fpcs = fpcs)
 }
