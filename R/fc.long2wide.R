@@ -5,7 +5,7 @@ fc.long2wide = function(groups, time, values, bins=100)
 
   minval = min(time)
   maxval = max(time)
-  # cat(minval," ",maxval," ",(maxval - minval) / bins,"\n")
+#  cat(minval," ",maxval," ",(maxval - minval) / bins,"\n")
   tobin = function(x){
     ceiling ( ((x - minval) / (maxval - minval)) * bins)
   }

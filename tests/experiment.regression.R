@@ -118,51 +118,10 @@ fpca.model.X = fc.fpca(long.train[,],d = d,K=c(K),grid.l = 0:50/50)
 long.train = fc.wide2long(smp.Z$train)
 fpca.model.Z = fc.fpca(long.train[,],d = d,K=c(K),grid.l = 0:50/50)
 
-functionalRegression = function(Y, basis, U, lambda=0, maxIter=1e5, thresh = 1e-5, K = dim(U)[2]){
-  ynas = is.na(Y)
-  Yfill = Y
-  Yhat = Y
-  Yhat[] = 0
-  err = 1e9
-#  U = svd(U)$u
-
-  dims = 1:K
-  err = 0
-  for (i in 1:maxIter){
-    Yfill[ynas] = Yhat[ynas]
-
-    # Find B
-    B = ginv(U) %*% Yfill %*% basis   # The most basic multivariate regression
-    Bsvd = svd(B)
-    D = Bsvd$d - lambda
-    D[D<0] = 0
-    B = Bsvd$u %*% diag(D) %*% t(Bsvd$v)
-    Yhat.new = U %*% B %*% t(basis)   #Ysvd$u[,dims] %*% (D * t(Ysvd$v[,dims]))
-
-    # Regularize?
-    # Ysvd = svd(Yfill %*% basis)
-    # B = ginv(U) %*% Ysvd$u   # The most basic multivariate regression
-    # Yu = U %*% B   #Ysvd$u[,dims] %*% (D * t(Ysvd$v[,dims]))
-    # D = Ysvd$d - lambda
-    # D[D<0] = 0
-    # Yhat.new = Yu %*% diag(D) %*% t(Ysvd$v)  %*% t(basis)
-
-    ratio = norm(Yhat.new - Yhat,"F") / (norm(Yhat,type = "F") + 1e-10)
-    if (ratio < thresh){
-      break
-    }
-    Yhat = Yhat.new
-
-    err = sqrt(mean( ((Yhat - Y)[!ynas])**2))
-    cat(err,"\n")
-  }
-  list(fit=Yhat)
-
-}
-
 dcmp = 5
 U = cbind(fpca.model.X$fpcs,fpca.model.Z$fpcs)
-freg = functionalRegression(Y, fc.basis(d, "splines", dgrid = dgrid), U, thresh = 1e-5, lambda=0.1)
+freg = functionalRegression(Y, U, fc.basis(d, "splines", dgrid = dgrid), thresh = 1e-5, lambda=0.1)
+ind = 1:3 + 336
 matplot(t(smp.Y$train[ind,]),t='p',pch = 'X')
 matplot(t(freg$fit[ind,]),t='l',add=T,lwd=3,lty=1)
 matplot(t(fpca.model.Y$fit[ind,]),t='l',add=T,lwd=3,lty=2)
