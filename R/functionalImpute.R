@@ -54,7 +54,7 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda){
 }
 
 #' @export
-functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIter = 10e3, thresh = 10e-4, lambda = 0, final="hard"){
+functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIter = 10e3, thresh = 10e-4, lambda = 0, final="soft"){
   args <- list(...)
   err = 1e9
   best = NULL

@@ -80,6 +80,7 @@ R = cbind(nonna, vals)
 R[,2] = R[,2] / dgrid
 R = R[,c(1,3,2)]
 idx = unique(R[,1])
+length(idx)
 
 wide.Y = fc.long2wide(R[,1],R[,3],R[,2],bins = dgrid)
 smp.Y = fc.sample(wide.Y)
@@ -109,24 +110,30 @@ dim(wide.Z)
 
 devtools::install(".") ; library("fcomplete")
 
-long.train = fc.wide2long(smp.Y$train)
-fpca.model.Y = fc.fpca(long.train[,],d = d,K=c(K),grid.l = 0:50/50)
+long.train.Y = fc.wide2long(smp.Y$train)
+fpca.model.Y = fc.fpca(long.train.Y[,],d = d,K=c(K),grid.l = 0:50/50)
 
-long.train = fc.wide2long(smp.X$train)
-fpca.model.X = fc.fpca(long.train[,],d = d,K=c(K),grid.l = 0:50/50)
+long.train.X = fc.wide2long(smp.X$train)
+fpca.model.X = fc.fpca(long.train.X[,],d = d,K=c(K),grid.l = 0:50/50)
 
-long.train = fc.wide2long(smp.Z$train)
-fpca.model.Z = fc.fpca(long.train[,],d = d,K=c(K),grid.l = 0:50/50)
+long.train.Z = fc.wide2long(smp.Z$train)
+fpca.model.Z = fc.fpca(long.train.Z[,],d = d,K=c(K),grid.l = 0:50/50)
 
 dcmp = 5
 U = cbind(fpca.model.X$fpcs,fpca.model.Z$fpcs)
-freg = functionalRegression(Y, U, fc.basis(d, "splines", dgrid = dgrid), thresh = 1e-5, lambda=0.1)
+#freg.old = functionalRegression(Y, U, fc.basis(d, "splines", dgrid = dgrid), thresh = 1e-5, lambda=0.1)
+long = long.train.Y
+long$X = long.train.X$value
+long$Z = long.train.Z$value
+freg = fregression(value:time ~ X + Z | id, long, K=K, thresh = 1e-5, lambda.reg=0.1, method = "fpcs")
+
 ind = 1:3 + 336
 matplot(t(smp.Y$train[ind,]),t='p',pch = 'X')
 matplot(t(freg$fit[ind,]),t='l',add=T,lwd=3,lty=1)
 matplot(t(fpca.model.Y$fit[ind,]),t='l',add=T,lwd=3,lty=2)
 matplot(t(smp.Y$test[ind,]),t='p',pch = 'O',add=T)
 sqrt(mean((Ytrue[idx,] - freg$fit)**2))
+sqrt(mean((Ytrue[idx,] - freg.old$fit)**2))
 
 devtools::install(".") ; library("fcomplete")
 # fpca.model$sigma.est * fpca.model$sigma.est * sigma.factors
@@ -137,8 +144,8 @@ func.impute = functionalMultiImpute(smp.Y$train,
                                     smp.Z$train * 3,
                                     basis = fc.basis(d, "splines", dgrid = dgrid),
                                     maxIter = 10e5, thresh= 1e-5,
-                                    lambda = fpca.model.X$sigma.est * fpca.model.X$sigma.est * scales,
-                                    K = fpca.model$selected_model[2],
+                                    lambda = fpca.model.Y$sigma.est * fpca.model.Y$sigma.est * scales,
+                                    K = fpca.model.Y$selected_model[2],
                                     final="soft")
 #scales = c(0.1, 0.3, 0.5, 0.7, 1, 1.3)
 #func.impute = functionalMultiImpute(smp.Y$train, basis = fc.basis(d, "splines", dgrid = dgrid), maxIter = 10e5, thresh= 1e-6, lambda = fpca.model$sigma.est * fpca.model$sigma.est * scales,K=3,final="soft")
@@ -215,7 +222,7 @@ matplot(t(Ytrue[idx,][ind,]),t='l',lty=1,lwd=4)
 matplot(t(func.impute$fit[ind,]),t='l',lty=2,add=T,lwd=2)
 
 matplot(t(Ytrue[idx,][ind,]),t='l',lty=1,lwd=4)
-matplot(t(fpca.model$fit[ind,]),t='l',lty=2, add=T,lwd=2)
+matplot(t(fpca.model.Y$fit[ind,]),t='l',lty=2, add=T,lwd=2)
 
 matplot(t(Ytrue[idx,][ind,]),t='l',lty=1,lwd=4)
 matplot(t(freg$fit[ind,]),t='l',lty=2, add=T,lwd=2)

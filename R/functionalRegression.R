@@ -54,12 +54,15 @@ parse.formula <- function(formula) {
 }
 
 #' @export
-fregression = function(formula, data, bins = 51, method = c("fimpute", "fpca"))
+fregression = function(formula, data, bins = 51, method = c("fimpute", "fpca"), lambda = c(0), lambda.reg = 0, K = NULL, K.reg = NULL, thresh = 1e-5)
 {
   if (length(method) > 1)
     method = "fimpute"
 
-  basis = fc.basis(d = 5, dgrid = bins)
+  d = 7
+  if (is.null(K))
+    K = d
+  basis = fc.basis(d = d, dgrid = bins)
 
   vars = parse.formula(formula)
   subj.var = vars$groups
@@ -75,13 +78,18 @@ fregression = function(formula, data, bins = 51, method = c("fimpute", "fpca"))
     y.var = vars$response[1]
     time.var = vars$response[2]
     Y = na.omit(data[,c(subj.var, time.var, y.var)])
-    Y.wide = fc.long2wide(Y[,1], Y[,2], Y[,3], bins = bins)
+    Y.wide = fc.long2wide(Y[,1], as.numeric(Y[,2]), as.numeric(Y[,3]), bins = bins)
   }
 
   # Case 1: Y ~ 1 -- do functional impute
   if (length(vars$covariates) == 0)
   {
-    return (functionalMultiImpute(Y.wide, basis=basis))
+    if (method == "fpcs"){
+      return (fc.fpca(Y, d = d, K = K, grid.l = 0:(bins-1)/(bins-1)))
+    }
+    else {
+      return (functionalMultiImpute(Y.wide, basis = basis, lambda = lambda, K = K, thresh = thresh))
+    }
   }
 
   # Assome there are covariates
@@ -92,7 +100,7 @@ fregression = function(formula, data, bins = 51, method = c("fimpute", "fpca"))
   for (i in 1:nvars)
   {
     X.long[[i]] = na.omit(data[,c(subj.var, time.var, vars$covariates[i])])
-    X.wide[[i]] = fc.long2wide(X.long[[i]][,1], X.long[[i]][,2], X.long[[i]][,3], bins = bins)
+    X.wide[[i]] = fc.long2wide(X.long[[i]][,1], as.numeric(X.long[[i]][,2]), as.numeric(X.long[[i]][,3]), bins = bins)
   }
 
   # Case 2: 1 ~ X -- do unsupervised learning
@@ -100,6 +108,8 @@ fregression = function(formula, data, bins = 51, method = c("fimpute", "fpca"))
   {
     args = X.wide
     args$basis = basis
+    args$lambda = lambda
+    args$thresh = thresh
     return(do.call(functionalMultiImpute, args))
   }
 
@@ -108,9 +118,17 @@ fregression = function(formula, data, bins = 51, method = c("fimpute", "fpca"))
   combinedU = c()
   for (i in 1:nvars)
   {
-    models[[i]] = functionalMultiImpute(X.wide[[i]], basis=basis)
-    combinedU = cbind(combinedU, models[[i]]$u)
+    if (method == "fpcs"){
+      models[[i]] = fc.fpca(X.long[[i]], d = d, K = 3, grid.l = 0:(bins-1)/(bins-1))
+      combinedU = cbind(combinedU, models[[i]]$fpcs)
+    }
+    else {
+      models[[i]] = functionalMultiImpute(X.wide[[i]], basis = basis, lambda = lambda, thresh = thresh, K = K)
+      combinedU = cbind(combinedU, models[[i]]$u)
+    }
   }
 
-  functionalRegression(Y.wide, combinedU, basis)
+  if (is.null(K.reg))
+    K.reg = ncol(Y.wide)
+  functionalRegression(Y.wide, combinedU, basis, lambda = lambda.reg, K = K.reg, thresh = thresh)
 }

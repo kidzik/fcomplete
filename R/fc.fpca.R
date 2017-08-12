@@ -40,15 +40,19 @@ fpca.score.fixed<-function(data.m,grids.u,muhat,eigenvals,eigenfuncs,sig2hat,K){
 
 #' @export
 fc.fpca = function(X, d=5, K=2, grid.l=0:99/99){
-  X[is.na(X[,3]),3] = mean(X[,3],na.rm = TRUE)
+  ids = X[,1]
+  time = as.numeric(X[,2])
+  values = as.numeric(X[,3])
 
-  mint = min(X[,2])
-  maxt = max(X[,2])
+  # X[is.na(X[,3]),3] = mean(X[,3],na.rm = TRUE)
+
+  mint = min(time)
+  maxt = max(time)
 
   mapto01 = function(time) { (time - mint) / (maxt - mint) }
   mapfrom01 = function(time) {  mint + time * (maxt - mint) }
 
-  X[,2] = mapto01(X[,2])
+  time = mapto01(time)
 
   ## candidate models for fitting
 #  M.set<-c(4,5,6)
@@ -63,7 +67,7 @@ fc.fpca = function(X, d=5, K=2, grid.l=0:99/99){
 #  grid.l= min(X[,2]) + (max(X[,2]) - min(X[,2])) * 0:99/99
   grids = (grid.l - (min(grid.l))) / (max(grid.l) - min(grid.l)) #seq(0,1,0.002)
   ##fit candidate models by fpca.mle
-  result=fpca.mle(X[,c(1,3,2)], M.set,r.set,ini.method, basis.method,sl.v,max.step,grid.l,grids)
+  result=fpca.mle(cbind(ids,values,time), M.set,r.set,ini.method, basis.method,sl.v,max.step,grid.l,grids)
   muest<-result$fitted_mean
 
   #get predicted trajectories on a fine grid: the same grid for which mean and eigenfunctions are evaluated
