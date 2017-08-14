@@ -38,7 +38,7 @@ fpca.score.fixed<-function(data.m,grids.u,muhat,eigenvals,eigenfuncs,sig2hat,K){
 }
 
 
-#' @export
+# @export
 fc.fpca = function(X, d=5, K=2, grid.l=0:99/99){
   ids = X[,1]
   time = as.numeric(X[,2])

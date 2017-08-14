@@ -1,4 +1,4 @@
-#' @export
+# @export
 fc.wide2long = function(X, time = NULL, ids = NULL, value = "value")
 {
   # TODO: This function should be optimized

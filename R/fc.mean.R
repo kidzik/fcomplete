@@ -1,4 +1,4 @@
-#' @export
+# @export
 fc.mean = function(X){
   ms = rowMeans(X,na.rm = TRUE)
   X.true = X

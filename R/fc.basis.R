@@ -1,4 +1,4 @@
-#' @export
+# @export
 fc.basis = function(d = 11, type=c("fourier","splines"), norder = 4, dgrid = 100){
   if (length(type) > 1)
     type = "splines"

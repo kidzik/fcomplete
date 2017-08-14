@@ -1,12 +1,17 @@
 Package: fcomplete
 Type: Package
-Title: What the Package Does (Title Case)
+Date: 2017-08-14
+Title: Trajectory estimation for sparsely observed longitudinal data
 Version: 0.1.0
-Authors@R: person("First", "Last", email = "first.last@example.com", role = c("aut", "cre"))
-Description: More about what it does (maybe more than one line)
-License: What license is it under?
+Authors@R: c(person("Lukasz", "Kidzinski", email = "lukasz.kidzinski@stanford.edu", role = c("aut", "cre")), person("Trevor", "Hastie", email = "hastie@stanford.edu", role = c("aut")))
+License: GPL-3
 LazyData: TRUE
 RoxygenNote: 6.0.1
 Depends:
     R (>= 2.15.0),
-    MASS
+    MASS,
+    mvtnorm,
+    fda,
+    fpca,
+    clusterGeneration
+Roxygen: list(markdown = TRUE)

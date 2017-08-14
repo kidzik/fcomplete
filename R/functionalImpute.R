@@ -9,7 +9,7 @@ project.on.basis = function(Y, basis){
   res
 }
 
-#' @export
+# @export
 functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda){
   args <- list(...)
 
@@ -49,11 +49,14 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda){
   for (i in 1:length(args)){
     fit[[i]] = Yhat[,(i-1)*ncol + 1:ncol]
   }
+  if (length(args) == 1){
+    fit = fit[[1]]
+  }
 
   list(fit=fit, d=D, u=Ysvd$u[,dims,drop=FALSE], id=rownames(args[[i]]), grid=as.numeric(colnames(args[[i]])), err=err, lambda = lambda)
 }
 
-#' @export
+# @export
 functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIter = 10e3, thresh = 10e-4, lambda = 0, final="soft"){
   args <- list(...)
   err = 1e9
@@ -65,13 +68,16 @@ functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIt
   nargs = length(args.smpl)
   if (nargs > 1){
     for (i in 2:nargs){
-      args.smpl[[i]] = fcomplete::apply.mask(args.smpl[[i]], args.smpl[[1]])
+      args.smpl[[i]] = apply.mask(args.smpl[[i]], args.smpl[[1]])
     }
   }
   args.smpl[["basis"]] = basis
   args.smpl[["K"]] = K
   args.smpl[["maxIter"]] = maxIter
   args.smpl[["thresh"]] = thresh
+
+  cv.K = c()
+  cv.err = c()
 
   for (l in lambda)
   {
@@ -84,6 +90,8 @@ functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIt
     }
 
     cat(paste("Error with lambda=",l,"\t",err.new,"\n"))
+    cv.K = c(cv.K, sum(model$d > 1e-5))
+    cv.err = c(cv.err, err.new)
 
     if (err.new < err){
       err = err.new
@@ -91,19 +99,24 @@ functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIt
       bestK = sum(model$D > 1e-10)
     }
   }
+  meta = data.frame(lambda=lambda, cv.K = cv.K, cv.err=cv.err)
+
   args.smpl[["lambda"]] = bestLambda
   for (i in 1:nargs){
     args.smpl[[i]]$train = args[[i]]
   }
   if (final=="hard"){
     args.smpl[["lambda"]] = 0
+    print(bestK)
     args.smpl[["K"]] = bestK
   }
 
-  do.call(functionalMultiImpute.one, args.smpl)
+  res = do.call(functionalMultiImpute.one, args.smpl)
+  res$meta = meta
+  res
 }
 
-#' @export
+# @export
 apply.mask = function(wide, mask){
   smp.X = list(test.mask = mask$test.mask)
   smp.X$train = wide

@@ -1,4 +1,4 @@
-#' @export
+# @export
 fc.sample = function(X, perc = 0.1, one.per.row=TRUE){
   true = !is.na(X)
   total = sum(true)

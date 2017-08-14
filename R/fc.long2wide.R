@@ -1,4 +1,4 @@
-#' @export
+# @export
 fc.long2wide = function(groups, time, values, bins=100)
 {
   # TODO: This function should be optimized

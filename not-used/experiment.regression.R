@@ -13,7 +13,7 @@ d = 7
 K = 3
 dgrid = 51
 clean = 0.85
-n = 2000
+n = 300
 
 # Set up a basis
 #basis = fda::create.fourier.basis(c(0,1), d)
@@ -45,11 +45,7 @@ Xtrue = Xcoef %*% t(S)
 # Ytrue = Ycoef %*% t(S)
 Ytrue = Xtrue + Ztrue
 
-# Remove 99% of points
-nel = prod(dim(Ytrue))
-nna = ceiling(nel*clean)
 SigmaBig = genPositiveDefMat(dgrid)$Sigma
-
 noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise_mag
 Xnoise = Xtrue + noise
 noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise_mag
@@ -57,6 +53,10 @@ Znoise = Ztrue + noise
 noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise_mag
 Ynoise = Xnoise + Znoise + noise * 4
 #Ynoise = Xnoise + noise * 5
+
+# Remove 99% of points
+nel = prod(dim(Ytrue))
+nna = ceiling(nel*clean)
 
 Y = Ynoise
 remove.points = sample(nel)[1:nna]
@@ -127,7 +127,7 @@ long$X = long.train.X$value
 long$Z = long.train.Z$value
 freg = fregression(value:time ~ X + Z | id, long, K=K, thresh = 1e-5, lambda.reg=0.1, method = "fpcs")
 
-ind = 1:3 + 336
+ind = 1:3 + 36
 matplot(t(smp.Y$train[ind,]),t='p',pch = 'X')
 matplot(t(freg$fit[ind,]),t='l',add=T,lwd=3,lty=1)
 matplot(t(fpca.model.Y$fit[ind,]),t='l',add=T,lwd=3,lty=2)
