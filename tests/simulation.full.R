@@ -16,9 +16,9 @@ K = simulation$params$K
 model.mean = fregression(Y:time ~ 1 | id, data, method = "mean")
 model.fpca = fregression(Y:time ~ 1 | id, data, lambda = 0, K = c(3,4,5), thresh = 1e-7, method = "fpcs")
 
-lambdas = c(2,3,4,5,6,8,10,12,15,20)
-model.fimp = fregression(Y:time ~ 1 | id, data, lambda = lambdas, thresh = 1e-5, final = "hard")
-model.fcmp = fregression(0:time ~ Y + X1 + X2 | id, data, lambda = lambdas, K = K, final = "hard")
+lambdas = c(4,5,6,7)
+model.fimp = fregression(Y:time ~ 1 | id, data, lambda = lambdas, thresh = 1e-5, final = "soft")
+model.fcmp = fregression(0:time ~ Y + X1 + X2 | id, data, lambda = lambdas, K = K, final = "soft")
 model.freg = fregression(Y:time ~ X1 + X2 | id, data, lambda = lambdas, thresh = 1e-5, lambda.reg = 0.1, method = "fpcs", K = K)
 
 # REPORT RESULTS

@@ -1,3 +1,6 @@
+# TODO: This file is ugly for now
+# The main purpose is to wrap fpcs functions to our framework
+
 #########
 fpca.score.fixed<-function(data.m,grids.u,muhat,eigenvals,eigenfuncs,sig2hat,K){
   ##estimated conditional principal component scores (BLUPs): \hat{E(\xi_k|Y)}, k=1,...,K

@@ -126,6 +126,7 @@ fregression = function(formula, data,
     args$basis = basis
     args$lambda = lambda
     args$thresh = thresh
+    args$final = final
     args$K = K
     return(do.call(functionalMultiImpute, args))
   }

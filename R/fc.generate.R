@@ -1,17 +1,27 @@
-# Helper function for bimodal positive definite matrix
+#' Helper function for bimodal positive definite matrix
+#'
+#' @noRd
 # @export
 generate.matrix = function(n, d)
 {
+  # generate covariance matrices
   V = svd(matrix(rnorm(d*d),d))$v
   D = diag(c(1,0.9,0.5,exp(-(3:(d-1))))) * 500
   Sigma1 = V %*% D %*% t(V)
   V = svd(matrix(rnorm(d*d),d))$v
   D = diag(c(1.3,0.4,0.4,exp(-(3:(d-1))))) * 500
   Sigma2 = V %*% D %*% t(V)
+
+  # fix the mean of one group
+  # adjust another group to get overall mean equal zero
   mm = rnorm(d)*5
+
+  # Generate matrices
   Ycoef1 = rmvnorm(n = n, sigma = Sigma1, mean = mm)
   Ycoef2 = rmvnorm(n = n, sigma = Sigma2, mean = -2*mm)
-  subst = 1:n > n/3 #runif(n) > 1/3
+
+  # split into two groups
+  subst = 1:n > n/3
   Ycoef = Ycoef1
   Ycoef[subst,] = Ycoef2[subst,]
   Ycoef

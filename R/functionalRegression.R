@@ -1,3 +1,6 @@
+#' Run sparse functional regression based on latent values
+#'
+#' @noRd
 # @export
 functionalRegression = function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 1e-4, K = dim(X)[2]){
   ynas = is.na(Y)
@@ -15,13 +18,14 @@ functionalRegression = function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 1e-
     # Find B
     B = ginv(X) %*% Yfill %*% basis   # The most basic multivariate regression
     Bsvd = svd(B)
+    # regularize B
     D = Bsvd$d - lambda
     D[D<0] = 0
     Dm = diag(D,length(D),length(D)) # allows D be 1x1
     B = Bsvd$u %*% Dm  %*% t(Bsvd$v)
     Yhat.new = X %*% B %*% t(basis)   #Ysvd$u[,dims] %*% (D * t(Ysvd$v[,dims]))
 
-    # Regularize?
+    # Regularize Y?
     # Ysvd = svd(Yfill %*% basis)
     # B = ginv(X) %*% Ysvd$u   # The most basic multivariate regression
     # Yu = X %*% B   #Ysvd$u[,dims] %*% (D * t(Ysvd$v[,dims]))
@@ -41,6 +45,12 @@ functionalRegression = function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 1e-
   list(fit = Yhat, id = row.names(Y), grid = as.numeric(colnames(Y)))
 }
 
+#' Parse the formula "response ~ covariates | groups"
+#' to lists: response, covariates, groups
+#'
+#' syntax var1:var2 will add 2 variables to a corresponding list
+#'
+#' @noRd
 # @export
 parse.formula <- function(formula) {
   vars <- terms(as.formula(formula))
