@@ -2,3 +2,4 @@
 
 export(fregression)
 export(fsimulate)
+export(sample.long)

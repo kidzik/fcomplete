@@ -1,16 +1,12 @@
+rm(list = ls())
+
 # Regenerate and reinstall fimpute
 library("roxygen2") ; roxygenize()
 library("devtools") ; devtools::install(".")
 library("fcomplete")
 
-#rm(list = ls())
-res = list()
-nexp = 10
-
-for(exp.id in 1:nexp){
-
 # SIMULATE DATA
-set.seed(515 + exp.id)
+set.seed(1)
 simulation = fsimulate()
 data = simulation$data
 ftrue = simulation$ftrue
@@ -20,12 +16,10 @@ K = simulation$params$K
 model.mean = fregression(Y:time ~ 1 | id, data, method = "mean")
 model.fpca = fregression(Y:time ~ 1 | id, data, lambda = 0, K = c(3,4,5), thresh = 1e-7, method = "fpcs")
 
-lambdas = seq(4,6,length.out = 20)
-
-library("devtools") ; devtools::install(".")
-model.fimp = fregression(Y:time ~ 1 | id, data, lambda = lambdas, thresh = 1e-5, final = "soft", fold = 20)
+lambdas = c(4,5,6,7)
+model.fimp = fregression(Y:time ~ 1 | id, data, lambda = lambdas, thresh = 1e-5, final = "soft")
 model.fcmp = fregression(0:time ~ Y + X1 + X2 | id, data, lambda = lambdas, K = K, final = "soft")
-model.freg = fregression(Y:time ~ X1 + X2 | id, data, lambda = lambdas, thresh = 1e-5, lambda.reg = 0.005 * 0:20, method = "fpcs", K = K)
+model.freg = fregression(Y:time ~ X1 + X2 | id, data, lambda = lambdas, thresh = 1e-5, lambda.reg = 0.1, method = "fpcs", K = K)
 
 # REPORT RESULTS
 idx = unique(data$id)
@@ -44,12 +38,6 @@ tbl.true = cbind(
 colnames(tbl.true) = c("MSE","% expl")
 rownames(tbl.true) = c("mean","fpca","fimpute","fcompress","regression")
 print(tbl.true)
-
-res[[exp.id]] = list()
-res[[exp.id]]$tbl = tbl.true
-res[[exp.id]]$fimpute = model.fimp
-res[[exp.id]]$fpca = model.fpca
-res[[exp.id]]$freg = model.fimp
 
 # PLOT EXAMPLES
 par(mfrow=c(2,2))
@@ -87,12 +75,3 @@ title("Cross-validation of the dimension")
 n = nrow(model.fcmp$u)
 plot(model.fcmp$u[,1:2], col = 1 + (1:n > n/3), xlab = "Component 1", ylab="component 2")
 title("Decomposition of (Y(t),X_1(t),X_2(t))")
-
-exp.id = exp.id + 1
-}
-
-joint.tbl = res[[1]]$tbl
-for (i in 2:length(res)){
-  joint.tbl = joint.tbl + res[[i]]$tbl
-}
-joint.tbl = joint.tbl/length(res)

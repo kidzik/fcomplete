@@ -67,12 +67,11 @@
 #' @export
 fregression = function(formula, data,
                        bins = 51, method = c("fimpute", "fpcs", "mean"), lambda = c(0),
-                       lambda.reg = 0, K = NULL, K.reg = NULL, thresh = 1e-5, final="soft")
+                       lambda.reg = 0, K = NULL, K.reg = NULL, thresh = 1e-5, final="soft", d = 7, fold = 5)
 {
   if (length(method) > 1)
     method = "fimpute"
 
-  d = 7
   if (is.null(K))
     K = d
   basis = fc.basis(d = d, dgrid = bins)
@@ -92,20 +91,29 @@ fregression = function(formula, data,
     time.var = vars$response[2]
     Y = na.omit(data[,c(subj.var, time.var, y.var)])
     Y.wide = fc.long2wide(Y[,1], as.numeric(Y[,2]), as.numeric(Y[,3]), bins = bins)
+
+    time = data[[time.var]]
+    LE = lowess(time, data[[y.var]])
+    cmeans = approx(x = LE$x, y = LE$y, xout = seq(min(time),max(time),length.out = bins))$y
+    Y.wide = t(t(Y.wide) - cmeans)
   }
 
   # Case 1: Y ~ 1 -- do functional impute
   if (length(vars$covariates) == 0)
   {
     if (method == "fpcs"){
-      return (fc.fpca(Y, d = d, K = K, grid.l = 0:(bins-1)/(bins-1)))
+      res = fc.fpca(Y, d = d, K = K, grid.l = 0:(bins-1)/(bins-1))
+      res$fit = t(t(res$fit) - cmeans) # silly but consistent
     }
     else if (method == "mean"){
-      return (list(fit = fc.mean(Y.wide)))
+      res = list(fit = fc.mean(Y.wide))
     }
     else {
-      return (functionalMultiImpute(Y.wide, basis = basis, lambda = lambda, K = K, thresh = thresh, final = final))
+      res = functionalMultiImputeCV(Y.wide, basis = basis, lambda = lambda, K = K, thresh = thresh, final = final, fold = fold)
     }
+    res$fit = t(t(res$fit) + cmeans)
+    res$Y = t(t(Y.wide) + cmeans)
+    return(res)
   }
 
   # Assome there are covariates
@@ -137,7 +145,7 @@ fregression = function(formula, data,
   for (i in 1:nvars)
   {
     if (method == "fpcs"){
-      models[[i]] = fc.fpca(X.long[[i]], d = d, K = 3, grid.l = 0:(bins-1)/(bins-1))
+      models[[i]] = fc.fpca(X.long[[i]], d = d, K = K, grid.l = 0:(bins-1)/(bins-1))
       combinedU = cbind(combinedU, models[[i]]$fpcs)
     }
     else {
@@ -148,5 +156,11 @@ fregression = function(formula, data,
 
   if (is.null(K.reg))
     K.reg = ncol(Y.wide)
-  functionalRegression(Y.wide, combinedU, basis, lambda = lambda.reg, K = K.reg, thresh = thresh)
+
+  res = functionalRegression(Y.wide, combinedU, basis, lambda = lambda.reg, K = K.reg, thresh = thresh)
+  res$Y = Y.wide
+  res$X = X.wide
+  res$U = combinedU
+  res$fit = t(t(res$fit) + cmeans)
+  res
 }

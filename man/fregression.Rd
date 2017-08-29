@@ -6,7 +6,7 @@
 \usage{
 fregression(formula, data, bins = 51, method = c("fimpute", "fpcs", "mean"),
   lambda = c(0), lambda.reg = 0, K = NULL, K.reg = NULL,
-  thresh = 1e-05, final = "soft")
+  thresh = 1e-05, final = "soft", d = 7, fold = 5)
 }
 \arguments{
 \item{formula}{formula describing the linear relation between processes and indicating time and grouping variables. See details}
