@@ -76,7 +76,7 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda, sta
     Yhat.new = project.on.basis(Ysvd$u[,dims] %*% (D * t(Ysvd$v[,dims])), t(basis))
 
     # Check if converged
-    ratio = norm(Yhat.new - Yhat,"F") / (norm(Yhat,type = "F") + 1e-5)
+    ratio = norm(Yhat.new - Yhat,"F") / (norm(Yhat,type = "F") + 1e-15)
     if (i %% 100 == 0)
       print(ratio)
     if (ratio < thresh)
@@ -93,11 +93,8 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda, sta
   for (i in 1:length(args)){
     fit[[i]] = Yhat[,(i-1)*ncol + 1:ncol]
   }
-  if (length(args) == 1){
-    fit = fit[[1]]
-  }
 
-  list(fit=fit, d=D, u=Ysvd$u[,dims,drop=FALSE], id=rownames(args[[i]]), grid=as.numeric(colnames(args[[i]])), err=err, lambda = lambda, data=args)
+  list(multiFit=fit, fit = fit[[1]], d=D, u=Ysvd$u[,dims,drop=FALSE], id=rownames(args[[i]]), grid=as.numeric(colnames(args[[i]])), err=err, lambda = lambda, data=args)
 }
 
 # @export
@@ -124,6 +121,7 @@ functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIt
 
   cv.K = c()
   cv.err = c()
+  fit.err = c()
 
   if (length(lambda) > 1){
     for (l in lambda)
@@ -133,12 +131,14 @@ functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIt
 
       err.new = 0
       for (i in 1:nargs){
-        err.new = err.new + sqrt(mean((args.smpl[[i]]$test - model$fit[[i]])[args.smpl[[i]]$test.mask]**2))
+        err.new = err.new + mean((args.smpl[[i]]$test - model$multiFit[[i]])[args.smpl[[i]]$test.mask]**2)
       }
 
+      print(model$err)
       cat(paste("Error with lambda=",l,"\t",err.new,"\n"))
       cv.K = c(cv.K, sum(model$d > 1e-5))
       cv.err = c(cv.err, err.new)
+      fit.err = c(fit.err, model$err)
 
       if (err.new < err){
         err = err.new
@@ -147,7 +147,7 @@ functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIt
         bestModel = model
       }
     }
-    meta = data.frame(lambda=lambda, cv.K = cv.K, cv.err=cv.err)
+    meta = data.frame(lambda=lambda, cv.K = cv.K, cv.err=cv.err, fit.err = fit.err)
   }
   else {
     bestLambda = lambda
@@ -172,12 +172,8 @@ functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIt
 }
 
 # @export
-functionalMultiImputeCV = function(..., basis = fc.basis(), K = ncol(basis), maxIter = 10e3, thresh = 10e-4, lambda = 0, final="soft", fold = 5){
+functionalMultiImputeCV = function(..., basis = fc.basis(), K = ncol(basis), maxIter = 10e3, thresh = 10e-4, lambda = 0, final="soft", fold = 5, cv.ratio = 0.05){
   args <- list(...)
-  err = 1e9
-  best = NULL
-  bestK = K
-  bestModel = NULL
   meta = 0
 
   for (i in 1:fold){
@@ -188,7 +184,7 @@ functionalMultiImputeCV = function(..., basis = fc.basis(), K = ncol(basis), max
 
   args.smpl = args
   args.smpl[["lambda"]] = meta[which.min(meta[,3]),1]
-  args.smpl[[1]] = fc.sample(args.smpl[[1]], 0.05)
+  args.smpl[[1]] = fc.sample(args.smpl[[1]], cv.ratio)
   nargs = length(args)
 
   args.smpl[["basis"]] = basis
@@ -203,11 +199,10 @@ functionalMultiImputeCV = function(..., basis = fc.basis(), K = ncol(basis), max
   if (final=="hard"){
     args.smpl[["lambda"]] = 0
     args.smpl[["K"]] = bestK
-    args.smpl[["start"]] = bestModel$fit
+    args.smpl[["start"]] = res$fit
   }
 
   res = do.call(functionalMultiImpute.one, args.smpl)
   res$meta = meta
-  res$err.cv = err
   res
 }

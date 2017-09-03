@@ -35,7 +35,7 @@ functionalRegression.one= function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 
     # D[D<0] = 0
     # Yhat.new = Yu %*% diag(D) %*% t(Ysvd$v)  %*% t(basis)
 
-    ratio = norm(Yhat.new - Yhat,"F") / (norm(Yhat,type = "F") + 1e-10)
+    ratio = norm(Yhat.new - Yhat,"F") / (norm(Yhat,type = "F") + 1e-15)
     if (ratio < thresh){
       break
     }

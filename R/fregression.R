@@ -66,8 +66,8 @@
 #'                          lambda.reg = 0.1, method = "fpcs", K = K)
 #' @export
 fregression = function(formula, data,
-                       bins = 51, method = c("fimpute", "fpcs", "mean"), lambda = c(0),
-                       lambda.reg = 0, K = NULL, K.reg = NULL, thresh = 1e-5, final="soft", d = 7, fold = 5)
+                       bins = 51, method = c("fimpute", "fpcs", "mean"), lambda = c(0), maxIter = 1e5,
+                       lambda.reg = 0, K = NULL, K.reg = NULL, thresh = 1e-5, final="soft", d = 7, fold = 5, cv.ratio = 0.05)
 {
   if (length(method) > 1)
     method = "fimpute"
@@ -109,7 +109,7 @@ fregression = function(formula, data,
       res = list(fit = fc.mean(Y.wide))
     }
     else {
-      res = functionalMultiImputeCV(Y.wide, basis = basis, lambda = lambda, K = K, thresh = thresh, final = final, fold = fold)
+      res = functionalMultiImputeCV(Y.wide, basis = basis, lambda = lambda, K = K, thresh = thresh, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter)
     }
     res$fit = t(t(res$fit) + cmeans)
     res$Y = t(t(Y.wide) + cmeans)

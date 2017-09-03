@@ -6,10 +6,10 @@ generate.matrix = function(n, d)
 {
   # generate covariance matrices
   V = svd(matrix(rnorm(d*d),d))$v
-  D = diag(c(1,0.9,0.5,exp(-(3:(d-1))))) * 500
+  D = diag(c(1,0.9,0.005,0.1 * exp(-(3:(d-1))))) * 500
   Sigma1 = V %*% D %*% t(V)
   V = svd(matrix(rnorm(d*d),d))$v
-  D = diag(c(1.3,0.4,0.4,exp(-(3:(d-1))))) * 500
+  D = diag(c(1.3,1.0,0.005,0.1 * exp(-(3:(d-1))))) * 500
   Sigma2 = V %*% D %*% t(V)
 
   # fix the mean of one group
