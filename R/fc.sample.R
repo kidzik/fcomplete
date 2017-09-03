@@ -53,7 +53,7 @@ fc.sample = function(X, perc = 0.1, one.per.row=TRUE)
 #' @return list of the same format as \code{fc.sample}
 #'
 #' @noRd
-# @export
+#' @export
 apply.mask = function(wide, mask){
   smp.X = list(test.mask = mask$test.mask)
   smp.X$train = wide

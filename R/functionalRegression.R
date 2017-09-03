@@ -42,9 +42,8 @@ functionalRegression.one= function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 
     Yhat = Yhat.new
 
     err = sqrt(mean( ((Yhat - Y)[!ynas])**2))
-    cat(err,"\n")
   }
-  list(fit = Yhat, id = row.names(Y), grid = as.numeric(colnames(Y)))
+  list(fit = Yhat, id = row.names(Y), grid = as.numeric(colnames(Y)), err = err)
 }
 
 #' Parse the formula "response ~ covariates | groups"
@@ -76,6 +75,7 @@ functionalRegression = function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 1e-
   meta = NULL
 
   cv.err = c()
+  fit.err = c()
 
   args.smpl = list()
   args.smpl[["Y"]] = fc.sample(Y)
@@ -92,10 +92,12 @@ functionalRegression = function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 1e-
       args.smpl[["lambda"]] = l
       model = do.call(functionalRegression.one, args.smpl)
 
+      print(model$fit)
       err.new = sqrt(mean((args.smpl[["Y"]]$test - model$fit)[args.smpl[["Y"]]$test.mask]**2))
 
       cat(paste("Error with lambda=",l,"\t",err.new,"\n"))
       cv.err = c(cv.err, err.new)
+      fit.err = c(fit.err, model$err)
 
       if (err.new < err){
         err = err.new
@@ -103,7 +105,7 @@ functionalRegression = function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 1e-
         bestModel = model
       }
     }
-    meta = data.frame(lambda=lambda, cv.err=cv.err)
+    meta = data.frame(lambda = lambda, cv.err = cv.err, fit.err = fit.err)
   }
   else {
     bestLambda = lambda
