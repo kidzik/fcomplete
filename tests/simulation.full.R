@@ -5,14 +5,14 @@ library("fcomplete")
 
 #rm(list = ls())
 res = list()
-nexp = 2
+nexp = 1
 dgrid = 51
 
 for(exp.id in 1:nexp){
 
 # SIMULATE DATA
 set.seed(323 + exp.id)
-simulation = fsimulate(dgrid = dgrid)
+simulation = fsimulate(dgrid = dgrid,clear = 0.85)
 data = simulation$data
 ftrue = simulation$ftrue
 K = 6 #simulation$params$K
@@ -21,10 +21,11 @@ K = 6 #simulation$params$K
 model.mean = fregression(Y:time ~ 1 | id, data, method = "mean", bins = dgrid)
 model.fpca = fregression(Y:time ~ 1 | id, data, lambda = 0, K = 2:K, thresh = 1e-7, method = "fpcs", bins = dgrid)
 
-lambdas = seq(0,25,length.out = 100)
+lambdas = seq(0,10,length.out = 20)
 model.fimp = fregression(Y:time ~ 1 | id, data, lambda = lambdas, thresh = 0, final = "soft", maxIter = 100, fold = 5, cv.ratio = 0.05, K = K, bins = dgrid)
 model.fcmp = fregression(0:time ~ Y + X1 + X2 | id, data, lambda = lambdas, K = K, final = "soft")
-model.freg = fregression(Y:time ~ X1 + X2 | id, data, lambda = lambdas, thresh = 1e-5, lambda.reg = 0.005 * 0:20, method = "fpcs", K = K)
+lambdas = seq(0,2,length.out = 10)
+model.freg = fregression(Y:time ~ X1 + X2 | id, data, lambda = lambdas, thresh = 1e-5, lambda.reg = 0.1 * 5:20, method = "fimpute", K = K)
 
 # REPORT RESULTS
 idx = unique(data$id)
@@ -32,7 +33,7 @@ errors = c(
   mean((ftrue[idx,] - model.mean$fit)**2),
   mean((ftrue[idx,] - model.fpca$fit)**2),
   mean((ftrue[idx,] - model.fimp$fit)**2),
-  mean((ftrue[idx,] - model.fcmp$fit[[1]])**2),
+  mean((ftrue[idx,] - model.fcmp$fit)**2),
   mean((ftrue[idx,] - model.freg$fit)**2)
 )
 errors
@@ -54,11 +55,11 @@ res[[exp.id]]$freg = model.fimp
 
 # PLOT EXAMPLES
 par(mfrow=c(2,2))
-ind = 1:2
+ind = 1:2 + 10
 idx = as.numeric(model.freg$id)
 
-lims = c(min(simulation$fobs[ind,],na.rm = TRUE) - 0.5,
-         max(simulation$fobs[ind,],na.rm = TRUE) + 0.5)
+lims = c(min(ftrue[idx,][ind,],simulation$fobs[ind,],na.rm = TRUE) - 2,
+         max(ftrue[idx,][ind,],simulation$fobs[ind,],na.rm = TRUE) + 2)
 matplot(t(ftrue[idx,][ind,]),t='l',lty=1,lwd=4,ylim = lims)
 matplot(t(simulation$fobs[ind,]),t='p',lty=2,add=T,lwd=2,pch="x")
 matplot(t(model.mean$fit[ind,]),t='l',lty=2,add=T,lwd=2)
@@ -72,12 +73,18 @@ title("Functional impute")
 matplot(t(ftrue[idx,][ind,]),t='l',lty=1,lwd=4,ylim = lims)
 matplot(t(simulation$fobs[ind,]),t='p',lty=2,add=T,lwd=2,pch="x")
 matplot(t(model.fpca$fit[ind,]),t='l',lty=2, add=T,lwd=2)
-title("Functional SVD")
+title("Functional PCA")
 
-# matplot(t(ftrue[idx,][ind,]),t='l',lty=1,lwd=4,ylim = lims)
-# matplot(t(simulation$fobs[ind,]),t='p',lty=2,add=T,lwd=2,pch="x")
-# matplot(t(`model.freg$fit[ind,]),t='l',lty=2, add=T,lwd=2)
-# title("Functional regression")
+matplot(t(ftrue[idx,][ind,]),t='l',lty=1,lwd=4,ylim = lims)
+matplot(t(simulation$fobs[ind,]),t='p',lty=2,add=T,lwd=2,pch="x")
+matplot(t(model.freg$fit[ind,]),t='l',lty=2, add=T,lwd=2)
+title("Functional regression")
+
+par(mfrow=c(1,2), cex=1.3)
+matplot(t(-model.fimp$v)[,1:3],t='l')
+title("First 3 PCs from fPCA method")
+matplot(t(model.fpca$v)[,1:3],t='l')
+title("First 3 PCA from Soft-Functional-Impute")
 
 par(mfrow=c(1,1), cex=1.3)
 plot(cv.err ~ lambda, model.fimp$meta, type='o', ylab="CV error")

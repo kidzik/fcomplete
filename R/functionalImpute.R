@@ -58,6 +58,7 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda, sta
   }
 
   # Repeat SVD + impute till convergence
+  K = min(K,ncol(basis))
   dims = 1:K
   err = 0
 
@@ -94,11 +95,15 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda, sta
     fit[[i]] = Yhat[,(i-1)*ncol + 1:ncol]
   }
 
-  list(multiFit=fit, fit = fit[[1]], d=D, u=Ysvd$u[,dims,drop=FALSE], id=rownames(args[[i]]), grid=as.numeric(colnames(args[[i]])), err=err, lambda = lambda, data=args)
+  v = NULL
+  if (ncol(t(Ysvd$v[,1:ncol(basis),drop=FALSE])) == nrow(t(basis)))
+    v = t(Ysvd$v[,1:ncol(basis),drop=FALSE]) %*% t(basis)
+
+  list(multiFit=fit, fit = fit[[1]], d=D, u=Ysvd$u[,dims,drop=FALSE], v=v, id=rownames(args[[i]]), grid=as.numeric(colnames(args[[i]])), err=err, lambda = lambda, data=args)
 }
 
 # @export
-functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIter = 10e3, thresh = 10e-4, lambda = 0, final="soft"){
+functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIter = 1e4, thresh = 1e-5, lambda = 0, final="soft", mask = NULL){
   args <- list(...)
   err = 1e9
   best = NULL
@@ -107,6 +112,11 @@ functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIt
   meta = NULL
 
   args.smpl = args
+
+  if (!is.null(mask)){
+    args.smpl[[1]] = apply.mask(args.smpl[[1]], mask)$train
+  }
+
   args.smpl[[1]] = fc.sample(args.smpl[[1]], 0.05)
   nargs = length(args.smpl)
   if (nargs > 1){
@@ -131,7 +141,7 @@ functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIt
 
       err.new = 0
       for (i in 1:nargs){
-        err.new = err.new + mean((args.smpl[[i]]$test - model$multiFit[[i]])[args.smpl[[i]]$test.mask]**2)
+        err.new = err.new + sqrt(mean((args.smpl[[i]]$test - model$multiFit[[i]])[args.smpl[[i]]$test.mask]**2))
       }
 
       print(model$err)
@@ -157,7 +167,7 @@ functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIt
 
   args.smpl[["lambda"]] = bestLambda
   for (i in 1:nargs){
-    args.smpl[[i]]$train = args[[i]]
+    args.smpl[[i]]$train[args.smpl[[i]]$test.mask] = args.smpl[[i]]$test[args.smpl[[i]]$test.mask]
   }
   if (final=="hard"){
     args.smpl[["lambda"]] = 0

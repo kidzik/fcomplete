@@ -68,7 +68,7 @@ parse.formula <- function(formula) {
 #'
 #' @noRd
 # @export
-functionalRegression = function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 1e-4, K = dim(X)[2]){
+functionalRegression = function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 1e-4, K = dim(X)[2], mask = NULL){
   err = 1e9
   bestLambda = NULL
   bestModel = NULL
@@ -78,7 +78,12 @@ functionalRegression = function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 1e-
   fit.err = c()
 
   args.smpl = list()
-  args.smpl[["Y"]] = fc.sample(Y)
+  if (!is.null(mask)){
+    args.smpl[["Y"]] = apply.mask(Y,mask)
+  }
+  else {
+    args.smpl[["Y"]] = fc.sample(Y)
+  }
   args.smpl[["X"]] = X
   nargs = length(args.smpl)
   args.smpl[["basis"]] = basis
@@ -92,7 +97,10 @@ functionalRegression = function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 1e-
       args.smpl[["lambda"]] = l
       model = do.call(functionalRegression.one, args.smpl)
 
-      print(model$fit)
+      # print(args.smpl[["Y"]]$test[args.smpl[["Y"]]$test.mask]**2)
+      # print(args.smpl[["Y"]]$train[args.smpl[["Y"]]$test.mask]**2)
+      # print(model$fit[args.smpl[["Y"]]$test.mask]**2)
+      # print((args.smpl[["Y"]]$test - model$fit)[args.smpl[["Y"]]$test.mask]**2 )
       err.new = sqrt(mean((args.smpl[["Y"]]$test - model$fit)[args.smpl[["Y"]]$test.mask]**2))
 
       cat(paste("Error with lambda=",l,"\t",err.new,"\n"))
@@ -116,6 +124,7 @@ functionalRegression = function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 1e-
   res = do.call(functionalRegression.one, args.smpl)
   res$meta = meta
   res$err.cv = err
+  res$lambda = bestLambda
   res
 
 }

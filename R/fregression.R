@@ -96,6 +96,8 @@ fregression = function(formula, data,
     LE = lowess(time, data[[y.var]])
     cmeans = approx(x = LE$x, y = LE$y, xout = seq(min(time),max(time),length.out = bins))$y
     Y.wide = t(t(Y.wide) - cmeans)
+    yscale = sd(Y.wide[!is.na(Y.wide)])
+    Y.wide[!is.na(Y.wide)] = Y.wide[!is.na(Y.wide)] / yscale
   }
 
   # Case 1: Y ~ 1 -- do functional impute
@@ -103,7 +105,7 @@ fregression = function(formula, data,
   {
     if (method == "fpcs"){
       res = fc.fpca(Y, d = d, K = K, grid.l = 0:(bins-1)/(bins-1))
-      res$fit = t(t(res$fit) - cmeans) # silly but consistent
+      res$fit = t(t(res$fit) - cmeans) / yscale # silly but consistent
     }
     else if (method == "mean"){
       res = list(fit = fc.mean(Y.wide))
@@ -111,12 +113,12 @@ fregression = function(formula, data,
     else {
       res = functionalMultiImputeCV(Y.wide, basis = basis, lambda = lambda, K = K, thresh = thresh, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter)
     }
-    res$fit = t(t(res$fit) + cmeans)
-    res$Y = t(t(Y.wide) + cmeans)
+    res$fit = t(t(res$fit * yscale) + cmeans)
+    res$Y = t(t(Y.wide * yscale) + cmeans)
     return(res)
   }
 
-  # Assome there are covariates
+  # Assume there are covariates
   X.long = list()
   X.wide = list()
 
@@ -136,20 +138,25 @@ fregression = function(formula, data,
     args$thresh = thresh
     args$final = final
     args$K = K
-    return(do.call(functionalMultiImpute, args))
+    return(do.call(functionalMultiImputeCV, args))
   }
 
   # Case 3: Y ~ X -- do regression
   models = list()
   combinedU = c()
+
+  maskedY = fc.sample(Y.wide, 0.05)
+
   for (i in 1:nvars)
   {
+    X.long[[i]][,3] = scale(X.long[[i]][,3])
+    X.wide[[i]][!is.na(X.wide[[i]])] = scale(X.wide[[i]][!is.na(X.wide[[i]])])
     if (method == "fpcs"){
       models[[i]] = fc.fpca(X.long[[i]], d = d, K = K, grid.l = 0:(bins-1)/(bins-1))
       combinedU = cbind(combinedU, models[[i]]$fpcs)
     }
     else {
-      models[[i]] = functionalMultiImpute(X.wide[[i]], basis = basis, lambda = lambda, thresh = thresh, K = K, final = final)
+      models[[i]] = functionalMultiImpute(X.wide[[i]], basis = basis, lambda = lambda, thresh = thresh, K = K, final = final, mask = maskedY)
       combinedU = cbind(combinedU, models[[i]]$u)
     }
   }
@@ -157,10 +164,11 @@ fregression = function(formula, data,
   if (is.null(K.reg))
     K.reg = ncol(Y.wide)
 
-  res = functionalRegression(Y.wide, combinedU, basis, lambda = lambda.reg, K = K.reg, thresh = thresh)
-  res$Y = Y.wide
+  res = functionalRegression(Y.wide, combinedU, basis, lambda = lambda.reg, K = K.reg, thresh = 1e-10, mask = maskedY)
+  res$Y = t(t(Y.wide * yscale) + cmeans)
   res$X = X.wide
   res$U = combinedU
-  res$fit = t(t(res$fit) + cmeans)
+  res$X.models = models
+  res$fit = t(t(res$fit * yscale) + cmeans)
   res
 }
