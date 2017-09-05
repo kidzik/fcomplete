@@ -69,9 +69,10 @@ library("ggthemes")
 dd = all.data.filtered[,c("Patient_ID","age","bmi")]
 dd$Patient_ID = as.factor(dd$Patient_ID)
 
+
 pp = ggplot(aes(x = age, y = bmi, color = Patient_ID), data = dd[1:200,]) +
-  geom_point() + theme_set(theme_grey(base_size = 18)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
+  geom_point(size = 2) + theme_set(theme_grey(base_size = 26)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
   stat_function(fun = approxfun(lowess(dd$age,dd$bmi)), size = 2.5, colour = "#000000")+ scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0))
 
 pp
-pp + geom_line()
+pp + geom_line(size=1)

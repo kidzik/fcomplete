@@ -54,36 +54,36 @@ res[[exp.id]]$fpca = model.fpca
 res[[exp.id]]$freg = model.fimp
 
 # PLOT EXAMPLES
-par(mfrow=c(2,2))
+par(mfrow=c(2,2), cex=1.3)
 ind = 1:2 + 10
 idx = as.numeric(model.freg$id)
 
 lims = c(min(ftrue[idx,][ind,],simulation$fobs[ind,],na.rm = TRUE) - 2,
          max(ftrue[idx,][ind,],simulation$fobs[ind,],na.rm = TRUE) + 2)
-matplot(t(ftrue[idx,][ind,]),t='l',lty=1,lwd=4,ylim = lims)
+matplot(t(ftrue[idx,][ind,]),t='l',lty=1,lwd=4,ylim = lims,xlab = "time")
 matplot(t(simulation$fobs[ind,]),t='p',lty=2,add=T,lwd=2,pch="x")
 matplot(t(model.mean$fit[ind,]),t='l',lty=2,add=T,lwd=2)
 title("Mean prediction")
 
-matplot(t(ftrue[idx,][ind,]),t='l',lty=1,lwd=4,ylim = lims)
+matplot(t(ftrue[idx,][ind,]),t='l',lty=1,lwd=4,ylim = lims,xlab = "time")
 matplot(t(simulation$fobs[ind,]),t='p',lty=2,add=T,lwd=2,pch="x")
 matplot(t(model.fimp$fit[ind,]),t='l',lty=2,add=T,lwd=2)
 title("Functional impute")
 
-matplot(t(ftrue[idx,][ind,]),t='l',lty=1,lwd=4,ylim = lims)
+matplot(t(ftrue[idx,][ind,]),t='l',lty=1,lwd=4,ylim = lims,xlab = "time")
 matplot(t(simulation$fobs[ind,]),t='p',lty=2,add=T,lwd=2,pch="x")
 matplot(t(model.fpca$fit[ind,]),t='l',lty=2, add=T,lwd=2)
 title("Functional PCA")
 
-matplot(t(ftrue[idx,][ind,]),t='l',lty=1,lwd=4,ylim = lims)
+matplot(t(ftrue[idx,][ind,]),t='l',lty=1,lwd=4,ylim = lims,xlab = "time")
 matplot(t(simulation$fobs[ind,]),t='p',lty=2,add=T,lwd=2,pch="x")
 matplot(t(model.freg$fit[ind,]),t='l',lty=2, add=T,lwd=2)
 title("Functional regression")
 
 par(mfrow=c(1,2), cex=1.3)
-matplot(t(-model.fimp$v)[,1:3],t='l')
+matplot(t(-model.fimp$v)[,1:3],t='l',lwd = 4)
 title("First 3 PCs from fPCA method")
-matplot(t(model.fpca$v)[,1:3],t='l')
+matplot(t(model.fpca$v)[,1:3],t='l', lwd = 4)
 title("First 3 singular vectors from SFI method")
 
 par(mfrow=c(1,2), cex=1.3)
