@@ -283,7 +283,7 @@ The matrix formulation in equation \eqref{eq:direct-matrix} and the classic appr
 However, the algebraic difference between \eqref{eq:direct-individual} and \eqref{eq:direct-matrix} constitutes the foundation for the method introduced in the sequel of this paper. The main advantage of the matrix representation \eqref{eq:direct-matrix} is that it enables us to use matrix factorization framework. In particular, in Section \ref{ss:matrix-factorization} we introduce an SVD-based algorithm for solving \eqref{eq:direct-matrix}. Moreover, many low-rank constraints on the random effect from the mixed-effect model introduced in Section \ref{ss:lmm} can be expressed in terms of constraints on $W$ or $W'W$ and potentially solved without imposing any probabilistic constraints.
 
 \paragraph{Low-rank approximation}
-In the low-rank approach described in Section \ref{ss:reduced-rank} we consider \eqref{eq:direct-individual} as a low-rank matrix approximation, with a constrain on $\rank{(W)}$. In many situations, the rank constrain can be efficiently relaxed by a nuclear norm to make the problem convex \citep{candes2009exact, fazel2002matrix}. Then, the optimization problem takes form 
+In the low-rank approach described in Section \ref{ss:reduced-rank} we assume that individual trajectories can be represented in a low-dimensional space, by constraining the latent space $W$ to only $q < K$ dimensions. In many situations, this rank constrain can be efficiently relaxed by a nuclear norm to make the problem convex \citep{candes2009exact, fazel2002matrix}. Then, the optimization problem takes form 
 \begin{align}
 \text{minimize\ \ } & \|W\|_* \nonumber\\
 \text{subject to\ \ } &\| P_\Omega(Y - WB') \|_F^2 \leq \delta,\label{eq:rank-restricted}
