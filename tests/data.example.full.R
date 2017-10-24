@@ -28,6 +28,12 @@ all.data.filtered = na.omit(all.data.filtered)
 all.data.filtered = all.data.filtered[!is.nan(all.data.filtered$PC1),]
 #############################
 
+res = c()
+res = read.csv("res.csv",row.names = 1)
+par(cex=1.3)
+boxplot(t(res))
+
+for (i in 1:10){
 # Sample data for testing
 data = sample.long(all.data.filtered, "Patient_ID", "age", "PC1", ratio = 0.05)
 
@@ -45,10 +51,20 @@ model.regression = fregression(PC1:age ~ PC1 + bmi + O2cost | Patient_ID, data$t
 
 ss = sqrt(mean((data$test.matrix - mean(data$test.matrix, na.rm = TRUE))**2, na.rm = TRUE))
 
-sqrt(mean((model.regression$fit - data$test.matrix)**2, na.rm = TRUE)) / ss
-sqrt(mean((model.impute$fit - data$test.matrix)**2, na.rm = TRUE)) / ss
-sqrt(mean((model.impute.fpcs$fit - data$test.matrix)**2, na.rm = TRUE)) / ss
-sqrt(mean((model.mean$fit - data$test.matrix)**2, na.rm = TRUE)) / ss
+errors = c(sqrt(mean((model.regression$fit - data$test.matrix)**2, na.rm = TRUE)),
+  sqrt(mean((model.impute$fit - data$test.matrix)**2, na.rm = TRUE)),
+  sqrt(mean((model.impute.fpcs$fit - data$test.matrix)**2, na.rm = TRUE)),
+  sqrt(mean((model.mean$fit - data$test.matrix)**2, na.rm = TRUE)))
+names(errors) = c("regression","impute","fPCA","mean")
+
+res = cbind(res, errors)
+}
+rownames(res) = c("regression","impute","fPCA","mean")
+cbind(rowMeans(res),
+apply(res,FUN=sd,1))
+colnames(res) = paste("run",1:11)
+par(mfrow=c(1,1))
+boxplot(t(res[c(3,2,1,4),]))
 
 ind = row.names(data$test.matrix) %in% data$X$Patient_ID[data$test.ob[1:3]]
 
@@ -65,14 +81,50 @@ title("Mean prediction")
 #############################
 library("ggplot2")
 library("ggthemes")
+library(RColorBrewer)
 
-dd = all.data.filtered[,c("Patient_ID","age","bmi")]
+#dd = all.data.filtered[,c("Patient_ID","age","PC1")]
+
+dd = data$train[,c("Patient_ID","age","PC1")] #fcomplete:::fc.wide2long(model.impute$data[[1]]$train)
+#colnames(dd) = c("Patient_ID","age","PC1")
 dd$Patient_ID = as.factor(dd$Patient_ID)
 
-
-pp = ggplot(aes(x = age, y = bmi, color = Patient_ID), data = dd[1:200,]) +
-  geom_point(size = 2) + theme_set(theme_grey(base_size = 26)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
-  stat_function(fun = approxfun(lowess(dd$age,dd$bmi)), size = 2.5, colour = "#000000")+ scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0))
-
+pp = ggplot(aes(x = age, y = PC1, color = Patient_ID), data = dd[1:200,]) + ylab("1st component") +
+  geom_point(size = 3) + theme_set(theme_grey(base_size = 26)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
+  stat_function(fun = approxfun(lowess(dd$age,dd$PC1)), size = 2.5, colour = "#000000")+ scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0))
 pp
-pp + geom_line(size=1)
+ggsave("~/Dropbox/Presentations/Mobilize17/images/fcomplete/points.pdf")
+pp + geom_line(size=0.7)
+ggsave("~/Dropbox/Presentations/Mobilize17/images/fcomplete/grouped.pdf")
+
+# The palette with grey:
+# The palette with black:
+cbPalette <- c("#000000", "#A69F00", "#56B4E9", "#009E73", "#008442") #, "#0072B2", "#D55E00", "#CC79A7")
+
+gg = as.numeric(colnames(model.impute.fpcs$Y))
+pp = ggplot(aes(x = age, y = PC1, color = Patient_ID), data = dd[2:14,]) +
+  scale_fill_manual(values = cbPalette) + scale_colour_manual(values = cbPalette) +
+  ylab("1st component") +
+  geom_point(size = 3) + theme_set(theme_grey(base_size = 26)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
+  stat_function(fun = approxfun(lowess(dd$age,dd$PC1)), size = 2.5, colour = "#000000")+ scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0)) + xlim(5,13)
+pp + geom_line(size = 0.7) +
+  stat_function(fun = approxfun(gg, model.impute.fpcs$fit[5,]) , color = cbPalette[5]) +
+  stat_function(fun = approxfun(gg, model.impute.fpcs$fit[2,]) , color = cbPalette[2]) +
+  stat_function(fun = approxfun(gg, model.impute.fpcs$fit[3,]) , color = cbPalette[3])  +
+  stat_function(fun = approxfun(gg, model.impute.fpcs$fit[4,]) , color = cbPalette[4])
+
+#pp #+ model.impute.fpcs$fit[1:4,]
+
+
+
+dgrid = 51
+d = 6
+basis = fda::create.bspline.basis(c(0,1), d)
+plot(basis)
+S = fda::eval.basis(evalarg = 0:(dgrid-1)/(dgrid-1), basisobj = basis)
+
+par(mfrow=c(1,2),cex=1.3)
+matplot(0:50/50, (S),t='l',ylab = "value",xlab="time",ylim = c(-1,1), lwd=4, col = brewer.pal(d, "Paired"), lty=1)
+title("Spline basis")
+matplot(0:50/50, (svd(S)$u),t='l',ylab="value",xlab="time",ylim = c(-1,1), lwd=4, col = brewer.pal(d, "Paired"),lty=1)
+title("Orthonormalized spline basis")

@@ -1,0 +1,18 @@
+\BOOKMARK [1][-]{section.1}{Motivation}{}% 1
+\BOOKMARK [1][-]{section.2}{Background and related work}{}% 2
+\BOOKMARK [2][-]{subsection.2.1}{Direct approach}{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.2}{Linear mixed-effect models}{section.2}% 4
+\BOOKMARK [2][-]{subsection.2.3}{Low-rank approximations}{section.2}% 5
+\BOOKMARK [1][-]{section.3}{Modeling sparse longitudinal processes using matrix factorization}{}% 6
+\BOOKMARK [2][-]{subsection.3.1}{Notation}{section.3}% 7
+\BOOKMARK [2][-]{subsection.3.2}{Matrix-factorization approach}{section.3}% 8
+\BOOKMARK [2][-]{subsection.3.3}{1-norm regularization}{section.3}% 9
+\BOOKMARK [2][-]{subsection.3.4}{The link between reduced-rank model and Soft-Longitudinal-Impute}{section.3}% 10
+\BOOKMARK [1][-]{section.4}{Multivariate sparse longitudinal modeling}{}% 11
+\BOOKMARK [2][-]{subsection.4.1}{Dimensionality reduction}{section.4}% 12
+\BOOKMARK [2][-]{subsection.4.2}{Regression}{section.4}% 13
+\BOOKMARK [1][-]{section.5}{Simulations}{}% 14
+\BOOKMARK [1][-]{section.6}{Data study}{}% 15
+\BOOKMARK [1][-]{section*.8}{References}{}% 16
+\BOOKMARK [1][-]{appendix.A}{Convergence Analysis}{}% 17
+\BOOKMARK [1][-]{appendix.B}{fimpute package}{}% 18

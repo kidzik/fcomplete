@@ -114,5 +114,5 @@ fsimulate = function(
 
   data$X1 = X.long$value
   data$X2 = Z.long$value
-  Yobj = list(ftrue = Ytrue, fnoisy = Ynoise, fobs = Y.wide, data = data, params = list(K = K, grid = 0:(dgrid-1)/(dgrid-1)))
+  Yobj = list(ftrue = Ytrue, fnoisy = Ynoise, fobs = Y.wide, data = data, params = list(K = K, grid = 0:(dgrid-1)/(dgrid-1)), basis = S)
 }

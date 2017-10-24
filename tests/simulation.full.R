@@ -12,7 +12,7 @@ for(exp.id in 1:nexp){
 
 # SIMULATE DATA
 set.seed(323 + exp.id)
-simulation = fsimulate(dgrid = dgrid,clear = 0.85)
+simulation = fsimulate(dgrid = dgrid,clear = 0.95, n = 100,noise.mag = 0.03,)
 data = simulation$data
 ftrue = simulation$ftrue
 K = 6 #simulation$params$K
@@ -110,3 +110,91 @@ res[[1]]$fimpute$meta
 par(mfrow=c(1,1))
 plot(model.fimp$meta[1:100,c(1,2)],ylim=c(0,10))
 lines(model.fimp$meta[1:100,c(1,3)] )
+
+joint.tbl
+#cbPalette <- c("#8c1515", "#007c92")
+cbPalette = list()
+cbPalette[[1]] <- c("#8c1515", "#f4f4f4")
+cbPalette[[2]] <- c("#f4f4f4", "#007c92")
+
+stdPalette =  c("#8c1515", "#0098db","#eaab00", "#009b76", "#e98300", "#53284f", "#d2c295")
+
+pid = 2
+
+ids = c(1,3)
+dd = data
+dd$id = as.factor(dd$id)
+dd$time = 5 + data$time*10
+gg = as.numeric(colnames(model.fimp$Y))*10 + 5
+
+pp = ggplot(aes(x = time, y = Y, color = id), data = dd[data$id %in% ids,]) +
+  scale_fill_manual(values = cbPalette[[pid]]) + scale_colour_manual(values = cbPalette[[pid]]) +
+  ylab("1st component") + xlab("age") +
+  theme_set(theme_grey(base_size = 26)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
+  scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0)) +
+  stat_function(fun = approxfun(gg, simulation$basis[,1]) , color = stdPalette[1], size=1) +
+  stat_function(fun = approxfun(gg, simulation$basis[,2]) , color = stdPalette[2], size=1) +
+  stat_function(fun = approxfun(gg, simulation$basis[,3]) , color = stdPalette[3], size=1) +
+  stat_function(fun = approxfun(gg, simulation$basis[,4]) , color = stdPalette[4], size=1) +
+  stat_function(fun = approxfun(gg, simulation$basis[,5]) , color = stdPalette[5], size=1) +
+  stat_function(fun = approxfun(gg, simulation$basis[,6]) , color = stdPalette[6], size=1) +
+  stat_function(fun = approxfun(gg, simulation$basis[,7]) , color = stdPalette[7], size=1)
+pp
+ggsave(paste0("~/Dropbox/Presentations/Mobilize17/images/fcomplete/splines.pdf"))
+
+pp = ggplot(aes(x = time, y = Y, color = id), data = dd[data$id %in% ids,]) +
+  scale_fill_manual(values = cbPalette[[pid]]) + scale_colour_manual(values = cbPalette[[pid]]) +
+  ylab("1st component") + xlab("age") +
+  theme_set(theme_grey(base_size = 26)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
+  scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0)) +
+  stat_function(fun = approxfun(gg, model.fimp$v[1,]) , color = stdPalette[3], size=1) +
+  stat_function(fun = approxfun(gg, model.fimp$v[2,]) , color = stdPalette[4], size=1) #+
+  # stat_function(fun = approxfun(gg, simulation$basis[,3]) , color = stdPalette[3], size=1) +
+  # stat_function(fun = approxfun(gg, simulation$basis[,4]) , color = stdPalette[4], size=1) +
+  # stat_function(fun = approxfun(gg, simulation$basis[,5]) , color = stdPalette[5], size=1) +
+  # stat_function(fun = approxfun(gg, simulation$basis[,6]) , color = stdPalette[6], size=1) +
+  # stat_function(fun = approxfun(gg, simulation$basis[,7]) , color = stdPalette[7], size=1)
+pp
+ggsave(paste0("~/Dropbox/Presentations/Mobilize17/images/fcomplete/fpca-basis.pdf"))
+
+
+
+
+pp = ggplot(aes(x = time, y = Y, color = id), data = dd[data$id %in% ids,]) +
+  scale_fill_manual(values = cbPalette[[pid]]) + scale_colour_manual(values = cbPalette[[pid]]) +
+  ylab("1st component") + xlab("age") +
+  geom_point(size = 3) + theme_set(theme_grey(base_size = 26)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
+  scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0)) +
+  stat_function(fun = approxfun(lowess(dd$time,dd$Y)), size = 1, colour = "#555555") + xlim(5,15) + ylim(-4,4)
+
+pp = pp +
+  stat_function(fun = approxfun(gg, simulation$ftrue[ids[1],]) , color = cbPalette[[pid]][1], size=1, linetype='dashed') +
+  stat_function(fun = approxfun(gg, simulation$ftrue[ids[2],]) , color = cbPalette[[pid]][2], size=1, linetype='dashed')
+  # stat_function(fun = approxfun(gg, simulation$ftrue[ids[3],]) , color = cbPalette[3], size=1, linetype='dashed')
+  # stat_function(fun = approxfun(gg, simulation$ftrue[4,]) , color = cbPalette[4], size=1, linetype='dashed')
+pp
+ggsave(paste0("~/Dropbox/Presentations/Mobilize17/images/fcomplete/observed-",pid,".pdf"))
+
+
+pp + ggtitle("Individual mean") +
+  stat_function(fun = approxfun(gg, model.mean$fit[ids[1],]) , color = cbPalette[[pid]][1], size=1.5, alpha = min(1,1.005 - (pid==2) )) +
+  stat_function(fun = approxfun(gg, model.mean$fit[ids[2],]) , color = cbPalette[[pid]][2], size=1.5, alpha = min(1,1.005 - (pid==1) ))
+  # stat_function(fun = approxfun(gg, model.mean$fit[ids[3],]) , color = cbPalette[3], size=1.5)
+  # stat_function(fun = approxfun(gg, model.mean$fit[4,]) , color = cbPalette[4], size=1.5)
+ggsave(paste0("~/Dropbox/Presentations/Mobilize17/images/fcomplete/2-curves-mean-",pid,".pdf"))
+
+pp + ggtitle("Sparse PCA") +
+  stat_function(fun = approxfun(gg, model.fpca$fit[ids[1],]) , color = cbPalette[[pid]][1], size=1.5, alpha = min(1,1.005 - (pid==2) )) +
+  stat_function(fun = approxfun(gg, model.fpca$fit[ids[2],]) , color = cbPalette[[pid]][2], size=1.5, alpha = min(1,1.005 - (pid==1) ))
+  # stat_function(fun = approxfun(gg, model.fimp$fit[ids[3],]) , color = cbPalette[3], size=1.5)
+  # stat_function(fun = approxfun(gg, model.fimp$fit[4,]) , color = cbPalette[4], size=1.5)
+ggsave(paste0("~/Dropbox/Presentations/Mobilize17/images/fcomplete/2-curves-fpca-",pid,".pdf"))
+
+pp + ggtitle("Sparse Impute") +
+  stat_function(fun = approxfun(gg, model.fimp$fit[ids[1],]) , color = cbPalette[[pid]][1], size=1.5, alpha = min(1,1.005 - (pid==2) )) +
+  stat_function(fun = approxfun(gg, model.fimp$fit[ids[2],]) , color = cbPalette[[pid]][2], size=1.5, alpha = min(1,1.005 - (pid==1) ) )
+  # stat_function(fun = approxfun(gg, model.fpca$fit[ids[3],]) , color = cbPalette[3], size=1.5)
+  # stat_function(fun = approxfun(gg, model.fpca$fit[4,]) , color = cbPalette[4], size=1.5)
+ggsave(paste0("~/Dropbox/Presentations/Mobilize17/images/fcomplete/2-curves-fimp-",pid,".pdf"))
+
+
