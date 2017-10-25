@@ -1,22 +1,22 @@
 \contentsline {section}{\numberline {1}Motivation}{1}{section.1}
-\contentsline {section}{\numberline {2}Background and related work}{2}{section.2}
+\contentsline {section}{\numberline {2}Background and related work}{3}{section.2}
 \contentsline {subsection}{\numberline {2.1}Direct approach}{3}{subsection.2.1}
 \contentsline {subsection}{\numberline {2.2}Linear mixed-effect models}{4}{subsection.2.2}
 \contentsline {subsection}{\numberline {2.3}Low-rank approximations}{4}{subsection.2.3}
 \contentsline {section}{\numberline {3}Modeling sparse longitudinal processes using matrix factorization}{5}{section.3}
 \contentsline {subsection}{\numberline {3.1}Notation}{6}{subsection.3.1}
-\contentsline {paragraph}{Direct approach}{6}{section*.3}
-\contentsline {paragraph}{Low-rank approximation}{7}{section*.4}
+\contentsline {paragraph}{Direct approach}{7}{section*.3}
+\contentsline {paragraph}{Low-rank matrix approximation}{8}{section*.4}
 \contentsline {subsection}{\numberline {3.2}Matrix-factorization approach}{8}{subsection.3.2}
-\contentsline {paragraph}{Modeling new data.}{8}{section*.5}
+\contentsline {paragraph}{Modeling new data.}{9}{section*.5}
 \contentsline {subsection}{\numberline {3.3}$\ell _1$-norm regularization}{9}{subsection.3.3}
 \contentsline {subsection}{\numberline {3.4}The link between reduced-rank model and \textsc {Soft-Longitudinal-Impute}}{9}{subsection.3.4}
 \contentsline {section}{\numberline {4}Multivariate sparse longitudinal modeling}{10}{section.4}
-\contentsline {subsection}{\numberline {4.1}Dimensionality reduction}{10}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.1}Dimensionality reduction}{11}{subsection.4.1}
 \contentsline {subsection}{\numberline {4.2}Regression}{12}{subsection.4.2}
 \contentsline {section}{\numberline {5}Simulations}{13}{section.5}
-\contentsline {paragraph}{Results}{13}{section*.6}
+\contentsline {paragraph}{Results}{14}{section*.6}
 \contentsline {section}{\numberline {6}Data study}{14}{section.6}
-\contentsline {section}{References}{15}{section*.8}
-\contentsline {section}{\numberline {A}Convergence Analysis}{18}{appendix.A}
-\contentsline {section}{\numberline {B}\texttt {fimpute} package}{19}{appendix.B}
+\contentsline {section}{References}{17}{section*.8}
+\contentsline {section}{\numberline {A}Convergence Analysis}{21}{appendix.A}
+\contentsline {section}{\numberline {B}\texttt {fimpute} package}{22}{appendix.B}

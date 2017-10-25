@@ -257,7 +257,7 @@ In such settings, our observations can be uniquely represented as a $N \times T$
 
 As in Section \ref{s:background} we impose smoothness by using a continuous basis $\bb(t) = [b_1(t),b_2(t),...,b_K(t)]'$. However, now, the basis is evaluated on the grid $G$ and we define $B = [\bb(\tau_1),\bb(\tau_2),...,\bb(\tau_T)]'$.
 
-Approaches discussed in Section \ref{s:background} can be expressed in matrix notation.
+Approaches discussed in Section \ref{s:background} can be expressed in the matrix notation. Here we discuss the direct approach and the low-rank approximation approach.
 %When $T$ is sufficiently large, approaches discussed in Section \ref{s:background} can be expressed in matrix notation. %In Section [TODO] we show that from the computational standpoint $T$ can be arbitrarily large, or we can also evaluate $\bb$ at the actual observed time-points [TODO].
 
 \paragraph{Direct approach}
@@ -280,10 +280,10 @@ where $W$ is an arbitrary $N \times K$ matrix.
 
 The matrix formulation in equation \eqref{eq:direct-matrix} and the classic approach in Section \ref{ss:direct} share multiple characteristics. In both cases if data is dense enough, we may find an accurate representations of the underlying process. Conversely, if the data is too sparse, the problem becomes ill-posed and we overfit.
 
-However, the algebraic difference between \eqref{eq:direct-individual} and \eqref{eq:direct-matrix} constitutes the foundation for the method introduced in the sequel of this paper. The main advantage of the matrix representation \eqref{eq:direct-matrix} is that it enables us to use matrix factorization framework. In particular, in Section \ref{ss:matrix-factorization} we introduce an SVD-based algorithm for solving \eqref{eq:direct-matrix}. Moreover, many low-rank constraints on the random effect from the mixed-effect model introduced in Section \ref{ss:lmm} can be expressed in terms of constraints on $W$ or $W'W$ and potentially solved without imposing any probabilistic constraints.
+However, the algebraic difference between \eqref{eq:direct-individual} and \eqref{eq:direct-matrix} constitutes the foundation for the method introduced in the sequel of this paper. The matrix representation enables us to use matrix factorization framework. In particular, in Section \ref{ss:matrix-factorization} we introduce an SVD-based algorithm for solving \eqref{eq:direct-matrix}. Moreover, some low-rank constraints on the random effect from the mixed-effect model introduced in Section \ref{ss:lmm} can be expressed in terms of constraints on $W$ and they can potentially be solved without imposing probabilistic constraints. In particular, the linear mixed-effect model can be expressed by constraining $\rank(W) = q$.
 
-\paragraph{Low-rank approximation}
-In the low-rank approach described in Section \ref{ss:reduced-rank} we assume that individual trajectories can be represented in a low-dimensional space, by constraining the latent space $W$ to only $q < K$ dimensions. In many situations, this rank constrain can be efficiently relaxed by a nuclear norm to make the problem convex \citep{candes2009exact, fazel2002matrix}. Then, the optimization problem takes form 
+\paragraph{Low-rank matrix approximation}
+In the low-rank approach described in Section \ref{ss:reduced-rank} we assume that individual trajectories can be represented in a low-dimensional space, by constraining the latent space $W$ to only $q < K$ dimensions. In many situations, this rank constrain can be efficiently relaxed by a nuclear norm to make the problem convex \citep{candes2009exact, fazel2002matrix}. Then, the optimization problem takes the form 
 \begin{align}
 \text{minimize\ \ } & \|W\|_* \nonumber\\
 \text{subject to\ \ } &\| P_\Omega(Y - WB') \|_F^2 \leq \delta,\label{eq:rank-restricted}
@@ -291,8 +291,9 @@ In the low-rank approach described in Section \ref{ss:reduced-rank} we assume th
 for some parameter $\delta > 0$. 
 The problem \eqref{eq:rank-restricted} can be solved using modern convex optimization software \citep{grant2008graph,boyd2004convex}. However, with large matrices $Y$ these algorithms can become very expensive.
 
-Note that compared to Section \ref{ss:reduced-rank}, the problem \eqref{eq:rank-restricted} does not impose any assumption on the distribution of $W$ or on the noise.
-In Section \ref{ss:matrix-factorization} we introduce methods for solving a relaxed version of this problem. We further describe links between matrix factorization and low-rank mixed-effect models in Section~\ref{s:the-link}. 
+Note that compared to Section \ref{ss:reduced-rank}, the problem \eqref{eq:rank-restricted} does not impose any assumption on the distribution of $W$ or on the noise. This property is particularly important whenever the data does not follow normal distribution
+
+In Section \ref{ss:matrix-factorization} we introduce methods for solving a relaxed version of this problem. % We further describe links between the matrix factorization and low-rank mixed-effect models in Section~\ref{s:the-link}. 
 
 % Estimation of the {\it Karhunen-Lo\`eve} expansion becomes difficult when the data is sparsely observed.
 % The functional principal components for sparse data, introduced by \citep{james2000principal}, is a parametric method that remedies problems of the direct approach. Similarly as in direct approach, it imposes continuity by assuming that observations come from underlying continuous processes, however, since the dimensionality of the basis might still be too large for estimation, the model further constrains the space to just a few principal components driving the variability of observed processes.
@@ -328,10 +329,10 @@ In Section \ref{ss:matrix-factorization} we introduce methods for solving a rela
 
 \subsection{Matrix-factorization approach}\label{ss:matrix-factorization}
 
-The reduced-rank approach, introduced in Section \ref{ss:reduced-rank}, is based on the observation that if only $P_\Omega(Y)$, it is only feasible to estimate a low-rank representation of $Y$ matrix. 
+The low-rank approach, introduced in Section \ref{ss:reduced-rank}, is based on the observation that the undrelying processes for each subject can be approximated in a low-dimensional space. %In $P_\Omega(Y)$, it is only feasible to estimate a low-rank representation of $Y$ matrix. %\citet{fazel2002matrix} show that, in order to make the optimization problem convex, the low-rank constraint \eqref{eq:rank-restricted} might be relaxed to a constraint on the nuclear norm of a matrix.
+Here, we exploit the same characteristic using a matrix-factorization techniques for solving the optimization problem.
 
-%\citet{fazel2002matrix} show that, in order to make the optimization problem convex, the low-rank constraint \eqref{eq:rank-restricted} might be relaxed to a constraint on the nuclear norm of a matrix. 
-Here, we exploit the same property using a matrix-factorization-based approach. In the Lagrangian form, the optimization problem \eqref{eq:rank-restricted} takes form
+Note, that in the Lagrangian form, the problem \eqref{eq:rank-restricted} takes form
 %\begin{align}\label{eq:mazumder}
 %\min_{\tilde{Z}} \frac{1}{2} \|P_\Omega(Y - \tilde{Z})\|_F^2 + \lambda\|\tilde{Z}\|_*,
 %\end{align}
@@ -340,12 +341,7 @@ Here, we exploit the same property using a matrix-factorization-based approach. 
 \begin{align}\label{eq:matrixproblem-final}
 \min_Z \frac{1}{2} \|P_\Omega(Y - WB')\|_F^2 + \lambda\|W\|_*,
 \end{align}
-where $Z$ is an $N \times K$ matrix. %Properties of Frobenius norm and orthogonality of $M$ imply that \eqref{eq:matrixproblem} is equivalent to 
-%\begin{align}\label{eq:matrixproblem-final}
-%\min_Z \frac{1}{2} \|P_\Omega(YM) - P_\Omega(Z)\|_F^2 + \lambda\|Z\|_*.
-%\end{align}
-
-We observe that \eqref{eq:matrixproblem-final} can be solved by extending the \textsc{Soft-Impute} algorithm \citep{mazumder2010spectral}. The key component to the solution is the following property.
+where $Z$ is an $N \times K$ matrix. We observe that \eqref{eq:matrixproblem-final} can be solved by extending the \textsc{Soft-Impute} algorithm \citep{mazumder2010spectral}. The key component to the solution is the following property linking the problem \eqref{eq:matrixproblem-final} with SVD.
 
 Let $D = \diag(d_1,...,d_p)$ be a diagonal matrix. Define 
 \begin{equation}
@@ -355,10 +351,10 @@ where $(x)_+ = \max(x, 0)$. \citet{cai2010singular} showed that an optimization 
 \begin{align}\label{eq:optsvd}
 \argmin_{W} \frac{1}{2} \| Y - WB \|_F^2 + \lambda\|W\|_*.
 \end{align}
-can be solved by singular value thresholding (SVT), i.e. $W = UD_\lambda V'$. We focus on solving \eqref{eq:optsvd} with sparsely observed  $Y$. %By extending ideas from \citep{mazumder2010spectral}, we show that $Y$ can be recovered by substituting unknown coefficient of $Y$ with corresponding values from $WB'$ and solving \eqref{eq:optsvd}, repeated till convergence.
+is solved by singular value thresholding (SVT), i.e. $W = UD_\lambda V'$.  %By extending ideas from \citep{mazumder2010spectral}, we show that $Y$ can be recovered by substituting unknown coefficient of $Y$ with corresponding values from $WB'$ and solving \eqref{eq:optsvd}, repeated till convergence.
 
 % \section{Longitudinal impute algorithms}
-We modify the \textsc{Soft-Impute} algorithm from \citep{mazumder2010spectral} to account for the basis $B$. %We need to project known elements of $Y$ on a chosen basis, encoded as an orthogonal matrix $M_{K\timets T}$. 
+In order to solve \eqref{eq:optsvd} with sparsely observed  $Y$, we modify the \textsc{Soft-Impute} algorithm from \citep{mazumder2010spectral} to account for the basis $B$. %We need to project known elements of $Y$ on a chosen basis, encoded as an orthogonal matrix $M_{K\timets T}$. 
 Our Algorithm \ref{alg:soft-impute} in each iteration $k$ defines a matrix $Z^{new,k}$, which is a candidate solution for \eqref{eq:matrixproblem-final}. In Appendix \ref{s:convergence} we show that $Z^{new,k}$ converges to the global solution $Z_\lambda$ of \eqref{eq:matrixproblem-final}.
 
 \begin{algorithm}
