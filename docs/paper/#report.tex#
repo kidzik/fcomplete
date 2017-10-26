@@ -294,7 +294,7 @@ The problem \eqref{eq:rank-restricted} can be solved using modern convex optimiz
 
 Note that compared to Section \ref{ss:reduced-rank}, the problem \eqref{eq:rank-restricted} does not impose any assumption on the distribution of $W$ or on the noise. This property is particularly important whenever the data does not follow normal distribution.
 
-While the relaxation \ref{eq:rank-restricted} is motivated by making the problem convex, \citep{mazumder2010spectral} argue that it may give better results than the rank constraint. They draw the analogy to the best-subset regression ($\ell_0$ regularization) and LASSO ($\ell_1$ regularization \citep{tibshirani1996regression, friedman2001elements}).
+While the relaxation \ref{eq:rank-restricted} is motivated by making the problem convex, \citep{mazumder2010spectral} argue that it may give better results than the rank constraint. They draw the analogy to the best-subset regression ($\ell_0$ regularization) and LASSO ($\ell_1$ regularization \citep{tibshirani1996regression, friedman2001elements}). Shriking allows to include more parameters and
 
 In Section \ref{ss:matrix-factorization} we introduce methods for solving a relaxed version of this problem. % We further describe links between the matrix factorization and low-rank mixed-effect models in Section~\ref{s:the-link}. 
 
