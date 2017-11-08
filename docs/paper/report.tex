@@ -25,6 +25,7 @@
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}{Lemma}
 \newcommand{\cN}{\mathcal{N}}
+\newcommand{\cS}{\mathcal{S}}
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\N}{\mathbb{N}}
 \newcommand{\bX}{\mathbf{X}}
@@ -150,7 +151,7 @@ where $\Sigma$ is a $K \times K$ covariance matrix. We model individual observat
 \begin{align}\label{eq:probabilistic}
  \mathbf{y}_i \sim \cN(\mu_i + B_i\mathbf{w}_i, \sigma^2I_{n_i}),
 \end{align}
-where $\mu_i = [\mu(t_{i,1}),\mu(t_{i,2}),...,\mu(t_{i,n_i})]'$, $\sigma$ is the standard deviation of observation error and $B_i = [\bb(t_{i,1}),...,\bb(t_{i,n_i})]'$. Estimation of the model parameters is typically accomplished by the expectation-maximization (EM) algorithm \citep{laird1982random}. For estimating coefficients $\b_wi$ one can use the best unbiased linear predictor (BLUP) \citep{henderson1950estimation,robinson1991blup}. % or other techniques typical for mixed-effect models \citep{mardia1980multivariate}.
+where $\mu_i = [\mu(t_{i,1}),\mu(t_{i,2}),...,\mu(t_{i,n_i})]'$, $\sigma$ is the standard deviation of observation error and $B_i = [\bb(t_{i,1}),...,\bb(t_{i,n_i})]'$. Estimation of the model parameters is typically accomplished by the expectation-maximization (EM) algorithm \citep{laird1982random}. For estimating coefficients $\bw_i$ one can use the best unbiased linear predictor (BLUP) \citep{henderson1950estimation,robinson1991blup}. % or other techniques typical for mixed-effect models \citep{mardia1980multivariate}.
 
 Since the LMM estimates the covariance structure and individual fit simultaneously, it reduces the problem of uncertain estimates of $\bw_i$, present in the direct approach. However, this model is only applicable if a relatively large number of observations per subject is observed since we attempt to estimate $K$ basis coefficients for every subject.
 
@@ -226,11 +227,11 @@ To illustrate this problem, let us assume that the data is drawn from two distri
 %While low-rank mixed models, as presented in \citep{james2000principal,tipping1999probabilistic}, can be potentially extended to the regression setting, in this paper 
 %[TODO: Describe the problem with existing approaches]
 
-The mixed-effect model, as any other probabilistic model, can be heavily biased when the data comes from the distribution considerably different than assumed. Since biomarkers can differ in every clinical setting, fine-tuning the models may require time and expertise. We develop a more flexible data-driven approach to the estimation of latent variables. Our method is based solely on the $L_2$ approximation rather than the underlying distributions.
+The mixed-effect model, as any other probabilistic model, can be heavily biased when the data comes from the distribution considerably different than assumed. Since biomarkers can differ in every clinical setting, fine-tuning the models may require time and expertise. We develop a more flexible approach to the estimation of latent variables. Our method is based solely on the $\ell_2$ approximation rather than the underlying distributions.
 
 We pose the problem of trajectory prediction as a matrix completion problem and we solve it using sparse matrix factorization techniques \citep{rennie2005fast, candes2009exact}. In the classical matrix completion problem the objective is to predict elements of a sparsely observed matrix using its known elements, while minimizing a certain criterion, often chosen to be the Mean Squared Error (MSE). The motivating example is the ``Netflix Prize'' competition \citep{bennett2007netflix}, where participants were tasked to predict unknown movie ratings using other observed ratings. We can represent these data as a matrix of $N$ users and $M$ movies, with a subset of known elements, measured on a fixed scale, e.g. $1-5$.
 
-One approach to solving this problem is to assume that the true matrix can be well-approximated by a low-rank matrix \citep{srebro2005generalization}. Given the low-rank representation $UV'$, vectors $V$ spanning the space of movies can be interpreted as ``taste'' components and each user is represented as a weighted sum of these tastes in a matrix of latent variables $U$ (see Figure \ref{fig:idea}).
+One approach to solving this problem is to assume that the true matrix can be well-approximated by a low-rank matrix \citep{srebro2005generalization}. Given the low-rank representation $WA'$, columns $A$ spanning the space of movies can be interpreted as ``taste'' components and each user is represented as a weighted sum of these tastes, i.e. a row in the matrix of latent variables $W$ (see Figure \ref{fig:idea}).
 
 We can use the same idea to predict sparsely sampled curves, as long as we introduce an additional smoothing step. The low-dimensional latent structure now corresponds to progression patterns and a trajectory of each individual can be represented as a weighted sum of these ``principal'' patterns.
 
@@ -238,7 +239,7 @@ We can use the same idea to predict sparsely sampled curves, as long as we intro
 
 \begin{figure}[h]
   \includegraphics[width=1\linewidth]{images/intro}
-  \caption{This key observation motivating this paper is the fact that sparse longitudinal trajectory prediction problem can be mapped to the matrix completion problem. Matrix completion can be approached with matrix factorization where we look for $U$ and $V$ of low rank, approximating observed values in $Y$ (circled rectangles in the matrix $Y$). In the sparse longitudinal setting, we impose continuity by fixing the basis $B$ (e.g. splines) and again finding low-rank $U$ and $V$ approximating observed values in $Y$. $B$ corresponds to some discretized smooth basis, here with $3$ basis elements.}
+  \caption{This key observation motivating this paper is the fact that sparse longitudinal trajectory prediction problem can be mapped to the matrix completion problem. Matrix completion can be approached with matrix factorization where we look for $W$ and $A$ of low rank, approximating observed values in $Y$ (circled rectangles in the matrix $Y$). In the sparse longitudinal setting, we impose continuity by fixing the basis $B$ (e.g. splines) and again finding low-rank $W$ and $A$ approximating observed values in $Y$. $B$ corresponds to some discretized smooth basis, here with $3$ basis elements.}
   \label{fig:idea}
 \end{figure}
 
@@ -249,7 +250,7 @@ We first introduce methodology for univariate sparsely-sampled processes. Next, 
 %To use matrix factorization techniques, in this section we represent the data as a matrix of $N$ individuals and $T$ time-points, unlike the previous work on longitudinal modeling, presented in Section \ref{s:background}. 
 %As presented in Section \ref{s:background},
 %The theory of functional data analysis can be developed directly on $L_2([t_{\min},t_{\max}])$ curves or, more broadly, any separable Hilbert space \citep{ferraty2006nonparametric}. In this article
-We assume that for each individual $i \in \{1,2,...,N\}$ we observe $n_i$ measurements $\{y_{i,1},...,y_{i,n}\}$ at time-points $\{t_{i,1},t_{i,2},...,t_{i,n_i}\}$. However, unlike the prior work introduced in Section \ref{s:background}, we discretize the time grid to $T$ equidistributed time-points $G = \left[\tau_1, \tau_2, ..., \tau_T\right],$ where $t_{\min} = \tau_1$ and $t_{\max} = \tau_T$. Each individual $i$ is expressed as a partially observed vector $r_i \in \R^T$. For each timepoint $t_{i,j}$ for $1 \leq j \leq n_i$ we find a corresponding grid-point $g_i(j) = \argmin_{1 \leq k \leq T}  |\tau_k - t_{i,j}|$. We define $r_{i,g_i(j)} = y_{i,j}$. All other elements of $r_i$ are considered missing.
+We assume that for each individual $i \in \{1,2,...,N\}$ we observe $n_i$ measurements $\{\tilde y_{i,1},...,\tilde y_{i,n_i}\}$ at time-points $\{t_{i,1},t_{i,2},...,t_{i,n_i}\}$. However, unlike the prior work introduced in Section \ref{s:background}, we discretize the time grid to $T$ equidistributed time-points $G = \left[\tau_1, \tau_2, ..., \tau_T\right],$ where $t_{\min} = \tau_1$ and $t_{\max} = \tau_T$. Each individual $i$ is expressed as a partially observed vector $r_i \in \R^T$. For each time-point $t_{i,j}$ for $1 \leq j \leq n_i$ we find a corresponding grid-point $g_i(j) = \argmin_{1 \leq k \leq T}  |\tau_k - t_{i,j}|$. We define $y_{i,g_i(j)} = \tilde y_{i,j}$. Let $O_i = \{g_i(j): 1 \leq j \leq n_i \}$ be a set of grid indices corresponding to observed grid-points for an individual $i$. All elements outside $O_i$, i.e. $\{y_{i,j} : j \notin O_i\}$ are considered missing.
 
 We will show that in our method the grid can be arbitrarily dense with marginal compromise on performance, and therefore, without loss of generality, we assume that at most one measurement per subject is mapped to every grid-point in $G$.
 
@@ -257,18 +258,26 @@ In such settings, our observations can be uniquely represented as a $N \times T$
 
 As in Section \ref{s:background} we impose smoothness by using a continuous basis $\bb(t) = [b_1(t),b_2(t),...,b_K(t)]'$. However, now, the basis is evaluated on the grid $G$ and we define $B = [\bb(\tau_1),\bb(\tau_2),...,\bb(\tau_T)]'$.
 
+In our algorithms we will use a diagonal-thresholding operator defined as follows. Let $D = \diag(d_1,...,d_p)$ be a diagonal matrix. Define 
+\begin{equation}
+D_\lambda = \diag((d_1 - \lambda)_+,(d_2 - \lambda)_+,...,(d_p - \lambda)_+),\label{eq:thresholding}
+\end{equation}
+where $(x)_+ = \max(x, 0)$. 
+
 Approaches discussed in Section \ref{s:background} can be expressed in the matrix notation. Here we discuss the direct approach and the low-rank approximation approach.
 %When $T$ is sufficiently large, approaches discussed in Section \ref{s:background} can be expressed in matrix notation. %In Section [TODO] we show that from the computational standpoint $T$ can be arbitrarily large, or we can also evaluate $\bb$ at the actual observed time-points [TODO].
 
-\paragraph{Direct approach}
+\subsection{Direct approach}
 
-The optimization problem \eqref{eq:direct-individual} of the direct approach described in Section \ref{ss:direct} can be approximated in the matrix notation. First, note that
+The optimization problem \eqref{eq:direct-individual} of the direct approach described in Section \ref{ss:direct} can be approximated in the matrix setting. First, note that the bias introduced by the grid is negligible if the grid is sufficiently large. We have
 \begin{align}
-  \left|y_{i,j} - \bw_i'\bb(t_{i,j})\right| &= \left|y_{i,g_i(j)} - \bw_i'\bb(t_{i,j})\right|\nonumber\\
-  &= \left| y_{i,g_i(j)} - \bw_i' \bb(\tau_{g_i(j)} + t_{i,j} - \tau_{g_i(j)})\right|\nonumber\\
-  &\leq \left| y_{i,g_i(j)} - \bw_i' \bb(\tau_{g_i(j)})\right| + \left|\bw_i' \bb(t_{i,j} - \tau_{g_i(j)})\right|\label{eq:grid-snap}
+  \left|\tilde y_{i,j} - \bw_i'\bb(t_{i,j})\right| &= \left|y_{i,g(j)} - \bw_i'\bb(t_{i,j})\right|\nonumber\\
+  &= \left| y_{i,g(j)} - \bw_i' \bb(\tau_{g_i(j)} + t_{i,j} - \tau_{g_i(j)})\right|\nonumber\\
+  &\leq \left| y_{i,g(j)} - \bw_i' \bb(\tau_{g_i(j)})\right| + \left|\bw_i' \bb(t_{i,j} - \tau_{g_i(j)})\right|\label{eq:grid-snap}
 \end{align}
-and, by continuity of the basis on a closed interval $[t_{\min},t_{\max}]$, the second element in \eqref{eq:grid-snap} can be arbitrarily small if $T \rightarrow \infty$ and therefore the solution of the problem relaxed to the grid will be a good approximation of the orginal problem. We define the optimization problem \eqref{eq:direct-individual} relaxed to the grid $G$ as
+and by the continuity of the basis on a closed interval $[t_{\min},t_{\max}]$ the second element in \eqref{eq:grid-snap} can be arbitrarily small if $T \rightarrow \infty$. Therefore, the error of the solution of the original problem is bounded by the error of the solution the grid.
+
+We can define the optimization problem \eqref{eq:direct-individual} mapped to the grid $G$ as a matrix completion problem
 \begin{align}
  \argmin_{\{\bw_i\}}\sum_{i=1}^N \sum_{j=1}^{n_i}\left|y_{i,g_i(j)} - \bw_i' \bb(\tau_{g_i(j)}))\right|^2 &= \argmin_{\{\bw_i\}}\sum_{(i,k) \in \Omega}\left|y_{i,k} - \bw_i' \bb(\tau_{k}))\right|^2\nonumber\\
 %% \end{align*}
@@ -276,27 +285,40 @@ and, by continuity of the basis on a closed interval $[t_{\min},t_{\max}]$, the 
 %% \begin{align*}
 &= \argmin_W \| P_\Omega(Y - WB') \|_F^2,\label{eq:direct-matrix}
 \end{align}
-where $W$ is an arbitrary $N \times K$ matrix.
+where the optimization over $\{\bw_i\}$ is an optimization over all $\{\bw_i : i \in \{ 1,2,...,N \}\}$ and $W$ is an arbitrary $N \times K$ matrix.
 
-The matrix formulation in equation \eqref{eq:direct-matrix} and the classic approach in Section \ref{ss:direct} share multiple characteristics. In both cases if data is dense enough, we may find an accurate representations of the underlying process. Conversely, if the data is too sparse, the problem becomes ill-posed and we overfit.
+The matrix formulation in equation \eqref{eq:direct-matrix} and the classic approach in Section \ref{ss:direct} share multiple characteristics. In both cases if data is dense, we may find an accurate representations of the underlying process simply by fitting least-squares estimates of $W$ or $\{\bw_i\}$. Conversely, if the data is too sparse, the problem becomes ill-posed and the least-squares estimates will overfit. Moreover, with $T \rightarrow \infty$ two frameworks become equivalent.
 
-However, the algebraic difference between \eqref{eq:direct-individual} and \eqref{eq:direct-matrix} constitutes the foundation for the method introduced in the sequel of this paper. The matrix representation enables us to use matrix factorization framework. In particular, in Section \ref{ss:matrix-factorization} we introduce an SVD-based algorithm for solving \eqref{eq:direct-matrix}. Moreover, some low-rank constraints on the random effect from the mixed-effect model introduced in Section \ref{ss:lmm} can be expressed in terms of constraints on $W$ and they can be potentially solved without imposing probabilistic constraints. In particular, the linear mixed-effect model can be expressed by constraining $\rank(W) = q$.
+However, representations \eqref{eq:direct-individual} and \eqref{eq:direct-matrix} differ algebraically and this difference constitutes the foundation for the method introduced in the sequel of this paper. The matrix representation enables us to use matrix completion framework and, in particular, in Section \ref{ss:matrix-factorization} we introduce convex optimization algorithms for solving \eqref{eq:direct-matrix} with additional constraints.
 
-\paragraph{Low-rank matrix approximation}
-In the low-rank approach described in Section \ref{ss:reduced-rank} we assume that individual trajectories can be represented in a low-dimensional space, by constraining the latent space $W$ to only $q < K$ dimensions. In many situations, this rank constrain can be efficiently relaxed by a nuclear norm to make the problem convex \citep{candes2009exact, fazel2002matrix}. Then, the optimization problem takes form 
+Note that some low-rank constraints on the random effect from the mixed-effect model introduced in Section \ref{ss:lmm} can be expressed in terms of constraints on $W$ and they can be potentially solved without imposing probability distributions. As we show next, the linear mixed-effect model can be expressed by constraining $\rank(W)$. % for some $q \in \N$.
+
+\subsection{Low-rank matrix approximation}\label{ss:low-rank-matrix}
+In the low-rank approach described in Section \ref{ss:reduced-rank} we assume that individual trajectories can be represented in a low-dimensional space, by constraining the rank of $W$. We might attempt taking the same route, however, the problem \eqref{eq:direct-matrix} with a constraint on the rank of $W$ is a non-convex problem.
+
+In many situations, this rank constrain can be efficiently relaxed by a nuclear norm to make the problem convex \citep{candes2009exact, fazel2002matrix}. \citet{candes2009near} consider the nuclear norm relaxation in the setting where the solution matches exactly a linear combination of the observed elements. In particular, they assume existence of exact solutions of \eqref{eq:direct-matrix} and they solve
+\begin{align} 
+\text{minimize\ \ } & \|W\|_*,  \nonumber\\
+\text{subject to\ \ } & \| P_\Omega(Y - WB') \|_F^2 = 0.
+\label{eq:cai}
+\end{align}
+The problem \eqref{eq:cai} can be solved using modern convex optimization software \citep{grant2008graph,boyd2004convex}, such as SDPT3 \citep{toh1999sdpt3} or SeDuMi \citep{sturm1999using}. However, with large matrices $Y$, these general algorithms can become computationally expensive and \citet{cai2010singular,mazumder2010spectral} introduced alternative iterative algorithms leveraging the low-rank and sparse decomposition.
+
+For our application, the constraint \eqref{eq:cai} requiring exact matching of the observed and predicted values is too strong. For example, if there are more measurements per subject than $\rank(W)$ or if a subject was measured at two consecutive grid-points with some observation noise, we may not be able to find a continuous solution imposed by the smooth basis $B$. For this reason, we relax the constraint in \eqref{eq:cai} to an inequality
 \begin{align}
-\text{minimize\ \ } & \| P_\Omega(Y - WB') \|_F^2 ,\nonumber\\
-\text{subject to\ \ } & \|W\|_* \leq q  
+\text{minimize\ \ } & \|W\|_*,  \nonumber\\
+\text{subject to\ \ } & \| P_\Omega(Y - WB') \|_F^2 \leq \delta
 \label{eq:rank-restricted}
-\end{align} 
-for some parameter $q > 0$. 
-The problem \eqref{eq:rank-restricted} can be solved using modern convex optimization software \citep{grant2008graph,boyd2004convex}. %However, with large matrices $Y$ these algorithms can become very expensive.
+\end{align}
+for some parameter $\delta > 0$.
 
-Note that compared to Section \ref{ss:reduced-rank}, the problem \eqref{eq:rank-restricted} does not impose any assumption on the distribution of $W$ or on the noise. This property is particularly important whenever the data does not follow normal distribution.
+\citet{cai2010singular} propose a first-order singular value thresholding algorithm (SVT), solving the problem \eqref{eq:rank-restricted}. Their algorithm can handle large datasets and has strong guarantees on convergence but it requires tuning the step size parameter, which can greatly influence the performance. This limitation was addressed by \citet{ma2011fixed,mazumder2010spectral,hastie2015matrix} who introduced iterative procedures which do not depend on such tuning. Moreover, \citet{hardt2014fast,chen2015fast} propose methods for the non-convex problem and \citet{ge2016matrix} argue that the non-convex problem has no spurious local minima.
 
-While the relaxation \ref{eq:rank-restricted} is motivated by making the problem convex, \citep{mazumder2010spectral} argue that it may give better results than the rank constraint. They draw the analogy to the best-subset regression ($\ell_0$ regularization) and LASSO ($\ell_1$ regularization \citep{tibshirani1996regression, friedman2001elements}).
+In the last decade, the machine learning and statistical learning communities have introduced multiple algorithms for matrix completion. Many of them are suitable for solving \eqref{eq:rank-restricted}. However, in this article we focus on analyzing benefits of framing the trajectory prediction problem \eqref{eq:direct-individual} in the matrix completion framework, rather than on benchmarking existing solutions.
 
-In Section \ref{ss:matrix-factorization} we introduce methods for solving a relaxed version of this problem. % We further describe links between the matrix factorization and low-rank mixed-effect models in Section~\ref{s:the-link}. 
+We argue that the matrix formulation \eqref{eq:rank-restricted} has two key advantages over the probabilistic approach (Section \ref{ss:reduced-rank}). First, the problem \eqref{eq:rank-restricted} does not impose any assumption on the distribution of $W$ or on the distribution of the noise. This property is particularly important whenever the data does not follow normal distribution. We further describe links between the matrix factorization and low-rank mixed-effect models in Section~\ref{s:the-link}. Second, the elementary formulation of \eqref{eq:rank-restricted} allows us to generalize this model to the multivariate or regression setting as we discuss in Section \ref{s:multivariate}.  
+
+%In Section \ref{ss:matrix-factorization} we introduce methods for solving a relaxed version of this problem. % 
 
 % Estimation of the {\it Karhunen-Lo\`eve} expansion becomes difficult when the data is sparsely observed.
 % The functional principal components for sparse data, introduced by \citep{james2000principal}, is a parametric method that remedies problems of the direct approach. Similarly as in direct approach, it imposes continuity by assuming that observations come from underlying continuous processes, however, since the dimensionality of the basis might still be too large for estimation, the model further constrains the space to just a few principal components driving the variability of observed processes.
@@ -330,119 +352,143 @@ In Section \ref{ss:matrix-factorization} we introduce methods for solving a rela
 % % \argmin_{\sigma,A,V}\| Y M' - AV\|_F^2 + \sigma^2 \| A D^{-1/2} \|_F^2.
 % % \end{align}
 
-\subsection{Matrix-factorization approach}\label{ss:matrix-factorization}
+\subsection{Low-rank approximation with singular value thresholding}\label{ss:matrix-factorization}
 
-The low-rank approach, introduced in Section \ref{ss:reduced-rank}, is based on the observation that the undrelying processes for each subject can be approximated in a low-dimensional space. %In $P_\Omega(Y)$, it is only feasible to estimate a low-rank representation of $Y$ matrix. %\citet{fazel2002matrix} show that, in order to make the optimization problem convex, the low-rank constraint \eqref{eq:rank-restricted} might be relaxed to a constraint on the nuclear norm of a matrix.
-Here, we exploit the same characteristic using a matrix-factorization techniques for solving the optimization problem.
+The low-rank probabilistic approach, introduced in Section \ref{ss:reduced-rank}, is based on the observation that the underlying processes for each subject can be approximated in a low-dimensional space. %In $P_\Omega(Y)$, it is only feasible to estimate a low-rank representation of $Y$ matrix. %\citet{fazel2002matrix} show that, in order to make the optimization problem convex, the low-rank constraint \eqref{eq:rank-restricted} might be relaxed to a constraint on the nuclear norm of a matrix.
+Here, we exploit the same characteristic using a matrix-factorization techniques for solving the optimization problem \eqref{eq:rank-restricted}.
 
-Note, that in the Lagrangian form, the problem \eqref{eq:rank-restricted} takes form
+Note, that in the Lagrangian form, the problem \eqref{eq:rank-restricted} becomes
 %\begin{align}\label{eq:mazumder}
-%\min_{\tilde{Z}} \frac{1}{2} \|P_\Omega(Y - \tilde{Z})\|_F^2 + \lambda\|\tilde{Z}\|_*,
+%\min_{\tilde{W}} \frac{1}{2} \|P_\Omega(Y - \tilde{W})\|_F^2 + \lambda\|\tilde{W}\|_*,
 %\end{align}
-%for some $\lambda = \lambda(\sigma) \geq 0$ and $\tilde{Z}$ is a $N \times T$ matrix. \citet{hastie2015matrix} introduced a fast and parallel algorithm for solving \eqref{eq:mazumder}.
-% In our longitudinal setting, estimating $\tilde{Z}$ directly from \eqref{eq:mazumder} will fail since it does not account for the continuous structure. Instead, we further constrain \eqref{eq:mazumder} by imposing the continuous basis $B$. We optimize
+%for some $\lambda = \lambda(\sigma) \geq 0$ and $\tilde{W}$ is a $N \times T$ matrix. \citet{hastie2015matrix} introduced a fast and parallel algorithm for solving \eqref{eq:mazumder}.
+% In our longitudinal setting, estimating $\tilde{W}$ directly from \eqref{eq:mazumder} will fail since it does not account for the continuous structure. Instead, we further constrain \eqref{eq:mazumder} by imposing the continuous basis $B$. We optimize
 \begin{align}\label{eq:matrixproblem-final}
 \min_Z \frac{1}{2} \|P_\Omega(Y - WB')\|_F^2 + \lambda\|W\|_*,
 \end{align}
-where $Z$ is an $N \times K$ matrix. We observe that \eqref{eq:matrixproblem-final} can be solved by extending the \textsc{Soft-Impute} algorithm \citep{mazumder2010spectral}. The key component to the solution is the following property linking the problem \eqref{eq:matrixproblem-final} with SVD.
+for some $\lambda > 0$ and where $W$ is an $N \times K$ matrix. For the sake of clarity and simplicity, we choose to solve the problem \eqref{eq:matrixproblem-final} with an extend version of the \textsc{Soft-Impute} algorithm designed by \citet{mazumder2010spectral}. As discussed in Section \ref{ss:low-rank-matrix}, many other convex optimization algorithms can be applied.
 
-Let $D = \diag(d_1,...,d_p)$ be a diagonal matrix. Define 
-\begin{equation}
-D_\lambda = \diag((d_1 - \lambda)_+,(d_2 - \lambda)_+,...,(d_p - \lambda)_+),\label{eq:thresholding}
-\end{equation}
-where $(x)_+ = \max(x, 0)$. \citet{cai2010singular} showed that an optimization problem
+The key component to the solution is the following property linking the problem \eqref{eq:matrixproblem-final} with singular value decomposition (SVD). Consider the fully observed case of \eqref{eq:matrixproblem-final}. Using Theorem 2.1 in \citet{cai2010singular}, one can show that the optimization problem
 \begin{align}\label{eq:optsvd}
-\argmin_{W} \frac{1}{2} \| Y - WB \|_F^2 + \lambda\|W\|_*.
+\argmin_{W} \frac{1}{2} \| Y - WB' \|_F^2 + \lambda\|W\|_*
 \end{align}
-is solved by singular value thresholding (SVT), i.e. $W = UD_\lambda V'$.  %By extending ideas from \citep{mazumder2010spectral}, we show that $Y$ can be recovered by substituting unknown coefficient of $Y$ with corresponding values from $WB'$ and solving \eqref{eq:optsvd}, repeated till convergence.
+has a unique solution $W = \cS_\lambda (YB)$, where $\cS_\lambda(X) = UD_\lambda V'$ and $X = UDV'$ is the SVD of $X$. We refer to this $\cS_\lambda(X)$ as a singular value thresholding (SVT) of $X$.
 
 % \section{Longitudinal impute algorithms}
-In order to solve \eqref{eq:optsvd} with sparsely observed  $Y$, we modify the \textsc{Soft-Impute} algorithm from \citep{mazumder2010spectral} to account for the basis $B$. %We need to project known elements of $Y$ on a chosen basis, encoded as an orthogonal matrix $M_{K\timets T}$. 
-Our Algorithm \ref{alg:soft-impute} in each iteration $k$ defines a matrix $Z^{new,k}$, which is a candidate solution for \eqref{eq:matrixproblem-final}. In Appendix \ref{s:convergence} we show that $Z^{new,k}$ converges to the global solution $Z_\lambda$ of \eqref{eq:matrixproblem-final}.
+In order to solve \eqref{eq:optsvd} with a sparsely observed  $Y$, we modify the \textsc{Soft-Impute} algorithm from \citep{mazumder2010spectral} to account for the basis $B$. Our Algorithm \ref{alg:soft-impute} iteratively constructs better approximations of the global solution for each $\lambda$ in some predefined set $\{\lambda_1, \lambda_2, ..., \lambda_k\}$. Suppose we have some approximation of the solution $W^{old}$. We impute $W^{old}B$ to unknown elements of $Y$ obtaining $\tilde{Y}$. We construct the next approximation $W^{new}$ by computing SVT of $\tilde{Y}$.
+
+In Appendix \ref{s:convergence} we show that $W^{new,k}$ converges to the global solution $W_\lambda$ of \eqref{eq:matrixproblem-final}. As our stopping criterion we compute the change between subsequent solution, relative to the magnitude of the solution, following the methodology in \cite{cai2010singular}. We set some fixed threshold for this value, e.g. $\varepsilon = 10^{-4}$.
 
 \begin{algorithm}
 \caption{\textsc{Soft-Longitudinal-Impute}\label{alg:soft-impute}}
 \begin{enumerate}
-\item Initialize $Z^{old}$ with zeros
+\item Initialize $W^{old}$ with zeros
 \item Do for $\lambda_1 > \lambda_2 > ... > \lambda_k$:
 \begin{enumerate}
 \item Repeat:
 \begin{enumerate}
-\item Compute $Z^{new} \leftarrow S_{\lambda_k}( (P_\Omega(Y) + P_\Omega^\perp(Z^{old}B'))B )$.
-\item If $\frac{\|Z^{new} - Z^{old}\|_F^2}{\|Z^{old}\|_F^2} < \varepsilon$ exit.
-\item Assign $Z^{old} \leftarrow Z^{new}$
+\item Compute $W^{new} \leftarrow S_{\lambda_k}( (P_\Omega(Y) + P_\Omega^\perp(W^{old}B'))B )$.
+\item If $\frac{\|W^{new} - W^{old}\|_F^2}{\|W^{old}\|_F^2} < \varepsilon$ exit.
+\item Assign $W^{old} \leftarrow W^{new}$
 \end{enumerate}
-\item Assign $\hat{Z}_{\lambda_k} \leftarrow Z^{new}$
+\item Assign $\hat{W}_{\lambda_k} \leftarrow W^{new}$
 \end{enumerate}
-\item Output $\hat{Z}_{\lambda_1}, \hat{Z}_{\lambda_2}, ... , \hat{Z}_{\lambda_k}$.
+\item Output $\hat{W}_{\lambda_1}, \hat{W}_{\lambda_2}, ... , \hat{W}_{\lambda_k}$.
 \end{enumerate}
 \end{algorithm}
 
+The common bottleneck of algorithms introduced by \citet{cai2010singular,mazumder2010spectral,ma2011fixed} as well as other SVT-based approaches is the computation of the SVD of large matrices. This is particularly severe in typical matrix completion settings, such as the Netflix problem, where the matrix size is over $400{,}000 \times 20{,}000$. However, in our problem,
+\begin{align}\label{eq:small-rank}
+  \rank(WB') \leq \rank(B) = K \ll N,
+\end{align}
+with $K \sim 10$ in our motivating data example. While algorithms for large matrices are also applicable here, the property \eqref{eq:small-rank} makes the computation of SVD feasible in practice with generic packages such as PROPACK \citep{larsen2004propack}.
+
 \paragraph{Modeling new data.}
 
-In practice, we can collect two types of new data: (1) a new measurements of an existing patient $i$ in $\{1,2,...,N\}$; (2) a new patient $(N+1)$.
+For modeling new data, in practice, we are interested in two scenarios: (1) we collect a new measurements of an existing patient $i \in \{1,2,...,N\}$; (2) we observe a new patient $(N+1)$. In both cases, we simply use the current fit for each parameter $\lambda$ and update all models with newly observed data. This approach not only estimates new predictions but also slightly improves the existing model. 
 
-In both cases, the most elementary approach is to keep the current fit for each parameter $\lambda$ and update these models with newly observed data. This not only gives new predictions but it also improves each model. 
-
-\tr{[TODO] If $n_i < q$, where $q$ is the rank of the current model, we might impose some additional conditions on $U_i$ and/or shrink it}
+%\tr{[TODO] If $n_i < q$, where $q$ is the rank of the current model, we might impose some additional conditions on $U_i$ and/or shrink it}
 
 % \paragraph{Convergence.}
 
 % Convergence of the algorithm can be proven by an elementary extension of the proofs in \citet{mazumder2010spectral}. We demonstrate a formal mapping of our problem to their setting Appendix \ref{s:convergence}.
 
-\subsection{$\ell_1$-norm regularization}
+\subsection{$\ell_0$-norm regularization}
 
-While the nuclear norm normalization is motivated by convex relaxation of the rank, \citet{mazumder2010spectral} observe that in many cases it can outperform rank restricted least squares. Analogically to \textsc{Lasso}, shrinkage can allow a rank higher than the actual rank of the matrix, improving prediction. Conversely, this can also lead to problems if the underlying dimension is very small.
+While the nuclear norm relaxation \eqref{eq:rank-restricted} is motivated by making the problem convex, \citet{mazumder2010spectral} argue that in many cases it may give better results than the rank constraint. They draw an analogy to the relation between best-subset regression ($\ell_0$ regularization) and LASSO ($\ell_1$ regularization \citep{tibshirani1996regression, friedman2001elements}). In LASSO by shrinking model parameters we allow more parameters to be included, what can potentially improve the prediction if the true subset is larger than the one derived through $\ell_0$ regularization. In the case of \eqref{eq:matrixproblem-final}, shrinking the nuclear norm allows to include more dimensions of $W$ again potentially improving the prediction if the true dimension is high.
 
-A natural modification of the nuclear norm penalty \eqref{eq:mazumder}, is the $L_1$ penalty
-\begin{align}\label{eq:matrixproblem-final-l1}
-\min_{Z} \frac{1}{2} \|P_\Omega(Y - ZB')\|_F^2 + \lambda\|ZB'\|_1,
+%While the nuclear norm normalization is motivated by the convex relaxation of the rank, \citet{mazumder2010spectral} observe that in many cases it can outperform rank restricted least squares. Analogically to \textsc{Lasso}, shrinkage can allow a rank higher than the actual rank of the matrix, improving prediction.
+
+Conversely, the same phenomenon can also lead to problems if the underlying dimension is small. In such case, shrinking may allow including unnecessary dimensions emerging from noise. To remedy this issue, following the analogy with penalized linear regression, we may consider another classes of penalties. In particular, we may consider coming back to the rank constraint by modifying the nuclear norm penalty \eqref{eq:matrixproblem-final} to $\ell_0$. We define $\|W\|_0 = \rank(W)$. For solving
+\begin{align}\label{eq:matrixproblem-final-l0}
+\min_{W} \frac{1}{2} \|P_\Omega(Y - WB')\|_F^2 + \lambda\|W\|_0,
 \end{align}
-which we solve using Algorithm \ref{alg:hard-impute}. Multiple extensions and analogies to regularization in linear models can be drawn in this setting. See \citep{mazumder2010spectral} for more details on possible extensions of the problem \eqref{eq:rank-restricted}.
+we use Algorithm \ref{alg:hard-impute}. % refering to \citet{mazumder2010spectral}. %Multiple extensions and analogies to regularization in linear models can be drawn in this setting. See \citep{mazumder2010spectral} for more details on possible extensions of the problem \eqref{eq:rank-restricted}.
 
 \begin{algorithm}
 \caption{\textsc{Hard-Longitudinal-Impute}\label{alg:hard-impute}}
 \begin{enumerate}
-\item Initialize $Z^{old}_{\lambda_i}$ with solutions $\tilde{Z}_{\lambda_i}$ from \textsc{Soft-Longitudinal-Impute}
+\item Initialize $W^{old}_{\lambda_i}$ with solutions $\tilde{W}_{\lambda_i}$ from \textsc{Soft-Longitudinal-Impute}
 \item Do for $\lambda_1 > \lambda_2 > ... > \lambda_k$:
 \begin{enumerate}
 \item Repeat:
 \begin{enumerate}
-\item Compute $Z^{new} \leftarrow S_{\lambda_k}^H( (P_\Omega(Y) + P_\Omega^\perp(Z^{old}M'))M )$.
-\item If $\frac{\|Z^{new} - Z^{old}\|_F^2}{\|Z^{old}\|_F^2} < \varepsilon$ exit.
-\item Assign $Z^{old} \leftarrow Z^{new}$
+\item Compute $W^{new} \leftarrow S_{\lambda_k}^H( (P_\Omega(Y) + P_\Omega^\perp(W^{old}M'))M )$.
+\item If $\frac{\|W^{new} - W^{old}\|_F^2}{\|W^{old}\|_F^2} < \varepsilon$ exit.
+\item Assign $W^{old} \leftarrow W^{new}$
 \end{enumerate}
-\item Assign $\hat{Z}_{\lambda_k} \leftarrow Z^{new}$
+\item Assign $\hat{W}_{\lambda_k} \leftarrow W^{new}$
 \end{enumerate}
-\item Output $\hat{Z}_{\lambda_1}, \hat{Z}_{\lambda_2}, ... , \hat{Z}_{\lambda_k}$.
+\item Output $\hat{W}_{\lambda_1}, \hat{W}_{\lambda_2}, ... , \hat{W}_{\lambda_k}$.
 \end{enumerate}
 \end{algorithm}
 
+\tr{[TODO]} The problem \eqref{eq:matrixproblem-final-l0} is non-convex, however, by starting from the solutions of Algorithm \ref{alg:soft-impute} we explore the space around the global minimum of the $\ell_1$ version of the problem. This strategy has been successfully empirically \citep{ge2016matrix}.
+
+% and in recent years there has been a growing interest in analyzing properties of non-convex algorithms for matrix completion \cite{sun2016guaranteed}.
 
 \subsection{The link between reduced-rank model and \textsc{Soft-Longitudinal-Impute}}\label{s:the-link}
 
-%Let $L < K$ be a number of true factors and let $\Tau_{L\times K}$ be a matrix of $L$ factor loadings in the basis $M_{K\times T}$. 
-We investigate the relation between probabilistic and matrix-factorization approaches by starting with the probabilistic model \eqref{eq:probabilistic-model}. We show that the two methods coincide if the data is fully observed. For simplicity, we assume the mean $\mu = 0$. 
+%Let $L < K$ be a number of true factors and let $\Tau_{L\times K}$ be a matrix of $L$ factor loadings in the basis $M_{K\times T}$.
 
-Assume that observations come from the distribution
-\begin{align}\label{eq:model}
-  Y \sim \cN(0, M V \Lambda V'  M' + \sigma^2 I_T),
+Intuitively we might expect similarity between the principal directions derived using the probabilistic approach \eqref{eq:probabilistic} and their counterparts derived from the SVT-based approach. We investigate this relation by analyzing solutions given by SVT for matrices sampled from the probabilistic model.
+
+For simplicity, we start with the case where the mean $\mu = 0$ and the data is fully observed on a grid $G$ of $T$ time-points. Assume that observations $i \in \{1,2,...,N\}$ come from the mixed-effect model
+\begin{align}
+  \by_i &\sim \cN(\bw_i B', \sigma^2 I_T), \label{eq:model-y}\\
+  \bw_i &\sim \cN(0 , \Sigma), \label{eq:model-w}
 \end{align}
-where $V_{K \times K}$ is orthogonal and $\Lambda_{K \times K}$ is diagonal with $L$ positive decreasing coefficients.
-%where $\tau \in \R^{p}$ is a vector of coefficients of a population mean in the basis $B$. %, $\alpha_i \in \R^{1 \times k}$ such that $\alpha_i~\sim~\cN(0, D)$ is 'random effect' of subject $i$ with a diagonal $D \in \R^{k \times k}$ and $\varepsilon_i \sim \cN(0, \sigma I_d)$ is some observation noise.
-$L < K \ll T$. Let $X_1,X_2,...,X_n$ be observations drawn from this distribution. Model \eqref{eq:model} can be interpreted as a factor model with $L$ factors, defined by the first $L$ rows of $V'M'$.
+% V \Lambda V'
+%
+where $\Sigma$ is a covariance matrix of rank $q < K$ and variables $\{\bw_i, \by_i\}$ are uncorrelated. By the spectral decomposition theorem we write $\Sigma = V\Lambda V'$, where $V$ is a $K\times K$ orthogonal and $\Lambda$ is a diagonal $K\times K$ matrix with $q$ positive coefficients in decreasing order.
+Since $\by_i$ and $\bw_i$ are uncorrelated, the distribution \eqref{eq:model-y} can be rewritten as
+\begin{align}
+  \by_i &\sim \cN(0, B V \Lambda V'  B' + \sigma^2 I_T). \label{eq:model}
+\end{align}
+Note that, the model \eqref{eq:model} is a factor model with $q$ factors--the first $q$ columns of $BV$.
 
-One approach to estimate parameters in \eqref{eq:model} is to first decompose $XM = U D W'$ using SVD. Then, by Theorem 9.4.1 (\citet{mardia1980multivariate}) derived from \citep{joreskog1967some}, for a fixed $\sigma$, the likelihood wrt. $(\lambda,V)$ is maximized by
-\[
- \Lambda = D_{\sigma^2} \text{ and } V = W,
-\]
-where $D_\sigma$ is the thresholded $D$ as defined in \eqref{eq:thresholding}.
+The following theorem constitutes a link between the mixed-effect model and SVT. It is adapted from Theorem 9.4.1 in \citet{mardia1980multivariate}, which was derived from \citet{joreskog1967some}, 
 
-Now, given the parametric representation, there are multiple ways to estimate factor scores, i.e. a matrix $A$ such that $X \sim AD_{\sigma^2}V'$, notably Spearman's scores, Bartlett's scores and Thompson's scores \citep{kim1978factor}. \citet{james2000principal} find maximum likelihood estimates for all parameters together. However, taking $W = U$ brings us to the solution of \eqref{eq:optsvd} as long as $\lambda = \sigma^2$.
+\begin{theorem}\label{thm:maxlike}
+  Let $Y = [\by_1,...,\by_N]'$ be the observed matrix and let $S_{\sigma^2}(YB) = UD_{\sigma^2}Q'$. Then, $(D_{\sigma^2},Q)$ is the maximum likelihood estimator of $(\Lambda,V)$.
+\end{theorem}
 
-Note that in the factor analysis framework, the likelihood of $(V,\sigma)$ can be parametrized by $\sigma$ and we can find the optimal solution analytically. This corresponds to minimizing \eqref{eq:optsvd} for different $\lambda$, however there is no known analytical solution.
+ %One approach to estimate parameters in \eqref{eq:model-y} is to first decompose $YB = U D W'$ using SVD. ,
+Factor analysis provides us not only with estimates of $\Lambda$ and $V$ but also with estimates of the individual latent variables $W = [\bw_1,...,\bw_N]'$.
+%% For a fixed $\sigma$, the likelihood wrt. $(\lambda,V)$ is maximized by
+%% \[
+%%  \Lambda = D_{\sigma^2} \text{ and } V = Q,
+%% \]
+%% where $D_\sigma$ is the thresholded $D$ as defined in \eqref{eq:thresholding}.
+In multivariate analysis literature, there are multiple ways to estimate factor scores, i.e. a matrix $A$ such that $X \sim AD_{\sigma^2}V'$, most notably Spearman's scores, Bartlett's scores and Thompson's scores \citep{kim1978factor}. %\citet{james2000principal} find maximum likelihood estimates for all parameters together.
+Simply taking $W = U$ as the estimate of the scores corresponds to the solution of \eqref{eq:optsvd} as long as $\lambda = \sigma^2$.
 
-This observations relates to the intuition that for a zero mean processes, sparse functional principal components and an SVD-based methods should yield similar principal directions. This intuition is also illustrated by our simulation study in Section \ref{s:simulation} (see Figure \ref{fig:principal-components}).
+Note that in Theorem \ref{thm:maxlike} we assume that $\sigma^2$ is known, which is unfeasible in practice. However, the likelihood of $(V,\sigma)$ can be parametrized by $\sigma$ and we can find the optimal solution analytically. This corresponds to minimizing \eqref{eq:optsvd} for different $\lambda$.
+
+%In the sparsely observed case, we want to approximate the same 
+%\tr{TODO} }
+
+These similarities is also confirmed in our simulation study in Section \ref{s:simulation} (see Figure \ref{fig:principal-components}). Note that similar analogy is drawn between the classical principal component analysis and probabilistic principal component analysis by \citet{tipping1999probabilistic} and \citet{james2000principal}. 
 
 % Bartlett's estimate of the scores is
 % \[
@@ -498,21 +544,20 @@ This observations relates to the intuition that for a zero mean processes, spars
 %Let $X_1,X_2,...,X_n$ be observations from \eqref{model:x}. Let $\bX = [X_1',X_2',...,X_n']'$. Consider
 
 
-\section{Multivariate sparse longitudinal modeling}
+\section{Multivariate sparse longitudinal modeling}\label{s:multivariate}
 
-One major advantage of the matrix-factorization approach is its simple algebraic formulation and solution which makes it easily adaptable to more complex situations. In this chapter, we present methods for expanding our methodology to a process of variables of interest measured sparsely in time. We explore two cases: dimensionality reduction, where we project sparsely sampled multivariate processes to small latent spaces and linear regression, where multivariate processes are used for prediction of another process of interest.
+One major advantage of the matrix-factorization approach is its simple algebraic formulation and solution which makes it easily adaptable to more complex situations. In this section, we present methods for expanding our methodology to a process of variables of interest measured sparsely in time. We explore two cases: (1) dimensionality reduction, where we project sparsely sampled multivariate processes to small latent spaces, and (2) linear regression, where multivariate processes are used for prediction of another process of interest. Both cases are directly motivated by medical applications where multiple clinical tests are taken sparsely in time.
 
-Both cases are directly motivated by medical applications where multiple clinical tests are taken sparsely in time. Dimensionality reduction allows to understand patients' intrinsic features and compare them with each other, while regression allows to use additional information in estimation of teh progression of the main parameter of interest.
+The dimensionality reduction allows to compare subjects with each other in a smaller space, independent of the sampling time of the orginal processes. The regression setting allows to use additional covariates in estimation of the progression of the main parameter of interest. To motivate both cases we start with a bivariate process.
 
-\subsection{Dimensionality reduction}
-
-Suppose that for every individual we observe a multivariate process, e.g. results of multiple medical tests, and we want to find a projection to $\R^d$ maximizing the variance for some $d \in \N$. For fully observed $X_1,...,X_p$ this would correspond to the reduced-rank SVD of concatenated matrices $X_1:X_2:...:X_p$. In this section, we introduce a method for finding such projection when the data is sparsely observed. We illustrate the method on bivariate processes, however it can be easily extended to any $p$-dimensional processes. 
-
+\subsection{Bivariate processes}
 Suppose we sparsely observe processes $X_{N\times T}$ and $Y_{N\times T}$. Both matrices are observed with some noise $E_X$ and $E_Y$ correspondingly. Assume that 
 \begin{align*}
 X &= \tilde{X} + E_X\\
-Y &= \tilde{Y} + E_Y.
+Y &= \tilde{Y} + E_Y
 \end{align*}
+and we expect dependence between the two processes.
+
 The task of finding common latent factors can be seen as a natural extension of the equation \eqref{eq:rank-restricted}. We solve
 \begin{gather*}
 \text{minimize } \rank{(\hat{X}:\hat{Y})} \\
@@ -546,21 +591,25 @@ See Algorithm \ref{alg:soft-PCA} for the detailed description of the procedure. 
 \caption{\textsc{Soft-Longitudinal-PCA}\label{alg:soft-PCA}}
 \begin{enumerate}
 \item Normalize $X_1,...,X_p$ (optional)
-\item Initialize $Z^{old}_1,...,Z^{old}_p$ with zeros
+\item Initialize $W^{old}_1,...,W^{old}_p$ with zeros
 \item Do for $\lambda_1 > \lambda_2 > ... > \lambda_k$:
 \begin{enumerate}
 \item Repeat:
 \begin{enumerate}
-\item Compute $Z^{prj}_i = (P_\Omega(X_i) + P_\Omega^\perp(Z_i^{old}M'))M$ for $i \in \{1,...,p\}$,
-\item Compute $Z^{new} \leftarrow S_{\lambda_k}( Z^{prj}_1 : ... : Z^{prj}_p )$.
-\item If $\frac{\|Z^{new} - Z^{old}\|_F^2}{\|Z^{old}\|_F^2} < \varepsilon$ exit.
-\item Assign $Z^{old} \leftarrow Z^{new}$
+\item Compute $W^{prj}_i = (P_\Omega(X_i) + P_\Omega^\perp(W_i^{old}M'))M$ for $i \in \{1,...,p\}$,
+\item Compute $W^{new} \leftarrow S_{\lambda_k}( W^{prj}_1 : ... : W^{prj}_p )$.
+\item If $\frac{\|W^{new} - W^{old}\|_F^2}{\|W^{old}\|_F^2} < \varepsilon$ exit.
+\item Assign $W^{old} \leftarrow W^{new}$
 \end{enumerate}
-\item Assign $\hat{Z}_{\lambda_k} \leftarrow Z^{new}$
+\item Assign $\hat{W}_{\lambda_k} \leftarrow W^{new}$
 \end{enumerate}
-\item Output $\hat{Z}_{\lambda_1}, \hat{Z}_{\lambda_2}, ... , \hat{Z}_{\lambda_k}$.
+\item Output $\hat{W}_{\lambda_1}, \hat{W}_{\lambda_2}, ... , \hat{W}_{\lambda_k}$.
 \end{enumerate}
 \end{algorithm}
+
+\subsection{Dimensionality reduction}
+
+Suppose that for every individual we observe a multivariate process, e.g. results of multiple medical tests, and we want to find a projection to $\R^d$ maximizing the variance for some $d \in \N$. For fully observed $X_1,...,X_p$ this would correspond to the reduced-rank SVD of concatenated matrices $X_1:X_2:...:X_p$. In this section, we introduce a method for finding such projection when the data is sparsely observed. We illustrate the method on bivariate processes, however it can be easily extended to any $p$-dimensional processes. 
 
 \subsection{Regression}
 
@@ -773,7 +822,7 @@ regression & 128.34 & \textbf{11.95} \\
 
 \appendix
 
-\section{Convergence Analysis}\label{s:convergence}
+\section{\tr{TODO: Convergence Analysis}}\label{s:convergence}
 
 We prove convergence by mapping our problem into the framework of \citet{mazumder2010spectral}. First we redefine the observed values by defining the operators
 \[
@@ -785,21 +834,21 @@ $P_{\Omega,M}(X) + P_{\Omega,M}^\perp(X) = XM$ and
 	\|P_{\Omega,M}(X) + P_{\Omega,M}^\perp(X)\|_F^2 = \|P_{\Omega,M}(X)\|_F^2 + \|P_{\Omega,M}^\perp(X)\|_F^2.
 \end{equation} We define
 \begin{align}\label{eq:helper-function}
- f_\lambda(Z) := \frac{1}{2} \|P_{\Omega,M}(X) - P_{\Omega,M}(ZM')\|_F^2 + \lambda\|Z\|_*.
+ f_\lambda(W) := \frac{1}{2} \|P_{\Omega,M}(X) - P_{\Omega,M}(WM')\|_F^2 + \lambda\|W\|_*.
 \end{align}
-Our objective is to find $ Z_\lambda = {\arg\min}_Z f_\lambda(Z)$. We define
+Our objective is to find $ Z_\lambda = {\arg\min}_Z f_\lambda(W)$. We define
 \[
-Q_\lambda(Z|\tilde{Z}) = \frac{1}{2}\|P_{\Omega,M}(X) + P_{\Omega,M}^{\perp}(\tilde{Z} M') - Z\|_F^2 + \lambda \|Z\|_*,
+Q_\lambda(W|\tilde{W}) = \frac{1}{2}\|P_{\Omega,M}(X) + P_{\Omega,M}^{\perp}(\tilde{W} M') - Z\|_F^2 + \lambda \|W\|_*,
 \]
-as a surrogate of $f_\lambda$. One can show that Algorithm \ref{alg:soft-impute} in the step $k$ computes $Z_\lambda^{k+1} = \argmin_Z Q_\lambda(Z|Z_\lambda^k)$.
+as a surrogate of $f_\lambda$. One can show that Algorithm \ref{alg:soft-impute} in the step $k$ computes $W_\lambda^{k+1} = \argmin_Z Q_\lambda(W|W_\lambda^k)$.
 
 The key ingredients of the proof of convergence are the following two lemmas,
 \begin{lemma}
 Suppose the matrix $W_{N \times T}$ has rank $r \leq K$. The solution to the optimization problem
 \begin{equation}\label{eq:lemma1}
-\min_Z \frac{1}{2}\|WM - Z \|_F^2 + \lambda\|Z\|_*
+\min_Z \frac{1}{2}\|WM - Z \|_F^2 + \lambda\|W\|_*
 \end{equation}
-is given by $\hat{Z} = S_\lambda(WM)$ where
+is given by $\hat{W} = S_\lambda(WM)$ where
 \[
 S_\lambda(WM) \equiv UD_\lambda V' \text{ with } D_\lambda = \diag[(d_1 - \lambda)_+, ..., (d_r - \lambda)_+],
 \]
@@ -808,23 +857,23 @@ $UDV'$ is the SVD of $WM$, $D = \diag[d_1,...,d_r]$, and $t_+ = \max(t,0)$.
 \begin{proof}
 % Note that for any $A_{N\times T}$ of rank $K$, we have $S_\lambda(AM') = S_\lambda(A)M'$ and since \eqref{eq:lemma1} is equivalent to
 % \[
-% \min_Z \frac{1}{2}\|WM - Z \|_F^2 + \lambda\|Z\|_*,
+% \min_Z \frac{1}{2}\|WM - Z \|_F^2 + \lambda\|W\|_*,
 % \]
-The proof follows from Lemma 1 from \citep{mazumder2010spectral}. %, and $\hat{Z} = S_\lambda(WM) = S_\lambda(W)M$.
+The proof follows from Lemma 1 from \citep{mazumder2010spectral}. %, and $\hat{W} = S_\lambda(WM) = S_\lambda(W)M$.
 % Similarly, we can show that the sequence 
 % \begin{equation}\label{eq:sequence}
-% Z_\lambda^{k+1}M' = S_\lambda(P_\Omega(X) - P_\Omega(Z_\lambda^k M')),
+% Z_\lambda^{k+1}M' = S_\lambda(P_\Omega(X) - P_\Omega(W_\lambda^k M')),
 % \end{equation}
 % defined in Algorithm \ref{alg:soft-impute}, converges to the solution of \eqref{eq:matrixproblem-final}. 
 \end{proof}
 \begin{lemma}\label{eq:z-sequence}
-For every fixed $\lambda \geq 0$, define a sequence $Z_\lambda^k$ by
+For every fixed $\lambda \geq 0$, define a sequence $W_\lambda^k$ by
 \[
-Z_\lambda^{k+1} = \argmin_Z Q_\lambda(Z|Z_\lambda^k)
+Z_\lambda^{k+1} = \argmin_Z Q_\lambda(W|W_\lambda^k)
 \]
-with any starting point $Z_\lambda^0$. The sequence $Z_\lambda^k$ satisfies 
+with any starting point $W_\lambda^0$. The sequence $W_\lambda^k$ satisfies 
 \[
-f_\lambda(Z_\lambda^{k+1}) \leq  Q_\lambda(Z_\lambda^{k+1} | Z_\lambda^k ) \leq f_\lambda(Z_\lambda^{k})
+f_\lambda(W_\lambda^{k+1}) \leq  Q_\lambda(W_\lambda^{k+1} | Z_\lambda^k ) \leq f_\lambda(W_\lambda^{k})
 \]
 \end{lemma}
 \begin{proof}
@@ -832,22 +881,22 @@ Thanks to properties of $P_{\Omega,M}(X)$, the proof follows from Lemma 2 from \
 \end{proof}
 Similarly, thanks to equivalent properties of $P_\Omega$ and $P_{\Omega,M}$, we get equivalent results for Lemmas 3-6 from \citep{mazumder2010spectral}. This also allows implies the main result
 \begin{theorem}
-The sequence of $Z_{\lambda}^k$ defined in Lemma \ref{eq:z-sequence} converges to a limit $Z_\lambda^\infty$ that solves
+The sequence of $W_{\lambda}^k$ defined in Lemma \ref{eq:z-sequence} converges to a limit $W_\lambda^\infty$ that solves
 \[
-\min_Z \frac{1}{2} \|P_{\Omega,M}(X) - P_{\Omega,M}(ZM')\|_F^2 + \lambda\|Z\|_*,
+\min_Z \frac{1}{2} \|P_{\Omega,M}(X) - P_{\Omega,M}(WM')\|_F^2 + \lambda\|W\|_*,
 \]
 \end{theorem}
 
 \begin{proof}
-It's sufficient to show that $Z_{\lambda}^k$ has a limit. Then, the convergence follows from Lemma 5 in \citep{mazumder2010spectral}.
+It's sufficient to show that $W_{\lambda}^k$ has a limit. Then, the convergence follows from Lemma 5 in \citep{mazumder2010spectral}.
 
 Now
 \begin{align*}
-\|Z_\lambda - Z_\lambda^k\|_F^2 &= \|S_\lambda((P_{\Omega,M}(X) + P_{\Omega,M}^\perp(Z_\lambda M'))M) - S_\lambda((P_{\Omega,M}(X) + P_{\Omega,M}^\perp(Z_\lambda^{k-1}M'))M)\|_F^2 \\
-&\leq \|(P_{\Omega,M}(X) + P_{\Omega,M}^\perp(Z_\lambda M'))M - (P_{\Omega,M}(X) + P_{\Omega,M}^\perp(Z_\lambda^{k-1}M'))M\|_F^2\\
-&= \|P_{\Omega,M}^\perp(Z_\lambda M') - P_{\Omega,M}^\perp(Z_\lambda^{k-1}M')\|_F^2\\
-&= \|P_{\Omega,M}^\perp(Z_\lambda M' - Z_\lambda^{k-1}M')\|_F^2\\
-&\leq \|Z_\lambda - Z_\lambda^{k-1}\|_F^2
+\|W_\lambda - Z_\lambda^k\|_F^2 &= \|S_\lambda((P_{\Omega,M}(X) + P_{\Omega,M}^\perp(W_\lambda M'))M) - S_\lambda((P_{\Omega,M}(X) + P_{\Omega,M}^\perp(W_\lambda^{k-1}M'))M)\|_F^2 \\
+&\leq \|(P_{\Omega,M}(X) + P_{\Omega,M}^\perp(W_\lambda M'))M - (P_{\Omega,M}(X) + P_{\Omega,M}^\perp(W_\lambda^{k-1}M'))M\|_F^2\\
+&= \|P_{\Omega,M}^\perp(W_\lambda M') - P_{\Omega,M}^\perp(W_\lambda^{k-1}M')\|_F^2\\
+&= \|P_{\Omega,M}^\perp(W_\lambda M' - Z_\lambda^{k-1}M')\|_F^2\\
+&\leq \|W_\lambda - Z_\lambda^{k-1}\|_F^2
 \end{align*}
 and the reminder of the proof follows from the proof of Theorem 1 in \citep{mazumder2010spectral}.
 \end{proof}
