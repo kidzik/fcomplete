@@ -546,41 +546,69 @@ These similarities is also confirmed in our simulation study in Section \ref{s:s
 
 \section{Multivariate sparse longitudinal modeling}\label{s:multivariate}
 
-One major advantage of the matrix-factorization approach is its simple algebraic formulation and solution which makes it easily adaptable to more complex situations. In this section, we present methods for expanding our methodology to a process of variables of interest measured sparsely in time. We explore two cases: (1) dimensionality reduction, where we project sparsely sampled multivariate processes to small latent spaces, and (2) linear regression, where multivariate processes are used for prediction of another process of interest. Both cases are directly motivated by medical applications where multiple clinical tests are taken sparsely in time.
+One major advantage of the matrix-factorization approach is its simple algebraic formulation and solution which makes it easily adaptable to more complex situations. In this section, we present methods for expanding our methodology to a process of variables of interest measured sparsely in time. We explore two cases: (1) dimensionality reduction, where we project sparsely sampled multivariate processes to small latent spaces, and (2) linear regression, where multivariate processes are used for prediction of another process of interest.
 
-The dimensionality reduction allows to compare subjects with each other in a smaller space, independent of the sampling time of the orginal processes. The regression setting allows to use additional covariates in estimation of the progression of the main parameter of interest. To motivate both cases we start with a bivariate process.
+Both cases are directly motivated by medical applications where multiple clinical tests are taken sparsely in time. The dimensionality reduction allows to compare subjects with each other in a smaller space, independent of the sampling time of the orginal processes. The regression setting allows to use additional covariates in estimation of the progression of the main parameter of interest. To motivate both cases from the theorethical standpoint we start with a bivariate process.
 
-\subsection{Bivariate processes}
-Suppose we sparsely observe processes $X_{N\times T}$ and $Y_{N\times T}$. Both matrices are observed with some noise $E_X$ and $E_Y$ correspondingly. Assume that 
+\subsection{Motivation: Bivariate processes}
+Suppose we observe matrices $X_{N\times T}$, $Y_{N\times T}$ and we want to use $X$ to estimate $Y$ better, if possible. Both matrices are observed with some noise $E_X$ and $E_Y$ correspondingly. Assume a linear relation between them, i.e. 
 \begin{align*}
-X &= \tilde{X} + E_X\\
-Y &= \tilde{Y} + E_Y
+X = \tilde{X} + E_X \text{ \ and \ } Y = \tilde{X}R' + E_{Y},
 \end{align*}
-and we expect dependence between the two processes.
-
-The task of finding common latent factors can be seen as a natural extension of the equation \eqref{eq:rank-restricted}. We solve
-\begin{gather*}
-\text{minimize } \rank{(\hat{X}:\hat{Y})} \\
-\frac{1}{2} \| X - \hat{X} \| + \frac{1}{2} \| Y - \hat{Y} \|_F^2 \leq \delta,
-\end{gather*}
-in which again can relax the rank to the nuclear norm for making the problem convex. The Lagrangian form of the relaxed problem is
-\begin{gather}
-\argmin_{\hat{X},\hat{Y}} \frac{1}{2} \| X - \hat{X} \|_F^2 + \frac{1}{2}\| Y - \hat{Y} \|_F^2 + \lambda \| (\hat{X} : \hat{Y}) \|_*.\label{eq:two-vars}
-\end{gather}
-Using SVD any solution can be written as $(\hat{X} : \hat{Y}) = U (V_X'M' : V_Y'M')$. Now let $\hat{X} = UV_X'M'$ and $\hat{Y} = UV_Y'M'$. 
-The problem \eqref{eq:two-vars} can be becomes
+where $\tilde{X}$ is low-rank, i.e. $\tilde{X} = WA'$, and $E_X,E_Y$ are the measurement errors. Then, we can write it as
 \begin{align*}
-\argmin_{U,V_X,V_Y} \frac{1}{2} \| XM - U V_X' \|_F^2 + \frac{1}{2} \| YM - U V_Y' \|_F^2 + \lambda\|U\|_*,
+X = WA' + E_X \text{ \ and \ } Y = WB' + E_{Y},
 \end{align*}
-which is equivalent to
-\begin{align}\label{eq:final-bivar}
-\argmin_{U,V_X,V_Y} \frac{1}{2} \| (XM:YM) - U (V_X:V_Y)' \|_F^2 + \lambda\|U\|_*.
+where $B = RA$.
+
+Now, in order to reconstruct the low-rank decomposition of $Y$ we modify the problem \eqref{eq:rank-restricted} to
+\begin{align}
+\text{minimize\ \ } & \| Y - WB' \|_F^2,  \nonumber\\
+\text{subject to\ \ } & \| X - WA' \|_F^2 \leq \delta.
 \end{align}
-where $(\cdot:\cdot)$ operator is concatenation of matrices column-wise. This can be solved using direct extension of Algorithm \ref{alg:soft-impute}. Moreover, equation \eqref{eq:final-bivar} suggests an extension to more covariates
-\begin{align*}%\label{eq:multivar}
-\argmin_{U,V} \frac{1}{2} &\| (X_{(1)}M_{(1)}:X_{(2)}M_{(2)}:...:X_{(p)}M_{(p)}) - U V' \|_F^2 + \lambda\|U\|_*.
+The Lagrangian takes form 
+\begin{align*}
+\min_{A,B,W} \| Y - WB' \|_F^2  + \gamma\| X - WA' \|_F^2,
 \end{align*}
-Note that by allowing different basis, we also capture covariates which do not change in time if $X_{(i)}$ is an $N\times 1$ matrix and $M_{(i)} = 1$ for some $1 \leq i \leq p$.
+or simply
+\begin{align*}
+\min_{A,B,W} \| (Y: \gamma X) - W(B: \gamma A)' \|_F^2,
+\end{align*}
+where $\gamma$ can be interpreted as a scaling factor.
+
+Suppose the scaling factor $\gamma$ is known, but we do not know the rank of $W$. The task of finding common latent factors can be seen as a natural extension of the equation \eqref{eq:rank-restricted}. We solve
+\begin{gather*}
+\text{minimize } \|W\|_*\\
+\frac{1}{2} \| (Y:X) - W(B:A)' \|_F^2 \leq \delta
+\end{gather*}
+and the Lagrangian form of the relaxed problem is
+\begin{align}
+  \argmin_{A,B,W} \frac{1}{2} \| (X:Y) - W(B:A)' \|_F^2 + \lambda \| W \|_*.  \label{eq:final-bivariate}
+\end{align}
+
+This approach can be seen from two angles. First, the low-rank matrix $W$ provides a joint low-rank representation of matrices $X$ and $Y$ and can be seen as a dimensionality reduction technique as we discuss in Section \ref{ss:dim-red}. Second, such low-rank representation can be directly used for regression, as discussed in Section \ref{ss:regression}.
+
+%% Using SVD any solution can be written as $(\hat{X} : \hat{Y}) = U (V_X'M' : V_Y'M')$. Now let $\hat{X} = UV_X'M'$ and $\hat{Y} = UV_Y'M'$. 
+%% The problem \eqref{eq:two-vars} can be becomes
+%% \begin{align*}
+%% \argmin_{U,V_X,V_Y} \frac{1}{2} \| XM - U V_X' \|_F^2 + \frac{1}{2} \| YM - U V_Y' \|_F^2 + \lambda\|U\|_*,
+%% \end{align*}
+%% which is equivalent to
+%% \begin{align}\label{eq:final-bivar}
+%% \argmin_{U,V_X,V_Y} \frac{1}{2} \| (XM:YM) - U (V_X:V_Y)' \|_F^2 + \lambda\|U\|_*.
+%% \end{align}
+%% where $(\cdot:\cdot)$ operator is concatenation of matrices column-wise. This can be solved using direct extension of Algorithm \ref{alg:soft-impute}.
+
+\subsection{Dimensionality reduction}\label{ss:dim-red}
+
+Suppose that for every individual we observe a multivariate process, e.g. results of multiple medical tests, and we want to find a projection to $\R^d$ maximizing the variance for some $d \in \N$. For fully observed $X_1,...,X_p$ this would correspond to the reduced-rank SVD of concatenated matrices $X_1:X_2:...:X_p$. %In this section, we introduce a method for finding such projection when the data is sparsely observed. We illustrate the method on bivariate processes, however it can be easily extended to any $p$-dimensional processes. 
+Equation \eqref{eq:final-bivariate} suggests an extension to more covariates by solving
+\begin{align*}%\label{eq:multivar}
+\argmin_{U,V} \frac{1}{2} &\| (X_{(1)}M_{(1)}:X_{(2)}M_{(2)}:...:X_{(p)}M_{(p)}) - U V' \|_F^2 + \lambda\|U\|_*,
+\end{align*}
+where $M_{(1)}$ are basis in which we to approximate processes.
+
+Note that by allowing different basis, we also capture covariates which do not change in time if $X_{(i)}$ is a $N\times 1$ matrix and $M_{(i)} = 1$ for some $1 \leq i \leq p$.
 Finally, if measurements are on different scales, we may normalize them using any scaling $\gamma_1, \gamma_2,..., \gamma_p > 0$, and taking
 \begin{align*}%\label{eq:multivar-scaled}
 \argmin_{U,V} \frac{1}{2} &\| (\gamma_1 X_{(1)}M_{(1)}:\gamma_2 X_{(2)}M_{(2)}:...:\gamma_p X_{(p)}M_{(p)}) - U V' \|_F^2 + \lambda\|U\|_*.
@@ -607,11 +635,7 @@ See Algorithm \ref{alg:soft-PCA} for the detailed description of the procedure. 
 \end{enumerate}
 \end{algorithm}
 
-\subsection{Dimensionality reduction}
-
-Suppose that for every individual we observe a multivariate process, e.g. results of multiple medical tests, and we want to find a projection to $\R^d$ maximizing the variance for some $d \in \N$. For fully observed $X_1,...,X_p$ this would correspond to the reduced-rank SVD of concatenated matrices $X_1:X_2:...:X_p$. In this section, we introduce a method for finding such projection when the data is sparsely observed. We illustrate the method on bivariate processes, however it can be easily extended to any $p$-dimensional processes. 
-
-\subsection{Regression}
+\subsection{Regression}\label{ss:regression}
 
 On adding covariates \cite{condli1999bayesian}.
 

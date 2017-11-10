@@ -11,7 +11,7 @@
 \BOOKMARK [2][-]{subsection.3.5}{0-norm regularization}{section.3}% 11
 \BOOKMARK [2][-]{subsection.3.6}{The link between reduced-rank model and Soft-Longitudinal-Impute}{section.3}% 12
 \BOOKMARK [1][-]{section.4}{Multivariate sparse longitudinal modeling}{}% 13
-\BOOKMARK [2][-]{subsection.4.1}{Bivariate processes}{section.4}% 14
+\BOOKMARK [2][-]{subsection.4.1}{Motivation: Bivariate processes}{section.4}% 14
 \BOOKMARK [2][-]{subsection.4.2}{Dimensionality reduction}{section.4}% 15
 \BOOKMARK [2][-]{subsection.4.3}{Regression}{section.4}% 16
 \BOOKMARK [1][-]{section.5}{Simulations}{}% 17

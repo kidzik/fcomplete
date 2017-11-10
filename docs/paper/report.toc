@@ -12,12 +12,12 @@
 \contentsline {subsection}{\numberline {3.5}$\ell _0$-norm regularization}{11}{subsection.3.5}
 \contentsline {subsection}{\numberline {3.6}The link between reduced-rank model and \textsc {Soft-Longitudinal-Impute}}{12}{subsection.3.6}
 \contentsline {section}{\numberline {4}Multivariate sparse longitudinal modeling}{13}{section.4}
-\contentsline {subsection}{\numberline {4.1}Bivariate processes}{13}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.1}Motivation: Bivariate processes}{13}{subsection.4.1}
 \contentsline {subsection}{\numberline {4.2}Dimensionality reduction}{14}{subsection.4.2}
 \contentsline {subsection}{\numberline {4.3}Regression}{14}{subsection.4.3}
 \contentsline {section}{\numberline {5}Simulations}{15}{section.5}
 \contentsline {paragraph}{Results}{16}{section*.4}
 \contentsline {section}{\numberline {6}Data study}{17}{section.6}
 \contentsline {section}{References}{19}{section*.6}
-\contentsline {section}{\numberline {A}{\leavevmode {\color {red}TODO: Convergence Analysis}}}{23}{appendix.A}
+\contentsline {section}{\numberline {A}{\leavevmode {\color {red}TODO: Convergence Analysis}}}{24}{appendix.A}
 \contentsline {section}{\numberline {B}\texttt {fimpute} package}{25}{appendix.B}
