@@ -1,4 +1,4 @@
-# library("devtools")
+library("devtools")
 # devtools::install_git("https://github.com/kidzik/fpca.git",reload = TRUE)
 # devtools::install(".")
 
@@ -7,7 +7,7 @@ library("fcomplete")
 library("clusterGeneration")
 library("fda")
 library("fMultivar")
-source("R/mixedmodel.R")
+#source("R/mixedmodel.R")
 
 ntrials = 1
 RES = array(0,c(2,2,ntrials))
