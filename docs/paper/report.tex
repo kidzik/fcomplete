@@ -9,12 +9,11 @@
 \usepackage{algpseudocode}
 \usepackage{amsthm}
 \usepackage{mathtools}  
-%\usepackage[OT1]{fontenc}
+%\usepackage[OT1]{fontenc} 
 \usepackage{amsmath}
 \usepackage[colorlinks,citecolor=blue,urlcolor=blue]{hyperref}
-\usepackage[authoryear]{natbib}
-
-\bibliographystyle{plainnat}
+\usepackage{natbib}
+\bibliographystyle{imsart-nameyear}
 
 \startlocaldefs
 \numberwithin{equation}{section}
@@ -42,38 +41,43 @@
 \DeclareMathOperator*{\Var}{Var}
 \DeclareMathOperator*{\minimize}{minimize\ \ }
 \DeclareMathOperator*{\subjectto}{subject\ to\ \ }
+
 \endlocaldefs
+
+%\usepackage[backend=biber]{biblatex}
+%\addbibresource{report.bib}
+%\DeclareNameAlias{default}{last-first}
 
 \begin{document}
 
 \begin{frontmatter}
-\title{Longitudinal modeling\\using matrix factorization}
-\runtitle{Longitudinal modeling using matrix factorization}
+\title{Longitudinal data analysis\\using matrix factorization\thanksref{t1}}
+\runtitle{Longitudinal data analysis}
 
 
 \begin{aug}
-\author{\fnms{Trevor} \snm{Hastie}\ead[label=e1]{hastie@stanford.edu}}\thanksref{t1}
+\author{\fnms{Trevor} \snm{Hastie}\ead[label=e1]{hastie@stanford.edu}}%\thanksref{t1}
 \and
-\author{\fnms{\L ukasz} \snm{Kidzi\'nski}\ead[label=e2]{lukasz.kidzinski@stanford.edu}}\thanksref{t1}
+\author{\fnms{\L ukasz} \snm{Kidzi\'nski}\ead[label=e2]{lukasz.kidzinski@stanford.edu}}%\thanksref{t1}
 
-\thankstext{t1}{Partially sponsored by the Mobilize Center, a National Institutes of Health Big Data to Knowledge (NIH BD2K) Center of Excellence supported through Grant U54EB020405.}
+\thankstext{t1}{Research supported by the Mobilize Center, a National Institutes of Health Big Data to Knowledge (NIH BD2K) Center of Excellence supported through Grant U54EB020405.}
 \runauthor{Trevor Hastie and {\L}ukasz Kidzi\'nski}
 
 \affiliation{Stanford University}
 
-\address{Department of Statistics, Stanford University\\ 
-          \printead{e1}}
-\address{Department of Bioengineering, Stanford University\\ 
-          \printead{e2}}
+\address{Stanford University\\
+\printead{e1,e2}}
+%\address{\thanksmark{m1}Department of Statistics, Stanford University}%\\\printead{e1}}
+%\address{\thanksmark{m2}Department of Bioengineering, Stanford University}%\\\printead{e2}}
 
 \end{aug}
 
 \begin{abstract}
   In medical research, measurements are often collected sparsely and irregularly in time while the data acquisition is expensive, inconvenient or unethical. Examples include, measurements of spine bone mineral density, cancer growth through mammography or biopsy, progression of defect of vision or assessment of gait in patients with neurological disorders. Since the data collection is often costly and inconvenient, estimation of progression from sparse observations is of great interest for practitioners.
 
-  Such data is often analyzed in the context of a mixed-effect model where time is treated as both random and fixed effect. Alternatively, researchers analyze gaussian processes or functional data, where observations are assumed to be drawn from a certain distribution of processes. These powerful tools are flexible, but rely on a large set of probabilistic assumptions and require careful deployment.
+  Such data is often analyzed in the context of a mixed-effect model where time is treated as both random and fixed effect. Alternatively, researchers analyze gaussian processes or functional data, where observations are assumed to be drawn from a certain distribution of processes. These models are flexible, but rely on a large set of probabilistic assumptions and require careful deployment.
   
-  In this study we propose an alternative elementary framework for analyzing multivariate longitudinal data, relying on matrix factorization. Our method yields point estimates of progression processes by the means of iterative application of the SVD.
+  In this study we propose an alternative elementary framework for analyzing longitudinal data, relying on matrix factorization. Our method yields point estimates of progression curves by iterative application of the SVD. The framework covers multivariate longitudinal data and regression.
 
   
 \end{abstract}
@@ -88,6 +92,8 @@
 \kwd{multivariate longitudinal data}
 \kwd{functional data analysis}
 \kwd{matrix factorization}
+\kwd{regression}
+\kwd{interpolation}
 \end{keyword}
 
 \end{frontmatter}
@@ -135,7 +141,7 @@ If the set of observed values is dense, simple interpolation using a continuous 
  \argmin_{\bw_i}\sum_{j=1}^{n_i}\left|y_{i,j} - \bw_i'\bb(t_{i,j})\right|^2.
 \end{align}
 
-It is often convenient to compute principal functional components and represent curves in the space spanned by the first few of them. This representation, referred to as a {\it Karhunen-Lo\`eve} expansion \citep{watanabe1965karhunen,kosambi2016statistics}, has became a foundation of many functional data analysis workflows \citep{ramsay1991some,yao2005linear,cnaan1997tutorial,laird1988missing,hormann2015dynamic,horvath2012inference,besse1997simultaneous}. %If measurements are dense, confidence in estimates of $\bw_i$ is high and therefore the sample covariance of $\bw_i$ might also be an accurate estimator. 
+It is often convenient to compute principal functional components and represent curves in the space spanned by the first few of them. This representation, referred to as a {\it Karhunen-Lo\`eve} expansion \citep{watanabe1965karhunen,kosambi2016statistics}, has became a foundation of many functional data analysis workflows \citep{ramsay1991some,yao2005linear,cnaan1997tutorial,laird1988missing,horvath2012inference,besse1997simultaneous}. %If measurements are dense, confidence in estimates of $\bw_i$ is high and therefore the sample covariance of $\bw_i$ might also be an accurate estimator. hormann2015dynamic,
 
 This approach to modeling the covariance structure has two main drawbacks. First, if the number of observations $n_i$ for an individual $i$ is smaller or equal to the size of the basis $K$, we can fit a curve with no error leading to overfitting and unreliable estimator of the variance. Second, this approach ignores similarities between the curves, which could potentially improve the fit.
 
@@ -176,9 +182,11 @@ In the maximization stage, with $\bw_i$ assumed observed, they maximize the like
 
 Another approach to estimate parameters of \eqref{eq:james-model} is to optimize over $\bw_i$ and marginalize $A$ \citep{lawrence2004gaussian}. This approach allows modifying the distance measure in the latent space, using the ``kernel trick'' \citep{schulam2016disease}.
 
+Estimation of the covariance structure of processes is central of estimation of individual trajectories. \citet{descary2016functional} propose a method where the point estimate of covariance matrix is obtained through matrix completion. 
+
 Methods based on low-rank approximations appear to be widely adopted and applied in practice \citep{berkey1983longitudinal, yan2017dynamic, hall2006properties, besse1986principal, yao2006penalized, greven2011longitudinal}. However, due to their probabilistic formulation and reliance on the distribution assumptions, these models usually need to be fine-tuned for specific situations.
 
-To illustrate this problem, let us assume that the data is drawn from two distributions with equal probability taking form \eqref{eq:james-model}, but with two different means: $\mu$ and $-\mu$. Then, the estimated fixed effect will be close to $0$ and the zero-mean prior distribution on the latent variables will draw these variables towards $0$.
+To illustrate this problem in an elementary setting, let us assume that the data is drawn from two distributions with equal probability taking form \eqref{eq:james-model}, but with two different means: $\mu$ and $-\mu$. Then, the estimated fixed effect will be close to $0$ and the zero-mean prior distribution on the latent variables will draw these variables towards $0$.
 
 %Linear Mixed Models \citep{zeger1988models, verbeke1997linear}
 %If we assume that the processes come from the same distribution, we can use mixed effect models, treating time as a non-linear random effect \citep{}. Both methods require fairly large number of observation per individual. At the very least, we need to observe more points per subject than the size of the basis.
@@ -231,7 +239,7 @@ The mixed-effect model, as any other probabilistic model, can be heavily biased 
 
 We pose the problem of trajectory prediction as a matrix completion problem and we solve it using sparse matrix factorization techniques \citep{rennie2005fast, candes2009exact}. In the classical matrix completion problem the objective is to predict elements of a sparsely observed matrix using its known elements, while minimizing a certain criterion, often chosen to be the Mean Squared Error (MSE). The motivating example is the ``Netflix Prize'' competition \citep{bennett2007netflix}, where participants were tasked to predict unknown movie ratings using other observed ratings. We can represent these data as a matrix of $N$ users and $M$ movies, with a subset of known elements, measured on a fixed scale, e.g. $1-5$.
 
-One approach to solving this problem is to assume that the true matrix can be well-approximated by a low-rank matrix \citep{srebro2005generalization}. Given the low-rank representation $WA'$, columns $A$ spanning the space of movies can be interpreted as ``genre'' components and each user is represented as a weighted sum of these tastes, i.e. a row in the matrix of latent variables $W$ (see Figure \ref{fig:idea}).
+We assume that the true matrix can be approximated by a low-rank matrix \citep{srebro2005generalization}. Given the low-rank representation $WA'$, columns $A$ spanning the space of movies can be interpreted as ``genre'' components and each user is represented as a weighted sum of their genre preferences, i.e. a row in the matrix of latent variables $W$ (see Figure \ref{fig:idea}).
 
 We can use the same idea to predict sparsely sampled curves, as long as we introduce an additional smoothing step. The low-dimensional latent structure now corresponds to progression patterns and a trajectory of each individual can be represented as a weighted sum of these ``principal'' patterns.
 
@@ -243,7 +251,7 @@ We can use the same idea to predict sparsely sampled curves, as long as we intro
   \label{fig:idea}
 \end{figure}
 
-We first introduce methodology for univariate sparsely-sampled processes. Next, we show that the elementary representation of the problem allows for simple extension to multivariate sparsely-sampled processes and to a regression setting.
+We first introduce methodology for univariate sparsely-sampled processes. The direct method, mixed-effect models and low-rank approximations described in Section \ref{s:background} have their analogy in the matrix completion setting. We discuss these analogies in sections \ref{ss:direct-matrix} and \ref{ss:low-rank-matrix}. Next, we show that the elementary representation of the problem allows for simple extension to multivariate sparsely-sampled processes and to a regression setting.
 
 \subsection{Notation}
 
@@ -256,28 +264,29 @@ We will show that in our method the grid can be arbitrarily dense with marginal 
 
 In such settings, our observations can be uniquely represented as a $N \times T$ matrix $Y$ with missing values. Let $O_i = \{g_i(j): 1 \leq j \leq n_i \}$ be a set of grid indices corresponding to observed grid-points for an individual $i$. We denote the set of all observed elements by pairs of indices $\Omega = \{ (i,j) : i\in \{1,2,...,N\}, j \in O_i \}$. Let $P_\Omega(Y)$ be the projection onto observed indices, i.e. $P_\Omega(Y) = W$, such that $W_{i,j} = Y_{i,j}$ for $(i,j) \in \Omega$ and $W_{i,j} = 0$ otherwise. We will use $\|\cdot\|_F$ to denote the Frobenius norm, i.e. the square root of the sum of matrix elements, and $\|\cdot\|_*$ to denote the nuclear norm, i.e. the sum of singular values.
 
-As in Section \ref{s:background} we impose smoothness by using a continuous basis $\bb(t) = [b_1(t),b_2(t),...,b_K(t)]'$. However, now, the basis is evaluated on the grid $G$ and we define $B = [\bb(\tau_1),\bb(\tau_2),...,\bb(\tau_T)]'$.
+As in Section \ref{s:background} we impose smoothness by using a continuous basis $\bb(t) = [b_1(t),b_2(t),...,b_K(t)]'$. However, now, the basis is evaluated on the grid $G$ and we define $\tilde{B} = [\bb(\tau_1),\bb(\tau_2),...,\bb(\tau_T)]'$. Throughout the paper we will use 
 
-In our algorithms we will use a diagonal-thresholding operator defined as follows. Let $D = \diag(d_1,...,d_p)$ be a diagonal matrix. Define 
-\begin{equation}
+In our algorithms we will use a diagonal-thresholding operators defined as follows. Let $D = \diag(d_1,...,d_p)$ be a diagonal matrix. We define ``soft-thresholding'' as
+\begin{equation*}
 D_\lambda = \diag((d_1 - \lambda)_+,(d_2 - \lambda)_+,...,(d_p - \lambda)_+),\label{eq:thresholding}
-\end{equation}
-where $(x)_+ = \max(x, 0)$. 
+\end{equation*}
+where $(x)_+ = \max(x, 0)$, and ``hard-thresholding'' as
+\begin{equation*}
+D_\lambda^H = \diag(d_1,d_2,...,d_q,0,...,0),\label{eq:thresholding}
+\end{equation*}
+where $q = \argmin_k(d_k < \lambda)$.
 
-Approaches discussed in Section \ref{s:background} can be expressed in the matrix notation. Here we discuss the direct approach and the low-rank approximation approach.
-%When $T$ is sufficiently large, approaches discussed in Section \ref{s:background} can be expressed in matrix notation. %In Section [TODO] we show that from the computational standpoint $T$ can be arbitrarily large, or we can also evaluate $\bb$ at the actual observed time-points [TODO].
-
-\subsection{Direct approach}
+\subsection{Direct approach}\label{ss:direct-matrix}
 
 The optimization problem \eqref{eq:direct-individual} of the direct approach described in Section \ref{ss:direct} can be approximated in the matrix setting. First, note that the bias introduced by the grid is negligible if the grid is sufficiently large. We have
 \begin{align}
   \left|\tilde y_{i,j} - \bw_i'\bb(t_{i,j})\right| &= \left|y_{i,g(j)} - \bw_i'\bb(t_{i,j})\right|\nonumber\\
-  &= \left| y_{i,g(j)} - \bw_i' \bb(\tau_{g_i(j)} + t_{i,j} - \tau_{g_i(j)})\right|\nonumber\\
-  &\leq \left| y_{i,g(j)} - \bw_i' \bb(\tau_{g_i(j)})\right| + \left|\bw_i' \bb(t_{i,j} - \tau_{g_i(j)})\right|\label{eq:grid-snap}
+  &= \left| y_{i,g(j)} - \bw_i' (\bb (\tau_{g_i(j)}) + \bb (t_{i,j}) - \bb (\tau_{g_i(j)}))\right|\nonumber\\
+  &\leq \left| y_{i,g(j)} - \bw_i' \bb(\tau_{g_i(j)})\right| + \left|\bw_i' (\bb(t_{i,j}) - \bb(\tau_{g_i(j)}))\right|\label{eq:grid-snap}
 \end{align}
-and by the continuity of the basis on a closed interval $[t_{\min},t_{\max}]$ the second element in \eqref{eq:grid-snap} can be arbitrarily small if $T \rightarrow \infty$. Therefore, the error of the solution of the original problem is bounded by the error of the solution the grid.
+and by the continuity of the basis on a closed interval $[t_{\min},t_{\max}]$ the second element in \eqref{eq:grid-snap} can be arbitrarily small if $T \rightarrow \infty$. For the simplicity of notation in the reminder of this work we will assume that all the points are observed on the grid $G$.  %Therefore, the error of the solution of the original problem is bounded by the error of the solution the grid.
 
-We can define the optimization problem \eqref{eq:direct-individual} mapped to the grid $G$ as a matrix completion problem
+We define the optimization problem \eqref{eq:direct-individual} as a matrix completion problem
 \begin{align}
  \argmin_{\{\bw_i\}}\sum_{i=1}^N \sum_{j=1}^{n_i}\left|y_{i,g_i(j)} - \bw_i' \bb(\tau_{g_i(j)}))\right|^2 &= \argmin_{\{\bw_i\}}\sum_{(i,k) \in \Omega}\left|y_{i,k} - \bw_i' \bb(\tau_{k}))\right|^2\nonumber\\
 %% \end{align*}
@@ -287,24 +296,26 @@ We can define the optimization problem \eqref{eq:direct-individual} mapped to th
 \end{align}
 where the optimization over $\{\bw_i\}$ is an optimization over all $\{\bw_i : i \in \{ 1,2,...,N \}\}$ and $W$ is an arbitrary $N \times K$ matrix.
 
-The matrix formulation in equation \eqref{eq:direct-matrix} and the classic approach in Section \ref{ss:direct} share multiple characteristics. In both cases if data is dense, we may find an accurate representations of the underlying process simply by fitting least-squares estimates of $W$ or $\{\bw_i\}$. Conversely, if the data is too sparse, the problem becomes ill-posed and the least-squares estimates will overfit. Moreover, with $T \rightarrow \infty$ two frameworks become equivalent.
+The matrix formulation in equation \eqref{eq:direct-matrix} and the classic approach in Section \ref{ss:direct} share multiple characteristics. In both cases if data is dense, we may find an accurate representations of the underlying process simply by fitting least-squares estimates of $W$ or $\{\bw_i\}$. Conversely, if the data is too sparse, the problem becomes ill-posed and the least-squares estimates will overfit. %Moreover, with $T \rightarrow \infty$ two frameworks become equivalent.
 
-However, representations \eqref{eq:direct-individual} and \eqref{eq:direct-matrix} differ algebraically and this difference constitutes the foundation for the method introduced in the sequel of this paper. The matrix representation enables us to use matrix completion framework and, in particular, in Section \ref{ss:matrix-factorization} we introduce convex optimization algorithms for solving \eqref{eq:direct-matrix} with additional constraints.
+However, representations \eqref{eq:direct-individual} and \eqref{eq:direct-matrix} differ algebraically and this difference constitutes the foundation for the method introduced in the sequel of this paper. The matrix representation enables us to use the matrix completion framework and, in particular, in Section \ref{ss:matrix-factorization} we introduce convex optimization algorithms for solving \eqref{eq:direct-matrix}. % with additional constraints.
 
-Note that some low-rank constraints on the random effect from the mixed-effect model introduced in Section \ref{ss:lmm} can be expressed in terms of constraints on $W$ and they can be potentially solved without imposing probability distributions. As we show next, the linear mixed-effect model can be expressed by constraining $\rank(W)$. % for some $q \in \N$.
+Note that some low-rank constraints on the random effect from the mixed-effect model introduced in Section \ref{ss:lmm} can be expressed in terms of constraints on $W$ and they can be potentially solved without imposing probability distributions. In particular, as we show next, the linear mixed-effect model can be expressed by constraining $\rank(W)$. % for some $q \in \N$.
 
 \subsection{Low-rank matrix approximation}\label{ss:low-rank-matrix}
 In the low-rank approach described in Section \ref{ss:reduced-rank} we assume that individual trajectories can be represented in a low-dimensional space, by constraining the rank of $W$. We might attempt taking the same route, however, the problem \eqref{eq:direct-matrix} with a constraint on the rank of $W$ is a non-convex problem.
 
-In many situations, this rank constrain can be efficiently relaxed by a nuclear norm to make the problem convex \citep{candes2009exact, fazel2002matrix}. \citet{candes2009near} consider the nuclear norm relaxation in the setting where the solution matches exactly a linear combination of the observed elements. In particular, they assume existence of exact solutions of \eqref{eq:direct-matrix} and they solve
-\begin{align} 
-\text{minimize\ \ } & \|W\|_*,  \nonumber\\
-\text{subject to\ \ } & \| P_\Omega(Y - WB') \|_F^2 = 0.
-\label{eq:cai}
-\end{align}
-The problem \eqref{eq:cai} can be solved using modern convex optimization software \citep{grant2008graph,boyd2004convex}, such as SDPT3 \citep{toh1999sdpt3} or SeDuMi \citep{sturm1999using}. However, with large matrices $Y$, these general algorithms can become computationally expensive and \citet{cai2010singular,mazumder2010spectral} introduced alternative iterative algorithms leveraging the low-rank and sparse decomposition.
+%% In many situations, this rank constrain can be efficiently relaxed by a nuclear norm to make the problem convex \citep{candes2009exact, fazel2002matrix}. \citet{candes2009near} consider the nuclear norm relaxation in the setting where the solution matches exactly a linear combination of the observed elements. In particular, they assume existence of exact solutions of \eqref{eq:direct-matrix} and they solve
+%% \begin{align} 
+%% \text{minimize\ \ } & \|W\|_*,  \nonumber\\
+%% \text{subject to\ \ } & \| P_\Omega(Y - WB') \|_F^2 = 0.
+%% \label{eq:cai}
+%% \end{align}
+%% The problem \eqref{eq:cai} can be solved using modern convex optimization software \citep{grant2008graph,boyd2004convex}, such as SDPT3 \citep{toh1999sdpt3} or SeDuMi \citep{sturm1999using}. However, with large matrices $Y$, these general algorithms can become computationally expensive and \citet{cai2010singular,mazumder2010spectral} introduced alternative iterative algorithms leveraging the low-rank and sparse decomposition.
 
-For our application, the constraint \eqref{eq:cai} requiring exact matching of the observed and predicted values is too strong. For example, if there are more measurements per subject than $\rank(W)$ or if a subject was measured at two consecutive grid-points with some observation noise, we may not be able to find a continuous solution imposed by the smooth basis $B$. For this reason, we relax the constraint in \eqref{eq:cai} to an inequality
+%% For our application, the constraint \eqref{eq:cai} requiring exact matching of the observed and predicted values is too strong. For example, if there are more measurements per subject than $\rank(W)$ or if a subject was measured at two consecutive grid-points with some observation noise, we may not be able to find a continuous solution imposed by the smooth basis $B$.
+
+For this reason, we relax the constraint in \eqref{eq:cai} to an inequality
 \begin{align}
 \text{minimize\ \ } & \|W\|_*,  \nonumber\\
 \text{subject to\ \ } & \| P_\Omega(Y - WB') \|_F^2 \leq \delta
@@ -366,16 +377,16 @@ Note, that in the Lagrangian form, the problem \eqref{eq:rank-restricted} become
 \begin{align}\label{eq:matrixproblem-final}
 \min_Z \frac{1}{2} \|P_\Omega(Y - WB')\|_F^2 + \lambda\|W\|_*,
 \end{align}
-for some $\lambda > 0$ and where $W$ is an $N \times K$ matrix. For the sake of clarity and simplicity, we choose to solve the problem \eqref{eq:matrixproblem-final} with an extend version of the \textsc{Soft-Impute} algorithm designed by \citet{mazumder2010spectral}. As discussed in Section \ref{ss:low-rank-matrix}, many other convex optimization algorithms can be applied.
+for some $\lambda > 0$ and where $W$ is an $N \times K$ matrix. For the sake of clarity and simplicity, we choose to solve the problem \eqref{eq:matrixproblem-final} with an extended version of the \textsc{Soft-Impute} algorithm designed by \citet{mazumder2010spectral}. As discussed in Section \ref{ss:low-rank-matrix}, many other convex optimization algorithms can be applied.
 
-The key component to the solution is the following property linking the problem \eqref{eq:matrixproblem-final} with singular value decomposition (SVD). Consider the fully observed case of \eqref{eq:matrixproblem-final}. Using Theorem 2.1 in \citet{cai2010singular}, one can show that the optimization problem
+The key component to the solution is the following property linking problem \eqref{eq:matrixproblem-final} with the singular value decomposition (SVD). Consider the fully observed case of \eqref{eq:matrixproblem-final}. Using Theorem 2.1 in \citet{cai2010singular}, one can show that the optimization problem
 \begin{align}\label{eq:optsvd}
 \argmin_{W} \frac{1}{2} \| Y - WB' \|_F^2 + \lambda\|W\|_*
 \end{align}
-has a unique solution $W = \cS_\lambda (YB)$, where $\cS_\lambda(X) = UD_\lambda V'$ and $X = UDV'$ is the SVD of $X$. We refer to this $\cS_\lambda(X)$ as a singular value thresholding (SVT) of $X$.
+has a unique solution $W = \cS_\lambda (YB)$, where $\cS_\lambda(X) = UD_\lambda V'$ and $X = UDV'$ is the SVD of $X$. We refer to $\cS_\lambda(X)$ as the singular value thresholding (SVT) of $X$.
 
 % \section{Longitudinal impute algorithms}
-In order to solve \eqref{eq:optsvd} with a sparsely observed  $Y$, we modify the \textsc{Soft-Impute} algorithm from \citep{mazumder2010spectral} to account for the basis $B$. Our Algorithm \ref{alg:soft-impute} iteratively constructs better approximations of the global solution for each $\lambda$ in some predefined set $\{\lambda_1, \lambda_2, ..., \lambda_k\}$. Suppose we have some approximation of the solution $W^{old}$. We impute $W^{old}B$ to unknown elements of $Y$ obtaining $\tilde{Y}$. We construct the next approximation $W^{new}$ by computing SVT of $\tilde{Y}$.
+In order to solve \eqref{eq:optsvd} with a sparsely observed  $Y$, we modify the \textsc{Soft-Impute} algorithm from \citep{mazumder2010spectral} to account for the basis $B$. Our Algorithm \ref{alg:soft-impute} iteratively constructs better approximations of the global solution for each $\lambda$ in some predefined set $\{\lambda_1, \lambda_2, ..., \lambda_k\}$. Suppose we have some approximation of the solution $W^{old}$. We use $W^{old}B$ to impute unknown elements of $Y$ obtaining $\tilde{Y}$. We construct the next approximation $W^{new}$ by computing SVT of $\tilde{Y}$.
 
 %In Appendix \ref{s:convergence} we show that $W^{new,k}$ converges to the global solution $W_\lambda$ of \eqref{eq:matrixproblem-final}.
 As our stopping criterion we compute the change between subsequent solution, relative to the magnitude of the solution, following the methodology in \cite{cai2010singular}. We set some fixed threshold for this value, e.g. $\varepsilon = 10^{-4}$.
@@ -406,7 +417,7 @@ with $K \sim 10$ in our motivating data example. While algorithms for large matr
 
 \paragraph{Modeling new data.}
 
-For modeling new data, in practice, we are interested in two scenarios: (1) we collect a new measurements of an existing patient $i \in \{1,2,...,N\}$; (2) we observe a new patient $(N+1)$. In both cases, we simply use the current fit for each parameter $\lambda$ and update all models with newly observed data. This approach not only estimates new predictions but also slightly improves the existing model. 
+For modeling new data, in practice, we are interested in two scenarios: (1) we collect a new measurements of an existing patient $i \in \{1,2,...,N\}$; (2) we include a new patient $(N+1)$ with at least as many observations as the rank of $W$. In both cases, we simply use the current fit for each parameter $\lambda$ and update all models with newly observed data. This approach not only estimates new predictions but also slightly improves the existing model. 
 
 %\tr{[TODO] If $n_i < q$, where $q$ is the rank of the current model, we might impose some additional conditions on $U_i$ and/or shrink it}
 
@@ -416,15 +427,18 @@ For modeling new data, in practice, we are interested in two scenarios: (1) we c
 
 \subsection{$\ell_0$-norm regularization}
 
-While the nuclear norm relaxation \eqref{eq:rank-restricted} is motivated by making the problem convex, \citet{mazumder2010spectral} argue that in many cases it can also give better results than the rank constraint. They draw an analogy to the relation between best-subset regression ($\ell_0$ regularization) and LASSO ($\ell_1$ regularization \citep{tibshirani1996regression, friedman2001elements}). In LASSO by shrinking model parameters we allow more parameters to be included, what can potentially improve the prediction if the true subset is larger than the one derived through $\ell_0$ regularization. In the case of \eqref{eq:matrixproblem-final}, shrinking the nuclear norm allows to include more dimensions of $W$ again potentially improving the prediction if the true dimension is high.
+While the nuclear norm relaxation \eqref{eq:rank-restricted} is motivated by making the problem convex, \citet{mazumder2010spectral} argue that in many cases it can also give better results than the rank constraint. They draw an analogy to the relation between best-subset regression ($\ell_0$ regularization) and LASSO ($\ell_1$ regularization \citep{tibshirani1996regression, friedman2001elements}). In LASSO by shrinking model parameters we allow more parameters to be included, what can potentially improve the prediction if the true subset is larger than the one derived through $\ell_0$ regularization. In the case of \eqref{eq:matrixproblem-final}, shrinking the nuclear norm allows us to include more dimensions of $W$ again potentially improving the prediction if the true dimension is high.
 
 %While the nuclear norm normalization is motivated by the convex relaxation of the rank, \citet{mazumder2010spectral} observe that in many cases it can outperform rank restricted least squares. Analogically to \textsc{Lasso}, shrinkage can allow a rank higher than the actual rank of the matrix, improving prediction.
 
-Conversely, the same phenomenon can also lead to problems if the underlying dimension is small. In such case, shrinking may allow including unnecessary dimensions emerging from noise. To remedy this issue, following the analogy with penalized linear regression, we may consider another classes of penalties. In particular, we may consider coming back to the rank constraint by modifying the nuclear norm penalty \eqref{eq:matrixproblem-final} to $\ell_0$. We define $\|W\|_0 = \rank(W)$. For solving
+Conversely, the same phenomenon can also lead to problems if the underlying dimension is small. In such case, shrinking may allow including unnecessary dimensions emerging from noise. To remedy this issue, following the analogy with penalized linear regression, we may consider another classes of penalties. In particular, we may consider coming back to the rank constraint by modifying the nuclear norm penalty \eqref{eq:matrixproblem-final} to $\ell_0$. We define $\|W\|_0 = \rank(W)$. The problem
 \begin{align}\label{eq:matrixproblem-final-l0}
 \min_{W} \frac{1}{2} \|P_\Omega(Y - WB')\|_F^2 + \lambda\|W\|_0,
 \end{align}
-we use Algorithm \ref{alg:hard-impute}. % refering to \citet{mazumder2010spectral}. %Multiple extensions and analogies to regularization in linear models can be drawn in this setting. See \citep{mazumder2010spectral} for more details on possible extensions of the problem \eqref{eq:rank-restricted}.
+has a solution $W = \cS_\lambda^H (YB)$, where $\cS_\lambda^H(X) = UD_\lambda^H V'$ and $X = UDV'$ is the SVD of $X$. We refer to $\cS_\lambda^H(X)$ as the hard singular value thresholding (hard SVT) of $X$. We use Algorithm \ref{alg:hard-impute} to find the hard SVT of $YB$.
+
+
+% refering to \citet{mazumder2010spectral}. %Multiple extensions and analogies to regularization in linear models can be drawn in this setting. See \citep{mazumder2010spectral} for more details on possible extensions of the problem \eqref{eq:rank-restricted}.
 
 \begin{algorithm}
 \caption{\textsc{Hard-Longitudinal-Impute}\label{alg:hard-impute}}
@@ -456,17 +470,17 @@ Intuitively we might expect similarity between the principal directions derived 
 
 For simplicity, we start with the case where the mean $\mu = 0$ and the data is fully observed on a grid $G$ of $T$ time-points. Assume that observations $i \in \{1,2,...,N\}$ come from the mixed-effect model
 \begin{align}
-  \by_i &\sim \cN(\bw_i B', \sigma^2 I_T), \label{eq:model-y}\\
-  \bw_i &\sim \cN(0 , \Sigma), \label{eq:model-w}
+  \by_i | \bw_i &\sim \cN(\bw_i B', \sigma^2 I_T), \label{eq:model-y}\\
+  \bw_i &\sim \cN(0 , \Sigma), \nonumber%\label{eq:model-w}
 \end{align}
 % V \Lambda V'
 %
-where $\Sigma$ is a covariance matrix of rank $q < K$ and variables $\{\bw_i, \by_i\}$ are uncorrelated. By the spectral decomposition theorem we write $\Sigma = V\Lambda V'$, where $V$ is a $K\times K$ orthogonal and $\Lambda$ is a diagonal $K\times K$ matrix with $q$ positive coefficients in decreasing order.
-Since $\by_i$ and $\bw_i$ are uncorrelated, the distribution \eqref{eq:model-y} can be rewritten as
+where $\Sigma$ is a covariance matrix of rank $q < K$ and variables $\{\bw_i, \by_i\}$ are independent. By the spectral decomposition theorem we write $\Sigma = V\Lambda V'$, where $V$ is a $K\times K$ orthogonal and $\Lambda$ is a diagonal $K\times K$ matrix with $q$ positive coefficients in decreasing order.
+Since $\by_i$ and $\bw_i$ are independent, the distribution \eqref{eq:model-y} can be rewritten as
 \begin{align}
   \by_i &\sim \cN(0, B V \Lambda V'  B' + \sigma^2 I_T). \label{eq:model}
 \end{align}
-Note that, the model \eqref{eq:model} is a factor model with $q$ factors--the first $q$ columns of $BV$.
+Note that, the model \eqref{eq:model} is a factor model with $q$ factors---the first $q$ columns of $BV$.
 
 The following theorem constitutes a link between the mixed-effect model and SVT. It is adapted from Theorem 9.4.1 in \citet{mardia1980multivariate}, derived from \citet{joreskog1967some}, 
 
@@ -481,10 +495,10 @@ Factor analysis provides us not only with estimates of $\Lambda$ and $V$ but als
 %%  \Lambda = D_{\sigma^2} \text{ and } V = Q,
 %% \]
 %% where $D_\sigma$ is the thresholded $D$ as defined in \eqref{eq:thresholding}.
-In multivariate analysis literature, there are multiple ways to estimate factor scores, i.e. a matrix $A$ such that $X \sim AD_{\sigma^2}V'$, most notably Spearman's scores, Bartlett's scores and Thompson's scores \citep{kim1978factor}. %\citet{james2000principal} find maximum likelihood estimates for all parameters together.
+In the multivariate analysis literature, there are multiple ways to estimate factor scores, i.e. a matrix $A$ such that $X \sim AD_{\sigma^2}V'$, most notably Spearman's scores, Bartlett's scores and Thompson's scores \citep{kim1978factor}. %\citet{james2000principal} find maximum likelihood estimates for all parameters together.
 Simply taking $W = U$ as the estimate of the scores corresponds to the solution of \eqref{eq:optsvd} as long as $\lambda = \sigma^2$.
 
-Note that in Theorem \ref{thm:maxlike} we assume that $\sigma^2$ is known, which is unfeasible in practice. However, the likelihood of $(V,\sigma)$ can be parametrized by $\sigma$ and we can find the optimal solution analytically. This corresponds to minimizing \eqref{eq:optsvd} for different $\lambda$.
+Note that in Theorem \ref{thm:maxlike} we assume that $\sigma^2$ is known, which is infeasible in practice. However, the likelihood of $(V,\sigma)$ can be parametrized by $\sigma$ and we can find the optimal solution analytically. This corresponds to minimizing \eqref{eq:optsvd} for different $\lambda$.
 
 %In the sparsely observed case, we want to approximate the same 
 %\tr{TODO} }
@@ -545,48 +559,51 @@ This intuition is also confirmed in our simulation study in Section \ref{s:simul
 %Let $X_1,X_2,...,X_n$ be observations from \eqref{model:x}. Let $\bX = [X_1',X_2',...,X_n']'$. Consider
 
 
-\section{Multivariate sparse longitudinal modeling}\label{s:multivariate}
+\section{Multivariate longitudinal data}\label{s:multivariate}
 
-One major advantage of the matrix-factorization approach is its simple algebraic formulation and solution which makes it easily adaptable to more complex situations. In this section, we present methods for expanding our methodology to a process of variables of interest measured sparsely in time. We explore two cases: (1) dimensionality reduction, where we project sparsely sampled multivariate processes to small latent spaces, and (2) linear regression, where multivariate processes are used for prediction of another process of interest.
+Estimation of progression of a single parameter has been extensively studied in literature. However, in practice we are often interested in multivariate longitudinal measurements. Examples include clinical visits at which multiple blood tests or physical exams are taken, or measurements which are multivariate in their nature such as gene expression or x-rays observed longitudinally. The growing interest in this setting stimulated research in latent models \citep{sammel1996latent} and regression \citep{gray1998estimating,gray2000multidimensional}. \citet{diggle2002analysis} present an example case study in which longitudinal multivariate modeling enables estimation of joint confidence region, shrinking the individual confidence intervals.
 
-Both cases are directly motivated by medical applications where multiple clinical tests are taken sparsely in time. The dimensionality reduction allows to compare subjects with each other in a smaller space, independent of the sampling time of the orginal processes. The regression setting allows to use additional covariates in estimation of the progression of the main parameter of interest. To motivate both cases from the theorethical standpoint we start with a bivariate process.
+In this section, we present an extention of our univariate framework to multivariate measurements sparse in time. %One major advantage of the matrix-factorization approach is its simple algebraic formulation and solution which makes it easily adaptable to more complex situations.
+We explore two cases: (1) dimensionality reduction, where we project sparsely sampled multivariate processes to a small latent space, and (2) linear regression, where we usa a multivariate process for prediction of a univariate process of interest. To motivate our approach from the technical standpoint we start with a bivariate process.
+
+%Both cases are directly motivated by medical applications where multiple clinical tests are taken sparsely in time. The dimensionality reduction allows to compare subjects with each other in a smaller space, independent of the sampling time of the orginal processes. The regression setting allows to use additional covariates in estimation of the progression of the main parameter of interest.  
 
 \subsection{Motivation: Bivariate processes}
 
-Suppose we partly observe $N\times T$ matrices $X$, $Y$ and we aim at regressing $Y$ on $X$. Let $B$ be a $T\times K$ matrix of $K$ splines evaluated on a grid $G$ of $T$ timepoints. We assume the model \begin{align*}
+Suppose we partly observe $N\times T$ matrices $X$, $Y$ and we aim at regressing $Y$ on $X$. Let $B$ be an orthogonalized $T\times K$ matrix of $K$ splines evaluated on a grid $G$ of $T$ timepoints. We assume the model \begin{align*}
 X = \tilde{X}B' + E_X \text{ \ and \ } Y = \tilde{Y}B' + E_{Y},
 \end{align*}
-where $\tilde{X}$ is a $N\times K$ matrix, $E_X$ and $E_Y$ are $N \times T$ matrices with independent identically distributed coordinates $\cN(0,\sigma_X^2)$ and $\cN(0,\sigma_Y^2)$ correspondingly, $\tilde{Y}~=~\tilde{X}A$ for some $K\times K$ matrix $A$. We assume $\rank(\tilde{X}) = k$, where $k < K$.
+where $\tilde{X}$ is a $N\times K$ matrix, $E_X$ and $E_Y$ are $N \times T$ matrices with independent identically distributed coordinates $\cN(0,\sigma_X^2)$ and $\cN(0,\sigma_Y^2)$ correspondingly, $\sigma_X^2,\sigma_Y^2 > 0$, and $\tilde{Y}~=~\tilde{X}A$ for some $K\times K$ matrix $A$. We assume $\rank(\tilde{X}) = k$, where $k < K$.
 
 We consider the optimization problem
 %Now, in order to estimate the low-rank decomposition of $Y$ we consider %the problem \eqref{eq:rank-restricted} to
 \begin{align}\label{eq:lag:bivariate}
-  \minimize_{A,\tilde{X}} & \frac{1}{\sigma_Y^2} \| Y - \tilde{X}AB' \|_F^2 + \frac{1}{\sigma_X^2}\|X - \tilde{X}B' \|_F^2,\nonumber\\
+  \minimize_{A,\tilde{X}} & \frac{1}{\sigma_Y^2} \| Y - \tilde{X}A'B' \|_F^2 + \frac{1}{\sigma_X^2}\|X - \tilde{X}B' \|_F^2,\nonumber\\
   \subjectto & \rank(\tilde{X}) = k.
 \end{align}
 Let $\gamma = \sigma_X^2 / \sigma_Y^2$. Then \eqref{eq:lag:bivariate} can be written as
 \begin{align}\label{eq:lag:bivariate2}
-  \minimize_{A,\tilde{X}} & \| (Y:\gamma X) - \tilde{X}(AB':\gamma B') \|_F^2,\nonumber\\
+  \minimize_{A,\tilde{X}} & \| (Y:\gamma X) - \tilde{X}(A'B':\gamma B') \|_F^2,\nonumber\\
   \subjectto & \rank(\tilde{X}) = k,
 \end{align}
 which we solve by computing the SVD of $(YB:\gamma XB)$. 
 
 Note that solving the problem \eqref{eq:lag:bivariate} is equivalent to finding the first $k$ principal directions in the canonical correlation analysis (CCA) \citep{hotelling1936relations}. Moreover, if $\gamma=1$ the problem is equivalent to partial least squares (PLS) \citep{wold1975soft}. Solutions of CCA and PLS can be derived from the SVD of $(YB:\gamma XB)$ \citep{borga1997unified}.
 
-Although we motivate the problem \eqref{eq:lag:bivariate2} as a regression of $Y$ on $X$, there is symmetry between the two variables. The solution $\tilde{X}$ can be interpreted a latent representation of the two processes. To emphasize this, we introduce the latent $N \times K$ matrix $U$ and we rewrite the problem as
+Although we motivate the problem \eqref{eq:lag:bivariate2} as a regression of $Y$ on $X$, the two variables are symmetric. Therefore, the solution $\tilde{X}$ can be interpreted a latent representation of the two processes. To emphasize this, we introduce a $N \times K$ latent matrix $U$ and we rewrite the problem as
 \begin{align}\label{eq:lag:bivariate2}
-  \minimize_{U,A_X,A_Y} & \| (Y:\gamma X) - U(A_YB':A_XB') \|_F^2,\nonumber\\
+  \minimize_{U,A_X,A_Y} & \| (Y:\gamma X) - U(A_Y'B':A_X'B') \|_F^2,\nonumber\\
   \subjectto & \rank(U) = k.
 \end{align}
-As in \eqref{eq:rank-restricted} the rank constrain can be relaxed to the nuclear norm. Then, Lagrangian takes form
+As in \eqref{eq:rank-restricted}, the rank constrain can be relaxed to the nuclear norm. Then, Lagrangian takes form
 \begin{align}
-  \argmin_{U,A_X,A_Y} \| (Y:\gamma X) - U(A_YB':A_XB') \|_F^2 + \lambda \| U \|_*  \label{eq:final-bivariate}
+  \argmin_{U,A_X,A_Y} \| (Y:\gamma X) - U(A_Y'B':A_X'B') \|_F^2 + \lambda \| U \|_*  \label{eq:final-bivariate},
 \end{align}
-and methodology from Section \ref{ss:matrix-factorization} applies.
+and we apply methodology from Section \ref{ss:matrix-factorization} for finding $U,A_X$ and $A_Y$.
 
-The low-rank matrix $U$ is a joint low-rank representation of matrices $X$ and $Y$ and can be seen as a dimensionality reduction technique. In Section \ref{ss:dim-red} we extended this method to a larger number of variables. It can be also used for regression, as discussed in Section \ref{ss:regression}.
+The low-rank matrix $U$ is a joint low-rank representation of matrices $X$ and $Y$ and thus our method can be seen as a dimensionality reduction technique. In Section \ref{ss:dim-red} we extended this idea to a larger number of variables. In Section \ref{ss:regression} we discuss how this approach can be used for regression.
 
-Note that the approach presented in this section has an intuitive analogy in matrix completion problem. \citet{condli1999bayesian} proposed a Bayesian framework and showed that for improving prediction of entries in $Y$ one might consider a low-rank decomposition of $(Y:X)$, where $X$ are additional covariates for each individual (each row), e.g. demographic features.
+Note that the approach presented in this section has an analogy in the matrix completion context. \citet{condli1999bayesian} showed that for improving prediction of unknown entries in some matrix $A$ one might consider a low-rank decomposition of $(A:B)$, where $B$ are additional covariates for each row, e.g. demographic features of individuals. The idea of stacking the matrices together motivates the dimensionality reduction technique discussed in Section~\ref{ss:dim-red}.
 
 %% Using SVD any solution can be written as $(\hat{X} : \hat{Y}) = U (V_X'M' : V_Y'M')$. Now let $\hat{X} = UV_X'M'$ and $\hat{Y} = UV_Y'M'$. 
 %% The problem \eqref{eq:two-vars} can be becomes
@@ -605,14 +622,14 @@ Suppose that for every individual we observe multiple variables varying in time,
 
 We extend the equation \eqref{eq:final-bivariate} to account for a larger number of covariates
 \begin{align*}%\label{eq:multivar}
-\argmin_{U,V} &\| (X_1:X_2:...:X_p) - U (A_1B_1':A_2B_2':...:A_pB_p') \|_F^2 + \lambda\|U\|_*,
+\argmin_{U,V} &\| (X_1:X_2:...:X_p) - U (A_1'B_1':A_2'B_2':...:A_p'B_p') \|_F^2 + \lambda\|U\|_*,
 \end{align*}
 where $B_{i}$ is basis selected for approximation of processes $X_{i}$ for $1 \leq i \leq p$. 
 
 Note that by allowing a different basis for each process, we also allow for covariates constant in time if $X_i$ is a $N\times 1$ matrix and $B_{(i)} = 1$ for some $1 \leq i \leq p$.
-Finally, if measurements are on different scales, we may normalize them using any scaling $\gamma_1, \gamma_2,..., \gamma_p > 0$, and taking
+Finally, if measurements are on different scales, we may normalize them using some scaling $\gamma_1, \gamma_2,..., \gamma_p > 0$, and taking
 \begin{align*}%\label{eq:multivar-scaled}
-\argmin_{U,V} &\| (\gamma_1 X_{1}:\gamma_2 X_{2}:...:\gamma_p X_{p}) - U (A_1B_1':A_2B_2':...:A_pB_p') \|_F^2 + \lambda\|U\|_*.
+\argmin_{U,V} &\| (\gamma_1 X_{1}:\gamma_2 X_{2}:...:\gamma_p X_{p}) - U (A_1'B_1':A_2'B_2':...:A_p'B_p') \|_F^2 + \lambda\|U\|_*.
 \end{align*}
 See Algorithm \ref{alg:soft-PCA} for the detailed description of the procedure. Note that \textsc{Hard-Longitudinal-Impute} can be analogically extended to the multivariate setting. %Similarly, the proof of convergence follows from the proof in Section \ref{s:convergence}.
 
@@ -640,20 +657,20 @@ See Algorithm \ref{alg:soft-PCA} for the detailed description of the procedure. 
 
 In practice we may be interested in estimating progression of a certain parameter (e.g. cancer growth) given progressions of other covariates such as blood tests, vitals, biopsy results, etc.
 
-The method proposed in Section \ref{ss:dim-red} can be directly applied for finding relation between the processes. However, it might be suboptimal for prediction of a single parameter of choice, as it optimizes for least-squares distance in all variables rather than only the dependent variable. This is analogical to the difference between regression line of $Y$ on independent variables $X_1,...,X_p$ and the first principal component analysis of $(Y,X_1,...,X_p)$, used for prediction of $Y$. While the first one minimizes the distance to $Y$, the latter minimizes the distance to $(Y,X_1,...,X_p)$. Instead, for the regression problem we suggest a two step procedure motivated by principal component regression. 
+The method proposed in Section \ref{ss:dim-red} can be directly applied for finding relation between the processes. However, it might be suboptimal for prediction of a single parameter of choice, as it optimizes for least-squares distance in all variables rather than only the dependent variable. This is analogical to the difference between regression line of some univariate $y$ on independent variables $x_1,...,x_p$ and the first principal component analysis of $(y,x_1,...,x_p)$, used for prediction of $y$. While the first one minimizes the distance to $y$, the latter minimizes the distance to $(y,x_1,...,x_p)$.
 
 % using the method from Section \ref{ss:dim-red} as a basis for the principal component regression.
 
-In our two-step procedure, we first find a joint low-rank decomposition $U$ of covariates $X_1,...,X_p$ and then regress $Y$ on $U$. Note that the latent representation $U$ can be constructed either by applying sparse functional PCA, by \textsc{Soft-Longitudinal-Impute}, jointly by \textsc{Soft-Longitudinal-PCA} or by other low-rank representation of $(X_1,...,X_p)$.
+For the regression problem we suggest a two step procedure motivated by principal component regression. We first find a joint low-rank decomposition $U$ of covariates $X_1,...,X_p$ and then regress $Y$ on $U$. Note that the latent representation $U$ can be constructed either by applying sparse functional PCA, by \textsc{Soft-Longitudinal-Impute}, jointly by \textsc{Soft-Longitudinal-PCA} or by other low-rank representation of $(X_1,...,X_p)$.
 
 % Let $U$ be a latent representation of $X_1, X_2, ..., X_p$, derived using one of the aformentioned methods.
-Let $U_{d}$ denote the first $d$ columns of $U$. We find a $d \times K$ matrix $A$ such that
+Let us assume that $U$ is a $N \times d$ orthonormal matrix, where $d$ is the number of latent components. We find a $d \times K$ matrix $A$ such that
 \begin{align}\label{eq:pcr}
-\minimize_A \|P_\Omega(Y - U_dAB')\|_F^2,
+\minimize_A \|P_\Omega(Y - UA'B')\|_F^2,
 \end{align}
 where $P_\Omega$ is a projection on a set of observed coefficients.
 
-We propose an iterative algorithm where we fill in the missing values in $Y$ with zeros, multiply the exprssion by $B$, regress $YB$ on $U_dA$, and use the new $A$ for filling in the missing values, till convergence. We refer to Algorithm \ref{alg:sparse-regression} for the full description of the procedure.
+We propose an iterative algorithm where we fill in the missing values in $Y$ with zeros, multiply the exprssion by $B$, regress $YB$ on $UA'$, and use the new $A$ for filling in the missing values, till convergence. We refer to Algorithm \ref{alg:sparse-regression} for the full description of the procedure.
 
 
 %% Note that $B$ can be estimated by minimizing 
@@ -673,8 +690,8 @@ We propose an iterative algorithm where we fill in the missing values in $Y$ wit
 \textbf{Step 1: Latent representation}
 \end{flushleft}
 \begin{enumerate}
-\item For sparsely observed $X_1,X_2,...,X_p$ find latent representations $U_1,U_2,...,U_p$
-\item Define $U = U_1:U_2:...:U_p$
+\item For sparsely observed $X_1,X_2,...,X_p$ find a latent representation $U$
+%\item Define $U = U_1:U_2:...:U_p$
 \item Orthogonalize $U$
 \end{enumerate}
 \begin{flushleft}
@@ -698,22 +715,23 @@ We propose an iterative algorithm where we fill in the missing values in $Y$ wit
 
 We illustrate properties of the multivariate longitudinal fitting in a simulation study. Let $G$ be a grid of $T = 51$ equidistributed points and let $B$ be a basis of $K = 9$ functions evaluated on the grid $G$. We generate observations from the model $\eqref{eq:model}$ with $p \in \{3,5,7\}$ true components. %We set $V\Lambda V'$ to a matrix with eigenvalues $\diag[1-\frac{1}{7},...,1 - \frac{p}{8},0,...,0]$.
 
-We draw two matrices $X_1,X_2$ of size $N \times K$ from this distribution and we define $Y = R_1 X_1 + R_2 X_2$, where $R_1,R_2$ are some fixed rotations in $\R^K$. We observe $Y_f = YB' + 2* E_Y, X_{1,f} = X_1B' + E_{X_1}$ and $X_{2,f} = X_2 B' + E_{X_2}$, where $E_{X_1},E_{X_2},E_{Y}$ are matrices with uncorrelated Gaussian coordinates with standard deviation $\sigma = 0.2$. We observe $10\%$ of indices. Our objective is to estimate $Y$ using the observed data.
+We draw two matrices $X_1,X_2$ of size $N \times K$ from $\eqref{eq:model}$ and we define $Y~=~R_1 X_1 + R_2 X_2$, where $R_1,R_2$ are some fixed rotations in $\R^K$. We observe $X_{1,f} = X_1B' + E_{X_1}, X_{2,f} = X_2 B' + E_{X_2}$ and $Y_f = YB' + 2* E_Y$, where $E_{X_1},E_{X_2},E_{Y}$ are matrices with uncorrelated Gaussian coordinates with standard deviation $\sigma = 0.2$. We observe $10\%$ of indices. Our objective is to estimate $Y$ using the observed data.
 
-We compare Sparse-Longitudinal-Impute with the results from the fPCA \citep{james2000principal}, implemented in \citet{peng2009geometric}. Both, Sparse-Longitudinal-Impute and fPCA require a parameter corresponding to the number of basis elements $k$. In our method we also need the tuning parameter $\lambda$, whilst in fPCA we need to chose the rank $R$. We use cross-validation to find $(k_{ours},\lambda)$ and $(k_{FPCA},R)$.
+We compare \textsc{Sparse-Longitudinal-Impute} (SLI) with the results from the fPCA \citep{james2000principal}, implemented in \citet{peng2009geometric}. Both, SLI and fPCA require are parametrized with a set of basis functions. In both cases we use the first $k$ elements of the Fourier basis. In our method we also need the tuning parameter $\lambda$, whilst in fPCA we need to chose the rank $R$. We use cross-validation to find $(k_{ours},\lambda)$ and $(k_{FPCA},R)$.
 
-For illustration, we also present results of Sparse-Longitudinal-Regression (SLR), regressing $Y$ on $X_1$ and $X_2$. Note, however that the SLR, unlike two other methods, uses additional information about $Y$. The comparison is only meant to illustrate potential gain in this setting.
+For illustration, we also present results of \textsc{Sparse-Longitudinal-Regression} (SLR), regressing $Y$ on $X_1$ and $X_2$. Note, however that the SLR, unlike two other methods, uses additional information about $Y$. The comparison is only meant to validate the approach of adding more covariates.
 
-We compare the three methods fPCA, SLI and SLR, in reference to the baseline -- the {\it estimated subject's mean}. For each subject $p$ we compute the {\it estimated subject's mean} by taking the mean $\hat{m}_p$ of observed elements in $P_\Omega(X)$ in the row $p$. We assign $P_\Omega(\hat{X})_p = P_\Omega(X)_p$ and $P^\perp_\Omega (\hat{X}_p) \equiv \hat{m}_p$, where $P(\cdot)_p$ denotes the $p$-th row of the projection.
+We compare the three methods fPCA, SLI and SLR, in reference to the baseline -- the {\it estimated subject's mean}. For each subject $p$ we compute the {\it estimated subject's mean} (\textsc{mean}) by taking the mean $\hat{m}_p$ of observed elements in $P_\Omega(X)$ in the row $p$ as a predictor of unknown values in that row. Formally, we assign $P_\Omega(\hat{X})_p = P_\Omega(X)_p$ and $P^\perp_\Omega (\hat{X}_p) \equiv \hat{m}_p$, where $P(\cdot)_p$ denotes the $p$-th row of the projection.
 
 We divide the observed coefficients into training ($81\%$), validation ($9\%$) and test ($10\%$) sets. We choose the best parameters of the three models on the validation set and then retrain on the entire training + validation set. Finally, since in the simulated setting we have access to the ground truth, we compare algorithms on the entire curves. We compute the error of entire curves by taking mean squared Frobenius distance between $Y$ and estimated $\hat{Y}$, i.e.
 \[
- \verb|err|(\hat{Y}) = \frac{1}{nT} \sum_{i=1}^N \|Y_i - \hat{Y}_i \|_F^2.
+ \verb|err|(\hat{Y}) = \frac{1}{T|S|} \sum_{i\in S} \|Y_i - \hat{Y}_i \|_F^2
  \]
+ on the test set $S$.
  
 \paragraph{Results}
 
-Our SLI achieves performance similar to \citep{james2000principal}, as presented in Table \ref{tbl:simulations}. The SLR, having access to additional information about $Y$, clearly outperforms other methods validating its correctness.
+The SLI achieves performance similar to \citep{james2000principal}, as presented in Table \ref{tbl:simulations}. The SLR, having access to additional information about $Y$, clearly outperforms other methods validating its correctness.
 
 In Figure \ref{fig:principal-components} we present the first components derived from both sparse functional PCA and Soft-Longitudinal-Impute. In Figure \ref{fig:example-predictions} we present example predictions from all four methods. In Figure \ref{fig:estimated-rank}, we present the estimated rank and cross-validation error of one of the simulation runs.
 
@@ -726,28 +744,28 @@ In Figure \ref{fig:principal-components} we present the first components derived
  & MSE & \% expl \\ 
   \hline
   mean & 3.43 & 0.00 \\ 
-  fpca & 2.00 & 39.18 \\ 
+  fPCA & 2.00 & 39.18 \\ 
   SLI & 1.99 & 40.20 \\ 
   SLR & 1.26 & 61.34 \\ 
    \hline
 \end{tabular}\label{tbl:simulations}
-\caption{Average (across 10 trials) variance explained by (1) mean: subject's mean of observed points, (2) fpca, (3) SLI: Sparse-Longitudinal-Impute and (4) SLR: Sparse-Longitudinal-Regression (with additional data available).}
+\caption{Average (across 10 trials) variance explained by (1) subject's mean of observed points (mean), (2) functional principal components (fPCA), (3) Sparse-Longitudinal-Impute (SLI) and (4) Sparse-Longitudinal-Regression (SLR) with extra data available for this procedure.}
 \end{table}
 
 \begin{figure}[h!]
-  \includegraphics[width=1\linewidth]{images/components}
-  \caption{The first three principal components derived using sparse functional PCA (left) and Soft-Longitudinal-Impute (right). The components are ordered as follow: 1st black solid curve, 2nd red dashed curve, 3rd green dotted line. The shape of components is similar while they differ by scale, since SFI does not normalize them.}
+  \includegraphics[width=0.85\linewidth]{images/components}
+  \caption{The first three principal components derived using sparse functional PCA (left) and Soft-Longitudinal-Impute (right). The components are ordered as follow: 1st black solid curve, 2nd red dashed curve, 3rd green dotted line. The shape of components is similar while they differ by scale, since SLI does not normalize the components.}
   \label{fig:principal-components}
 \end{figure}
 
 \begin{figure}[h!]
-  \includegraphics[width=1\linewidth]{images/predictions}
+  \includegraphics[width=0.85\linewidth]{images/predictions}
   \caption{Two example curves (black and red) for each of the four methods. Solid lines are the true curves and dashed lines are the predictions. }
   \label{fig:example-predictions}
 \end{figure}
 
 \begin{figure}[h!]
-  \includegraphics[width=1\linewidth]{images/cross-val}
+  \includegraphics[width=0.85\linewidth]{images/cross-val}
   \caption{Estimated error of the solution (left) and the estimated rank of the solution (right) depending on the parameter $\lambda$.}
   \label{fig:estimated-rank}
 \end{figure}
@@ -764,11 +782,11 @@ In Figure \ref{fig:principal-components} we present the first components derived
 
 \section{Data study}
 
-The target class of problems motivating this study is prediction of trajectory of disease progression from sparse observations. As an example application, we analyze a dataset of Gillette Children's Hospital patients visiting the clinic between 1994 and 2014, mostly diagnosed with Cerebral Palsy (CP), age ranging between 4 and 19 years. The dataset contains $84$ visits of $36$ patients without gait disorders and $6066$ visits of $2898$ patients with gait pathologies. 
+The target class of problems motivating this study is the prediction of trajectory of disease progression from sparse observations. As an example application, we analyze a dataset of Gillette Children's Hospital patients visiting the clinic between 1994 and 2014, mostly diagnosed with Cerebral Palsy (CP), age ranging between 4 and 19 years. The dataset contains $84$ visits of $36$ patients without gait disorders and $6066$ visits of $2898$ patients with gait pathologies. 
 
-One popular quantitative characteristic of gait patterns is a so-called Gait Deviation Index (GDI) introduced by \citet{schwartz2008gait}. During each visit of a child in a clinic, their body kinematics are recorded using motion capture technology. GDI, which is a function of these measurements, was collected along with patient's age and other parameters irrelevant for the purpose of this paper.
+One popular quantitative characteristic of gait patterns is a so-called Gait Deviation Index (GDI) introduced by \citet{schwartz2008gait}. During each visit of a child in a clinic, their body kinematics are recorded using motion capture technology. GDI, which is a function of these measurements, was collected along with patient's age and other parameters.
 
-We are interested in predicting patient's GDI development trajectory based solely on their GDI history and histories of other patients. A good model of progression trajectories can constitute an important baseline for analyzing effects of treatments -- accurate prediction of a trajectory can help us understand if an improvement after a therapy is meaningful or if it is only a result of natural progression.
+To illustrate our method, we are interested in predicting patient's GDI development trajectory in two scenarios: (1) solely based on their GDI history and histories of other patients, (2) using other sparsely observed covariates such as BMI or O2 expenditure. A good model of progression trajectories can constitute an important baseline for analyzing effects of treatments -- accurate prediction of a trajectory can help us understand if an improvement after a therapy is meaningful or if it is only a result of natural progression.
 
 We randomly selected $10\%$ of observations from patients who visited the clinic at least $4$ times as our test set. Then, we split the remaining $90\%$ of observations into a training and validation sets. We train the algorithms with all combinations of parameters $K \in \{6,8,10\}$, $\lambda \in \{0.5, 0.75, 1, 1.5, 2\}$ and $R \in \{2,3,4\}$.
 
@@ -776,7 +794,7 @@ Let us denote the validation set as $S \subset \{1,2,...,N\} \times \{1,2,...,T\
 \[
 \verb|MSE|(M) = \|P_S(M(X) - X)\|_2^2.
 \]
-We select the parameters using cross-validation. We estimate errors by cross-validation, sampling $95\%$ of points to train the models and leaving $5\%$ for estimating the \verb|MSE|. We test $4$ methods for prediction: sparse functional principal components (\verb|fPCA|), \textsc{Soft-Longitudinal-Impute} (\verb|SLI|) and \textsc{Soft-Longitudinal-Regression} (\verb|SLR|) and subject's mean (\verb|mean|). In the regression setting, we approximate GDI by using its own latent as well as latent variables of the patient's O2 expenditure and their BMI.
+We select the parameters using cross-validation. We estimate errors by cross-validation, sampling $95\%$ of points to train the models and leaving $5\%$ for estimating the \verb|MSE|. We test $4$ methods for prediction: functional principal components (\verb|fPCA|), \textsc{Soft-Longitudinal-Impute} (\verb|SLI|) and \textsc{Soft-Longitudinal-Regression} (\verb|SLR|) and subject's mean (\verb|mean|). In the regression setting, we approximate GDI by using its own latent as well as latent variables of the patient's O2 expenditure and their BMI.
 
 % latex table generated in R 3.4.1 by xtable 1.8-2 package
 % Tue Sep  5 22:27:27 2017
@@ -792,12 +810,12 @@ regression & 128.34 & \textbf{11.95} \\
   mean & 144.31 & 12.83 \\ 
    \hline
 \end{tabular}\label{tbl:data-res}
-\caption{Distribution of cross-validated MSE of the four procedures: sparse functional principal components (fPCA), Soft-Longitudinal-Impute (SLI), Soft-Longitudinal-Regression (SLR), subjects mean (mean). Top characteristic in bold.}
+\caption{Distribution of cross-validated MSE of the four procedures: functional principal components (fPCA), Soft-Longitudinal-Impute (SLI), Soft-Longitudinal-Regression (SLR), subjects mean (mean). Top characteristic in bold.}
 \end{table}
 
-\begin{figure}[h]
+\begin{figure}[h!]
   \includegraphics[width=0.7\linewidth]{images/cv-data-err}
-  \caption{Distribution of cross-validated MSE of the four procedures: sparse functional principal components (fPCA), Soft-Longitudinal-Impute (SLI), Soft-Longitudinal-Regression (SLR), subjects mean (mean).}
+  \caption{Distribution of cross-validated MSE of the four procedures: functional principal components (fPCA), Soft-Longitudinal-Impute (SLI), Soft-Longitudinal-Regression (SLR), subjects mean (mean).}
   \label{fig:Boxplots}
 \end{figure}
 
@@ -850,9 +868,9 @@ All three methods reduce the \verb|MSE| by $\sim 10\%$. We present detailed resu
 % \end{enumerate}
 
 % \section{Discussion}
-
-\bibliographystyle{imsart-nameyear}
+\renewcommand*{\bibfont}{\small}
 \bibliography{report}
+%\printbibliography
 
 %% \appendix
 
