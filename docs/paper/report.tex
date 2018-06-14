@@ -33,6 +33,8 @@
 \newcommand{\bb}{\mathbf{b}}
 \newcommand{\bx}{\mathbf{x}}
 \newcommand{\bw}{\mathbf{w}}
+\newcommand{\bu}{\mathbf{u}}
+\newcommand{\be}{\mathbf{e}}
 
 \DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator*{\diag}{diag}
@@ -41,6 +43,7 @@
 \DeclareMathOperator*{\Var}{Var}
 \DeclareMathOperator*{\minimize}{minimize\ \ }
 \DeclareMathOperator*{\subjectto}{subject\ to\ \ }
+\DeclareMathOperator*{\E}{\mathbb{E}}
 
 \endlocaldefs
 
@@ -136,7 +139,7 @@ In this section, we discuss state-of-the-art approaches to estimating this low-d
 
 \subsection{Direct approach}\label{ss:direct}
 
-If the set of observed values is dense, simple interpolation using a continuous basis can be sufficient for approximating the entire trajectory. Formally, let $\{b_i: i \in \N \}$ be a basis of $L_2([t_{\min},t_{\max}])$. In practice, we use a finite number of basis elements. Let $\bb(t) = [b_1(t),b_2(t),...,b_K(t)]'$ be a vector of $K$ basis elements evaluated at point $t \in (t_{\min},t_{\max})$. For each subject $i \in \{ 1,...,n_i \}$, we might use least squares method to find a set of coefficients $\bw_i = [w_{i,1},...,w_{i_K}]' \in \R$, minimizing euclidean distance to the observed point
+If the set of observed values is dense, simple interpolation using a continuous basis can be sufficient for approximating the entire trajectory. Formally, let $\{b_i: i \in \N \}$ be a basis of $L_2([t_{\min},t_{\max}])$. In practice, we use a finite number of basis elements. Let $\bb(t) = [b_1(t),b_2(t),...,b_K(t)]'$ be a vector of $K$ basis elements evaluated at point $t \in (t_{\min},t_{\max})$. For each subject $i \in \{ 1,...,n_i \}$, we might use least squares method to find a set of coefficients $\bw_i = [w_{i,1},...,w_{i_K}]' \in \R^K$, minimizing euclidean distance to the observed point
 \begin{align}\label{eq:direct-individual}
  \argmin_{\bw_i}\sum_{j=1}^{n_i}\left|y_{i,j} - \bw_i'\bb(t_{i,j})\right|^2.
 \end{align}
@@ -155,7 +158,7 @@ A common approach to modeling longitudinal observation $(\mathbf{t}_i, \mathbf{y
 \end{align}
 where $\Sigma$ is a $K \times K$ covariance matrix. We model individual observations as
 \begin{align}\label{eq:probabilistic}
- \mathbf{y}_i \sim \cN(\mu_i + B_i\mathbf{w}_i, \sigma^2I_{n_i}),
+ \mathbf{y}_i|\mathbf{w}_i \sim \cN(\mu_i + B_i\mathbf{w}_i, \sigma^2I_{n_i}),
 \end{align}
 where $\mu_i = [\mu(t_{i,1}),\mu(t_{i,2}),...,\mu(t_{i,n_i})]'$, $\sigma$ is the standard deviation of observation error and $B_i = [\bb(t_{i,1}),...,\bb(t_{i,n_i})]'$. Estimation of the model parameters is typically accomplished by the expectation-maximization (EM) algorithm \citep{laird1982random}. For estimating coefficients $\bw_i$ one can use the best unbiased linear predictor (BLUP) \citep{henderson1950estimation,robinson1991blup}. % or other techniques typical for mixed-effect models \citep{mardia1980multivariate}.
 
@@ -417,7 +420,7 @@ with $K \sim 10$ in our motivating data example. While algorithms for large matr
 
 \paragraph{Modeling new data.}
 
-For modeling new data, in practice, we are interested in two scenarios: (1) we collect a new measurements of an existing patient $i \in \{1,2,...,N\}$; (2) we include a new patient $(N+1)$ with at least as many observations as the rank of $W$. In both cases, we simply use the current fit for each parameter $\lambda$ and update all models with newly observed data. This approach not only estimates new predictions but also slightly improves the existing model. 
+For modeling new data, in practice, we are interested in two scenarios: (1) we collect new measurements of an existing patient $i \in \{1,2,...,N\}$; (2) we include a new patient $(N+1)$ with at least as many observations as the rank of $W$. In both cases, we simply use the current fit for each parameter $\lambda$ and update all models with newly observed data. This approach not only estimates new predictions but also slightly improves the existing model. 
 
 %\tr{[TODO] If $n_i < q$, where $q$ is the rank of the current model, we might impose some additional conditions on $U_i$ and/or shrink it}
 
@@ -569,26 +572,69 @@ We explore two cases: (1) dimensionality reduction, where we project sparsely sa
 
 \subsection{Motivation: Bivariate processes}
 
-Suppose we partly observe $N\times T$ matrices $X$, $Y$ and we aim at regressing $Y$ on $X$. Let $B$ be an orthogonalized $T\times K$ matrix of $K$ splines evaluated on a grid $G$ of $T$ timepoints. We assume the model \begin{align*}
-X = \tilde{X}B' + E_X \text{ \ and \ } Y = \tilde{Y}B' + E_{Y},
-\end{align*}
-where $\tilde{X}$ is a $N\times K$ matrix, $E_X$ and $E_Y$ are $N \times T$ matrices with independent identically distributed coordinates $\cN(0,\sigma_X^2)$ and $\cN(0,\sigma_Y^2)$ correspondingly, $\sigma_X^2,\sigma_Y^2 > 0$, and $\tilde{Y}~=~\tilde{X}A$ for some $K\times K$ matrix $A$. We assume $\rank(\tilde{X}) = k$, where $k < K$.
+%% Suppose we observe two processes defined as in \eqref{eq:latent-probabilistic} and \eqref{eq:probabilistic}. Let $B$ be an orthogonalized $T\times K$ matrix of $K$ splines evaluated on a grid $G$ of $T$ timepoints and define
+%% \begin{align}\label{eq:latent-probabilistic-bivar}
+%%   \mathbf{x|u} \sim \cN(\mu_x + B\mathbf{u}, \sigma_x^2I_{T})  \text{ \ and \ }
+%%  \mathbf{y|w} \sim \cN(\mu_y + B\mathbf{w}, \sigma_y^2I_{T}),
+%% \end{align}
+%% where
+%% \begin{align}
+%%  \mathbf{u} \sim \cN(0, \Sigma_u)  \text{ \ and \ } \mathbf{w} \sim \cN(0, \Sigma_w),
+%% \end{align}
+%% $\Sigma_u, \Sigma_w$ are $K \times K$ covariance matrices and we model individual observations as
+%% Assume that $\mathbf{x}$ and $\mathbf{y}$ are linked by a linear model in the latent spaces, i.e.
+%% \begin{align}\label{eq:latent-linear}
+%%  \mathbf{w} = \mathbf{u}A + \varepsilon,
+%% \end{align}
+%% where $A$ is a $K \times K$ matrix and $\varepsilon \sim \cN(0,\Sigma_\varepsilon)$ for some covariance matrix $\Sigma_\varepsilon$. We want to estimate $\alpha$ and mutually improve estimates of $\bw$ and $\bu$ given the relation \eqref{eq:latent-linear}.
 
-We consider the optimization problem
+%% \tr{TODO: Comments on how to do it directly - the probabilistic approach}
+
+Suppose, as previously, that the true processes are in a low-dimensional space of splines, but they are observed with noise. More precisely, let
+\begin{align}\label{eq:definitions-xy}
+  \bx_i = \bu_iB' + \be_{x,i} \text{\ \ and\ \ } \by_i = \bw_iB' + \be_{y,i},
+\end{align}
+for $1 \leq i \leq N$, where $\bx_i,\by_i,\be_{x,i},\be_{y,i}$ are $1 \times T$ vectors, $\bu_i,\bw_i$ are $1 \times K$ vectors and $B$ is a $T \times K$ matrix of $K$ splines evaluated on a grid of $T$ points. We assume zero-mean independent errors $\be_{x,i},\be_{y,i}$ with fixed covariances and that the true processes underlying the observed $\bx_i$ and $\by_i$ follow a linear relation in the spline space, i.e.
+\begin{align}\label{eq:linear-xy}
+  \bw_i = \bu_iA,
+\end{align}
+where $A$ is some unknown $K \times K$ matrix.
+
+Let $X,Y,U,W$ be matrices formed from $\bx_i,\by_i,\bu_i,\bw_i$ stacked vertically. From \eqref{eq:linear-xy} we have $W = UA$, while \eqref{eq:definitions-xy} implies
+\begin{align}\label{eq:almost-errors-in-variables}
+X = UB' + E_X \text{ \ and \ } Y = UA B' + E_{Y},
+\end{align}
+where $E_X,E_Y$ are matrices of observation noise.
+
+Note that by multiplying both expressions in \eqref{eq:definitions-xy} or in \eqref{eq:almost-errors-in-variables} by $B^{-1}$ we can map the problem to a classical multivariate {\em errors-in-variables models}. Let
+\begin{align}\label{eq:errors-in-variables}
+  \tilde{X} = XB^{-1} = U + \tilde{E}_X \text{ and } \tilde{Y} = YB^{-1} = UA + \tilde{E}_Y,
+\end{align}  
+where $\tilde{E}_X = E_XB^{-1}$ and $\tilde{E}_Y = E_YB^{-1}$. In errors-in-variables models it is assumed that the parameters $U$ and $A$ are unknown, and are to be estimated. Both regressors and responses are measured with noise (here $\tilde{E}_X$ and $\tilde{E}_Y$). The parameter $U$ can be seen as a latent representation of both $\tilde{X}$ and $\tilde{Y}$.
+
+The problem \eqref{eq:errors-in-variables} has been extensively studied in literature dating back to \citet{adckock1978}. Two main methods for estimating parameters in \eqref{eq:errors-in-variables} are {\em maximum likelihood estimates (MLE)} and {\em generalized least squares estimators (GLSE)}. The estimators in MLE are derived under assumption of certain ditributions of the errors. In GLSE, the only assumption on errors is that they are independent, zero-mean and with a common covariance matrix. Then, $\tilde{X} - U$ and $\tilde{Y} - UA$ are zero-mean and estimates for $U$ and $B$ can be found by optimizing some norm of these expressions. \tr{TODO: Comment on the fact that they are equivalent under reasonable assumptions}
+
+% We assume $\rank(U) = k$, where $k < K$. 
+
+In this work we focus on the GLSE approach as it can be directly solved in our matrix factorization framework and we find it easier to deploy in practice. We consider the optimization problem
 %Now, in order to estimate the low-rank decomposition of $Y$ we consider %the problem \eqref{eq:rank-restricted} to
 \begin{align}\label{eq:lag:bivariate}
-  \minimize_{A,\tilde{X}} & \frac{1}{\sigma_Y^2} \| Y - \tilde{X}A'B' \|_F^2 + \frac{1}{\sigma_X^2}\|X - \tilde{X}B' \|_F^2,\nonumber\\
-  \subjectto & \rank(\tilde{X}) = k.
+  \minimize_{A,U} & \frac{1}{\sigma_Y^2} \| Y - UAB' \|_F^2 + \frac{1}{\sigma_X^2}\|X - UB' \|_F^2.%\nonumber\\
+  %\subjectto & \rank(U) = k.
 \end{align}
 Let $\gamma = \sigma_Y^2 / \sigma_X^2$. Then \eqref{eq:lag:bivariate} can be written as
 \begin{align}\label{eq:lag:bivariate2}
+<<<<<<< HEAD
   \minimize_{A,\tilde{X}} & \| (Y:\gamma X) - (\tilde{X}A'B':\gamma \tilde{X}B') \|_F^2,\nonumber\\
   \subjectto & \rank(\tilde{X}) = k,
+=======
+  \minimize_{A,U} & \| (Y:\gamma X) - U(AB':\gamma B') \|_F^2,%\nonumber\\
+  %\subjectto & \rank(U) = k,
+>>>>>>> e80be8cf4467162a3b48a2d54aa0c7fe89f699e1
 \end{align}
-which we solve by computing the SVD of $(YB:\gamma XB)$. 
+which we solve by computing the SVD of $(YB:\gamma XB)$.
 
-Note that solving the problem \eqref{eq:lag:bivariate} is equivalent to finding the first $k$ principal directions in the canonical correlation analysis (CCA) \citep{hotelling1936relations}. Moreover, if $\gamma=1$ the problem is equivalent to partial least squares (PLS) \citep{wold1975soft}. Solutions of CCA and PLS can be derived from the SVD of $(YB:\gamma XB)$ \citep{borga1997unified}.
-
+<<<<<<< HEAD
 Although we motivate the problem \eqref{eq:lag:bivariate2} as a regression of $Y$ on $X$, the two variables are symmetric. Therefore, the solution $\tilde{X}$ can be interpreted as a latent representation of the two processes. To emphasize this, we introduce a $N \times K$ latent matrix $W$, and we rewrite the problem as
 \begin{align}\label{eq:lag:bivariate2}
   \minimize_{W,A_X,A_Y} & \| (Y:\gamma X) - (WA_Y'B':WA_X'B') \|_F^2,\nonumber\\
@@ -603,6 +649,30 @@ and we apply methodology from Section \ref{ss:matrix-factorization} for finding 
 The low-rank matrix $W$ is a joint low-rank representation of matrices $X$ and $Y$, and thus our method can be seen as a dimensionality reduction technique. In Section \ref{ss:dim-red} we extended this idea to a larger number of variables. In Section \ref{ss:regression} we discuss how this approach can be used for regression.
 
 Note that the approach presented in this section has an analogy in the matrix completion context. \citet{condli1999bayesian} showed that for improving prediction of unknown entries in some matrix $G$ one might consider a low-rank decomposition of $(G:H)$, where $H$ are additional covariates for each row, e.g., demographic features of individuals. The idea of stacking the matrices together motivates the dimensionality reduction technique discussed in Section~\ref{ss:dim-red}.
+=======
+Although we motivate the problem \eqref{eq:lag:bivariate2} as a regression of $Y$ on $X$, the two variables are symmetric. Therefore, the solution $U$ can be interpreted as a latent representation of the two processes. To emphasize this, we rewrite the problem as
+\begin{align}\label{eq:lag:bivariate2-symmetric}
+  \minimize_{U,A_X,A_Y} & \| (Y:\gamma X) - U(A_Y'B':A_X'B') \|_F^2.\nonumber
+\end{align}
+%% As in \eqref{eq:rank-restricted}, the rank constrain can be relaxed to the nuclear norm. Then, Lagrangian takes form
+%% \begin{align}
+%%   \argmin_{U,A_X,A_Y} \| (Y:\gamma X) - U(A_Y'B':A_X'B') \|_F^2 + \lambda \| U \|_*  \label{eq:final-bivariate},
+%% \end{align}
+%% and we apply methodology from Section \ref{ss:matrix-factorization} for finding $U,A_X$ and $A_Y$.
+
+For partially observed data, if they are very sparse, it might be essential to constrain the rank of the solution. The partially-observed and rank-constained problem \eqref{eq:lag:bivariate2} takes form 
+\begin{align*}%\label{eq:lag:bivariate2-partial}
+  \minimize_{A,U} & \| P_{\Omega:\Omega}((Y:\gamma X) - U(AB':\gamma B')) \|_F^2,\nonumber\\
+  \subjectto & \rank(U) = k,
+\end{align*}
+where $k$ is the desired rank of the solution, $P_{\Omega:\Omega}$ is a projection on $(\Omega:\Omega) = \{(q,r): (q,r) \in \Omega \text{ or } (q,r-T) \in \Omega\}$. The algorithm in a general case of multiple processes will be given in Section \ref{ss:dim-red}.
+
+The low-rank matrix $U$ is a joint low-rank representation of matrices $X$ and $Y$ and thus our method can be seen as a dimensionality reduction technique or as a latent space model. In Section \ref{ss:dim-red} we extended this idea to a larger number of variables. In Section \ref{ss:regression} we discuss how this approach can be used for regression.
+
+The linear structure of \eqref{eq:almost-errors-in-variables} allows us to draw analogy not only to the errors-in-variables models but also to vast literature on {\em canonical corroletaion analysis (CCA)}, {\em partial least squares (PLS)}, {\em factor analysis (FA)}, and {\em linear functional equation (LFE) models}. One can show that solving the problem \eqref{eq:lag:bivariate} is equivalent to finding the first $k$ principal directions in the canonical correlation analysis (CCA) \citep{hotelling1936relations}. Moreover, if $\gamma=1$ the problem is equivalent to PLS \citep{wold1975soft}. Solutions of CCA and PLS can be derived from the SVD of $(YB:\gamma XB)$ \citep{borga1997unified}. For discussion on relation between errors-in-variables, FA and CCA please refer to \cite{gleser1981}.
+
+Finally, note that the approach presented in this section has also an analogy in the recommender systems context. \citet{condli1999bayesian} showed that for improving prediction of unknown entries in some matrix $A$ one might consider a low-rank decomposition of $(A:B)$, where $B$ are additional covariates for each row, e.g. demographic features of individuals. %The idea of stacking the matrices together motivates the dimensionality reduction technique discussed in Section~\ref{ss:dim-red}.
+>>>>>>> e80be8cf4467162a3b48a2d54aa0c7fe89f699e1
 
 %% Using SVD any solution can be written as $(\hat{X} : \hat{Y}) = W (V_X'M' : V_Y'M')$. Now let $\hat{X} = WV_X'M'$ and $\hat{Y} = WV_Y'M'$. 
 %% The problem \eqref{eq:two-vars} can be becomes
@@ -617,13 +687,17 @@ Note that the approach presented in this section has an analogy in the matrix co
 
 \subsection{Dimensionality reduction}\label{ss:dim-red}
 
+<<<<<<< HEAD
 Suppose that for every individual we observe multiple variables varying in time, e.g., results of several medical tests at different times in a clinic, and we want to find a projection on $\R^d$ maximizing the variance explained for some $d \in \N$. %For fully observed $X_1,...,X_p$ this would correspond to the reduced-rank SVD of concatenated matrices $X_1~:~X_2~:~...~:~X_p$. %In this section, we introduce a method for finding such projection when the data is sparsely observed. We illustrate the method on bivariate processes, however it can be easily extended to any $p$-dimensional processes. 
+=======
+Suppose that for every individual we observe multiple variables varying in time (e.g. results of multiple medical tests at different times in a clinic) and we want to find a projection on $\R^d$ maximizing the variance explained for some $d \in \N$. %For fully observed $X_1,...,X_p$ this would correspond to the reduced-rank SVD of concatenated matrices $X_1~:~X_2~:~...~:~X_p$. %In this section, we introduce a method for finding such projection when the data is sparsely observed. We illustrate the method on bivariate processes, however it can be easily extended to any $p$-dimensional processes. 
+>>>>>>> e80be8cf4467162a3b48a2d54aa0c7fe89f699e1
 
 We extend the equation \eqref{eq:final-bivariate} to account for a larger number of covariates
 \begin{align*}%\label{eq:multivar}
 \argmin_{W,A_1,...,A_p} &\| (X_1:X_2:...:X_p) -  (WA_1'B_1':WA_2'B_2':...:WA_p'B_p') \|_F^2 + \lambda\|W\|_*,
 \end{align*}
-where $B_{i}$ is basis selected for approximation of processes $X_{i}$ for $1 \leq i \leq p$. 
+where $B_{i}$ is a basis selected for approximation of processes $X_{i}$ for $1 \leq i \leq p$. 
 
 Note that by allowing a different basis for each process, we also allow for covariates constant in time if $X_i$ is a $N\times 1$ matrix and $B_{(i)} = 1$ for some $1 \leq i \leq p$.
 Finally, if measurements are on different scales, we may normalize them using some scaling $\gamma_1, \gamma_2,..., \gamma_p > 0$, and taking
@@ -641,10 +715,17 @@ See Algorithm \ref{alg:soft-PCA} for the detailed description of the procedure. 
 \begin{enumerate}
 \item Repeat:
 \begin{enumerate}
+<<<<<<< HEAD
 \item Compute $A^{prj}_i = (P_\Omega(X_i) + P_\Omega^\perp(W^{old}A_i^{old}B'))B$ for $i \in \{1,...,p\}$,
 \item Compute $W^{new} (A_1^{new}:...:A_p^{new}) \leftarrow S_{\lambda_k}( A^{prj}_1 : ... : A^{prj}_p )$.
 \item If $\frac{\|W^{new} - W^{old}\|_F^2}{\|W^{old}\|_F^2} < \varepsilon$ exit,
 \item Assign $W^{old} \leftarrow W^{new}$ and $A_i^{old} \leftarrow A_i^{new}$ for $i \in \{1,...,p\}$.
+=======
+\item Compute $W^{prj}_i = (P_\Omega(X_i) + P_\Omega^\perp(W_i^{old}B'))B$ for $i \in \{1,...,p\}$,
+\item Compute $W^{new} \leftarrow S_{\lambda_k}( W^{prj}_1 : ... : W^{prj}_p )$.
+\item If $\frac{\|W^{new} - W^{old}\|_F^2}{\|W^{old}\|_F^2} < \varepsilon$ exit.
+\item Assign $W^{old} \leftarrow W^{new}$
+>>>>>>> e80be8cf4467162a3b48a2d54aa0c7fe89f699e1
 \end{enumerate}
 \item Assign $\hat{W}_{\lambda_k} \leftarrow W^{new}$
 \end{enumerate}
@@ -714,7 +795,7 @@ We propose an iterative algorithm where we fill in the missing values in $Y$ wit
 
 We illustrate properties of the multivariate longitudinal fitting in a simulation study. Let $G$ be a grid of $T = 51$ equidistributed points and let $B$ be a basis of $K = 9$ functions evaluated on the grid $G$. We generate observations from the model $\eqref{eq:model}$ with $p \in \{3,5,7\}$ true components. %We set $V\Lambda V'$ to a matrix with eigenvalues $\diag[1-\frac{1}{7},...,1 - \frac{p}{8},0,...,0]$.
 
-We draw two matrices $X_1,X_2$ of size $N \times K$ from $\eqref{eq:model}$ and we define $Y~=~R_1 X_1 + R_2 X_2$, where $R_1,R_2$ are some fixed rotations in $\R^K$. We observe $X_{1,f} = X_1B' + E_{X_1}, X_{2,f} = X_2 B' + E_{X_2}$ and $Y_f = YB' + 2* E_Y$, where $E_{X_1},E_{X_2},E_{Y}$ are matrices with uncorrelated Gaussian coordinates with standard deviation $\sigma = 0.2$. We observe $10\%$ of indices. Our objective is to estimate $Y$ using the observed data.
+We draw two matrices $X_1,X_2$ of size $N \times K$ from $\eqref{eq:model}$ and we define $Y~=~R_1 X_1 + R_2 X_2$, where $R_1,R_2$ are some fixed rotations in $\R^K$. We observe $X_{1,f} = X_1B' + E_{X_1}, X_{2,f} = X_2 B' + E_{X_2}$ and $Y_f = YB' + 2E_Y$, where $E_{X_1},E_{X_2},E_{Y}$ are matrices with uncorrelated Gaussian coordinates with standard deviation $\sigma = 0.2$. We observe $10\%$ of indices. Our objective is to estimate $Y$ using the observed data.
 
 We compare \textsc{Sparse-Longitudinal-Impute} (SLI) with the results from the fPCA \citep{james2000principal}, implemented in \citet{peng2009geometric}. Both, SLI and fPCA require are parametrized with a set of basis functions. In both cases we use the first $k$ elements of the Fourier basis. In our method we also need the tuning parameter $\lambda$, whilst in fPCA we need to chose the rank $R$. We use cross-validation to find $(k_{ours},\lambda)$ and $(k_{FPCA},R)$.
 
@@ -803,8 +884,8 @@ We select the parameters using cross-validation. We estimate errors by cross-val
   \hline
  & mean & sd \\ 
   \hline
-regression & 128.34 & \textbf{11.95} \\ 
-  impute & \textbf{128.31} & 12.47 \\ 
+  SLR & 128.34 & \textbf{11.95} \\ 
+  SLI & \textbf{128.31} & 12.47 \\ 
   fPCA & 129.01 & 12.47 \\ 
   mean & 144.31 & 12.83 \\ 
    \hline
