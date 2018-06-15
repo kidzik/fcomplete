@@ -250,7 +250,7 @@ We can use the same idea to predict sparsely sampled curves, as long as we intro
 
 \begin{figure}[h]
   \includegraphics[width=1\linewidth]{images/intro}
-  \caption{This key observation motivating this paper is the fact that sparse longitudinal trajectory prediction problem can be mapped to the matrix completion problem. Matrix completion can be approached with matrix factorization where we look for $W$ and $A$ of low rank, approximating observed values in $Y$ (circled rectangles in the matrix $Y$). In the sparse longitudinal setting, we impose continuity by fixing the basis $B$ (e.g. splines) and again finding low-rank $W$ and $A$ approximating observed values in $Y$. $B$ corresponds to some discretized smooth basis, here with $3$ basis elements.}
+  \caption{The key observation motivating this paper is the fact that sparse longitudinal trajectory prediction problem can be mapped to the matrix completion problem. Matrix completion can be approached with matrix factorization where we look for $W$ and $A$ of low rank, approximating observed values in $Y$ (circled rectangles in the matrix $Y$). In the sparse longitudinal setting, we impose continuity by fixing the basis $B$ (e.g. splines) and again finding low-rank $W$ and $A$ approximating observed values in $Y$. $B$ corresponds to some discretized smooth basis, here with $3$ basis elements.}
   \label{fig:idea}
 \end{figure}
 
@@ -265,15 +265,15 @@ For each individual $i \in \{1,2,...,N\}$ we observe $n_i$ measurements $\{\tild
 
 We will show that in our method the grid can be arbitrarily dense with marginal compromise on performance, and therefore, without loss of generality, we assume that at most one measurement per subject is mapped to every grid-point in $G$.
 
-In such settings, our observations can be uniquely represented as a $N \times T$ matrix $Y$ with missing values. Let $O_i = \{g_i(j): 1 \leq j \leq n_i \}$ be a set of grid indices corresponding to observed grid-points for an individual $i$. We denote the set of all observed elements by pairs of indices $\Omega = \{ (i,j) : i\in \{1,2,...,N\}, j \in O_i \}$. Let $P_\Omega(Y)$ be the projection onto observed indices, i.e. $P_\Omega(Y) = W$, such that $W_{i,j} = Y_{i,j}$ for $(i,j) \in \Omega$ and $W_{i,j} = 0$ otherwise. We will use $\|\cdot\|_F$ to denote the Frobenius norm, i.e. the square root of the sum of matrix elements, and $\|\cdot\|_*$ to denote the nuclear norm, i.e. the sum of singular values.
+In such settings, our observations can be uniquely represented as a $N \times T$ matrix $Y$ with missing values. Let $O_i = \{g_i(j): 1 \leq j \leq n_i \}$ be a set of grid indices corresponding to observed grid-points for an individual $i$. We denote the set of all observed elements by pairs of indices $\Omega = \{ (i,j) : i\in \{1,2,...,N\}, j \in O_i \}$. Let $P_\Omega(Y)$ be the projection onto observed indices, i.e. $P_\Omega(Y) = W$, such that $W_{i,j} = Y_{i,j}$ for $(i,j) \in \Omega$ and $W_{i,j} = 0$ otherwise. We define $P^\perp_\Omega(Y)$ as the projection on the complement of $\Omega$, i.e. $P^\perp_\Omega(Y) = Y - P_\Omega(Y)$. We will use $\|\cdot\|_F$ to denote the Frobenius norm, i.e. the square root of the sum of matrix elements, and $\|\cdot\|_*$ to denote the nuclear norm, i.e. the sum of singular values.
 
 As in Section \ref{s:background} we impose smoothness by using a continuous basis $\bb(t) = [b_1(t),b_2(t),...,b_K(t)]'$. However, now, the basis is evaluated on the grid $G$ and we define $\tilde{B} = [\bb(\tau_1),\bb(\tau_2),...,\bb(\tau_T)]'$. Throughout the paper we will use 
 
-In our algorithms we will use a diagonal-thresholding operators defined as follows. Let $D = \diag(d_1,...,d_p)$ be a diagonal matrix. We define ``soft-thresholding'' as
+In our algorithms we will use a diagonal-thresholding operators defined as follows. Let $D = \diag(d_1,...,d_p)$ be a diagonal matrix. We define {\em soft-thresholding} as
 \begin{equation*}
 D_\lambda = \diag((d_1 - \lambda)_+,(d_2 - \lambda)_+,...,(d_p - \lambda)_+),\label{eq:thresholding}
 \end{equation*}
-where $(x)_+ = \max(x, 0)$, and ``hard-thresholding'' as
+where $(x)_+ = \max(x, 0)$, and {\em hard-thresholding} as
 \begin{equation*}
 D_\lambda^H = \diag(d_1,d_2,...,d_q,0,...,0),\label{eq:thresholding}
 \end{equation*}
@@ -306,7 +306,9 @@ However, representations \eqref{eq:direct-individual} and \eqref{eq:direct-matri
 Note that some low-rank constraints on the random effect from the mixed-effect model introduced in Section \ref{ss:lmm} can be expressed in terms of constraints on $W$ and they can be potentially solved without imposing probability distributions. In particular, as we show next, the linear mixed-effect model can be expressed by constraining $\rank(W)$. % for some $q \in \N$.
 
 \subsection{Low-rank matrix approximation}\label{ss:low-rank-matrix}
-In the low-rank approach described in Section \ref{ss:reduced-rank} we assume that individual trajectories can be represented in a low-dimensional space, by constraining the rank of $W$. We might attempt taking the same route, however, the problem \eqref{eq:direct-matrix} with a constraint on the rank of $W$ is a non-convex problem.
+In the low-rank approach described in Section \ref{ss:reduced-rank} we assume that individual trajectories can be represented in a low-dimensional space, by constraining the rank of $W$.
+
+We might attempt taking the same route, however, the problem \eqref{eq:direct-matrix} with a constraint on the rank of $W$ is a non-convex problem. For this reason, we relax the constraint in \eqref{eq:direct-matrix} to an inequality
 
 %% In many situations, this rank constrain can be efficiently relaxed by a nuclear norm to make the problem convex \citep{candes2009exact, fazel2002matrix}. \citet{candes2009near} consider the nuclear norm relaxation in the setting where the solution matches exactly a linear combination of the observed elements. In particular, they assume existence of exact solutions of \eqref{eq:direct-matrix} and they solve
 %% \begin{align} 
@@ -318,13 +320,13 @@ In the low-rank approach described in Section \ref{ss:reduced-rank} we assume th
 
 %% For our application, the constraint \eqref{eq:cai} requiring exact matching of the observed and predicted values is too strong. For example, if there are more measurements per subject than $\rank(W)$ or if a subject was measured at two consecutive grid-points with some observation noise, we may not be able to find a continuous solution imposed by the smooth basis $B$.
 
-For this reason, we relax the constraint in \eqref{eq:cai} to an inequality
 \begin{align}
-\text{minimize\ \ } & \|W\|_*,  \nonumber\\
-\text{subject to\ \ } & \| P_\Omega(Y - WB') \|_F^2 \leq \delta
+  \argmin_W \| P_\Omega(Y - WB') \|_F^2 + \lambda\|W\|_*,
+%% \text{minimize\ \ } & \|W\|_*,  \nonumber\\
+%% \text{subject to\ \ } & \| P_\Omega(Y - WB') \|_F^2 \leq \delta
 \label{eq:rank-restricted}
 \end{align}
-for some parameter $\delta > 0$.
+for some parameter $\lambda > 0$.
 
 \citet{cai2010singular} propose a first-order singular value thresholding algorithm (SVT), solving the problem \eqref{eq:rank-restricted}. Their algorithm can handle large datasets and has strong guarantees on convergence but it requires tuning the step size parameter, which can greatly influence the performance. This limitation was addressed by \citet{ma2011fixed,mazumder2010spectral,hastie2015matrix} who introduced iterative procedures which do not depend on such tuning. Moreover, \citet{hardt2014fast,chen2015fast} propose methods for the non-convex problem and \citet{ge2016matrix} argue that the non-convex problem has no spurious local minima.
 
@@ -371,25 +373,27 @@ We argue that the matrix formulation \eqref{eq:rank-restricted} has two key adva
 The low-rank probabilistic approach, introduced in Section \ref{ss:reduced-rank}, is based on the observation that the underlying processes for each subject can be approximated in a low-dimensional space. %In $P_\Omega(Y)$, it is only feasible to estimate a low-rank representation of $Y$ matrix. %\citet{fazel2002matrix} show that, in order to make the optimization problem convex, the low-rank constraint \eqref{eq:rank-restricted} might be relaxed to a constraint on the nuclear norm of a matrix.
 Here, we exploit the same characteristic using a matrix-factorization techniques for solving the optimization problem \eqref{eq:rank-restricted}.
 
-[...] Note, that in the Lagrangian form, the problem \eqref{eq:rank-restricted} becomes
+%[...] Note, that in the Lagrangian form, the problem \eqref{eq:rank-restricted} becomes 
 %\begin{align}\label{eq:mazumder}
 %\min_{\tilde{W}} \frac{1}{2} \|P_\Omega(Y - \tilde{W})\|_F^2 + \lambda\|\tilde{W}\|_*,
 %\end{align}
 %for some $\lambda = \lambda(\sigma) \geq 0$ and $\tilde{W}$ is a $N \times T$ matrix. \citet{hastie2015matrix} introduced a fast and parallel algorithm for solving \eqref{eq:mazumder}.
 % In our longitudinal setting, estimating $\tilde{W}$ directly from \eqref{eq:mazumder} will fail since it does not account for the continuous structure. Instead, we further constrain \eqref{eq:mazumder} by imposing the continuous basis $B$. We optimize
-\begin{align}\label{eq:matrixproblem-final}
-\min_Z \frac{1}{2} \|P_\Omega(Y - WB')\|_F^2 + \lambda\|W\|_*,
-\end{align}
-for some $\lambda > 0$ and where $W$ is an $N \times K$ matrix. For the sake of clarity and simplicity, we choose to solve the problem \eqref{eq:matrixproblem-final} with an extended version of the \textsc{Soft-Impute} algorithm designed by \citet{mazumder2010spectral}. As discussed in Section \ref{ss:low-rank-matrix}, many other convex optimization algorithms can be applied.
+%% \begin{align}\label{eq:matrixproblem-final}
+%% \min_Z \frac{1}{2} \|P_\Omega(Y - WB')\|_F^2 + \lambda\|W\|_*,
+%% \end{align}
+%% for some $\lambda > 0$ and where $W$ is an $N \times K$ matrix.
 
-The key component to the solution is the following property linking problem \eqref{eq:matrixproblem-final} with the singular value decomposition (SVD). Consider the fully observed case of \eqref{eq:matrixproblem-final}. Using Theorem 2.1 in \citet{cai2010singular}, one can show that the optimization problem
+For the sake of clarity and simplicity, we choose to solve the problem \eqref{eq:rank-restricted} with an extended version of the \textsc{Soft-Impute} algorithm designed by \citet{mazumder2010spectral}. As discussed in Section \ref{ss:low-rank-matrix}, many other convex optimization algorithms can be applied.
+
+The key component to the solution is the following property linking problem \eqref{eq:rank-restricted} with the singular value decomposition (SVD). Consider the fully observed case of \eqref{eq:rank-restricted}. Using Theorem 2.1 in \citet{cai2010singular}, one can show that the optimization problem
 \begin{align}\label{eq:optsvd}
 \argmin_{W} \frac{1}{2} \| Y - WB' \|_F^2 + \lambda\|W\|_*
 \end{align}
 has a unique solution $W = \cS_\lambda (YB)$, where $\cS_\lambda(X) = UD_\lambda V'$ and $X = UDV'$ is the SVD of $X$. We refer to $\cS_\lambda(X)$ as the singular value thresholding (SVT) of $X$.
 
 % \section{Longitudinal impute algorithms}
-In order to solve \eqref{eq:optsvd} with a sparsely observed  $Y$, we modify the \textsc{Soft-Impute} algorithm from \citep{mazumder2010spectral} to account for the basis $B$. Our Algorithm \ref{alg:soft-impute} iteratively constructs better approximations of the global solution for each $\lambda$ in some predefined set $\{\lambda_1, \lambda_2, ..., \lambda_k\}$. Suppose we have some approximation of the solution $W^{old}$. We use $W^{old}B$ to impute unknown elements of $Y$ obtaining $\tilde{Y}$. We construct the next approximation $W^{new}$ by computing SVT of $\tilde{Y}$.
+In order to solve \eqref{eq:optsvd} with a sparsely observed  $Y$, we modify the \textsc{Soft-Impute} algorithm from \citep{hastie2015matrix, mazumder2010spectral} to account for the basis $B$. Our Algorithm \ref{alg:soft-impute} iteratively constructs better approximations of the global solution for each $\lambda$ in some predefined set $\{\lambda_1, \lambda_2, ..., \lambda_k\}$. Suppose we have some approximation of the solution $W^{old}$. We use $W^{old}B$ to impute unknown elements of $Y$ obtaining $\tilde{Y}$. We construct the next approximation $W^{new}$ by computing SVT of $\tilde{Y}$.
 
 %In Appendix \ref{s:convergence} we show that $W^{new,k}$ converges to the global solution $W_\lambda$ of \eqref{eq:matrixproblem-final}.
 As our stopping criterion we compute the change between subsequent solution, relative to the magnitude of the solution, following the methodology in \cite{cai2010singular}. We set some fixed threshold for this value, e.g. $\varepsilon = 10^{-4}$.
@@ -434,7 +438,7 @@ While the nuclear norm relaxation \eqref{eq:rank-restricted} is motivated by mak
 
 %While the nuclear norm normalization is motivated by the convex relaxation of the rank, \citet{mazumder2010spectral} observe that in many cases it can outperform rank restricted least squares. Analogically to \textsc{Lasso}, shrinkage can allow a rank higher than the actual rank of the matrix, improving prediction.
 
-Conversely, the same phenomenon can also lead to problems if the underlying dimension is small. In such case, shrinking may allow including unnecessary dimensions emerging from noise. To remedy this issue, following the analogy with penalized linear regression, we may consider another classes of penalties. In particular, we may consider coming back to the rank constraint by modifying the nuclear norm penalty \eqref{eq:matrixproblem-final} to $\ell_0$. We define $\|W\|_0 = \rank(W)$. The problem
+Conversely, the same phenomenon can also lead to problems if the underlying dimension is small. In such case, shrinking may allow including unnecessary dimensions emerging from noise. To remedy this issue, following the analogy with penalized linear regression, we may consider another classes of penalties. In particular, we may consider coming back to the rank constraint by modifying the nuclear norm penalty \eqref{eq:rank-restricted} to $\ell_0$. We define $\|W\|_0 = \rank(W)$. The problem
 \begin{align}\label{eq:matrixproblem-final-l0}
 \min_{W} \frac{1}{2} \|P_\Omega(Y - WB')\|_F^2 + \lambda\|W\|_0,
 \end{align}
@@ -590,70 +594,63 @@ We explore two cases: (1) dimensionality reduction, where we project sparsely sa
 
 %% \tr{TODO: Comments on how to do it directly - the probabilistic approach}
 
-Suppose, as previously, that the true processes are in a low-dimensional space of splines, but they are observed with noise. More precisely, let
+Suppose, as previously, that the true processes are in a low-dimensional space of splines and that we observe them with noise. More precisely, let
 \begin{align}\label{eq:definitions-xy}
-  \bx_i = \bu_iB' + \be_{x,i} \text{\ \ and\ \ } \by_i = \bw_iB' + \be_{y,i},
+  \bx_i' = \bw_i'B' + \be_{x,i}' \text{\ \ and\ \ } \by_i' = \bu_i'B' + \be_{y,i}',
 \end{align}
-for $1 \leq i \leq N$, where $\bx_i,\by_i,\be_{x,i},\be_{y,i}$ are $1 \times T$ vectors, $\bu_i,\bw_i$ are $1 \times K$ vectors and $B$ is a $T \times K$ matrix of $K$ splines evaluated on a grid of $T$ points. We assume zero-mean independent errors $\be_{x,i},\be_{y,i}$ with fixed covariances and that the true processes underlying the observed $\bx_i$ and $\by_i$ follow a linear relation in the spline space, i.e.
+for $1 \leq i \leq N$, where $\bx_i,\by_i,\be_{x,i},\be_{y,i}$ are $T \times 1$ vectors, $\bw_i, \bu_i$ are $K \times 1$ vectors and $B$ is a $T \times K$ matrix of $K$ splines evaluated on a grid of $T$ points. We assume zero-mean independent errors $\be_{x,i},\be_{y,i}$ with fixed covariance matrices $\Sigma_X,\Sigma_Y$ respectively, and that the true processes underlying the observed $\bx_i$ and $\by_i$ follow a linear relation in the spline space, i.e.
 \begin{align}\label{eq:linear-xy}
-  \bw_i = \bu_iA,
+  \bu_i' = \bw_i'A,
 \end{align}
-where $A$ is some unknown $K \times K$ matrix.
+where $A$ is an unknown $K \times K$ matrix.
 
-Let $X,Y,U,W$ be matrices formed from $\bx_i,\by_i,\bu_i,\bw_i$ stacked vertically. From \eqref{eq:linear-xy} we have $W = UA$, while \eqref{eq:definitions-xy} implies
+Let $X,Y,U,W$ be matrices formed from $\bx_i',\by_i',\bw_i',\bu_i'$ stacked vertically. From \eqref{eq:linear-xy} we have $U = WA$, while \eqref{eq:definitions-xy} implies
 \begin{align}\label{eq:almost-errors-in-variables}
-X = UB' + E_X \text{ \ and \ } Y = UA B' + E_{Y},
+X = WB' + E_X \text{ \ and \ } Y = WA B' + E_{Y},
 \end{align}
 where $E_X,E_Y$ are matrices of observation noise.
 
 Note that by multiplying both expressions in \eqref{eq:definitions-xy} or in \eqref{eq:almost-errors-in-variables} by $B^{-1}$ we can map the problem to a classical multivariate {\em errors-in-variables models}. Let
 \begin{align}\label{eq:errors-in-variables}
-  \tilde{X} = XB^{-1} = U + \tilde{E}_X \text{ and } \tilde{Y} = YB^{-1} = UA + \tilde{E}_Y,
+  \tilde{X} = XB^{-1} = W + \tilde{E}_X \text{ and } \tilde{Y} = YB^{-1} = WA + \tilde{E}_Y,
 \end{align}  
-where $\tilde{E}_X = E_XB^{-1}$ and $\tilde{E}_Y = E_YB^{-1}$. In errors-in-variables models it is assumed that the parameters $U$ and $A$ are unknown, and are to be estimated. Both regressors and responses are measured with noise (here $\tilde{E}_X$ and $\tilde{E}_Y$). The parameter $U$ can be seen as a latent representation of both $\tilde{X}$ and $\tilde{Y}$.
+where $\tilde{E}_X = E_XB^{-1}$ and $\tilde{E}_Y = E_YB^{-1}$. In errors-in-variables models it is assumed that the parameters $W$ and $A$ are unknown, and are to be estimated. Both regressors and responses are measured with noise (here $\tilde{E}_X$ and $\tilde{E}_Y$). The parameter $W$ can be seen as a latent representation of both $\tilde{X}$ and $\tilde{Y}$.
 
-The problem \eqref{eq:errors-in-variables} has been extensively studied in literature dating back to \citet{adckock1978}. Two main methods for estimating parameters in \eqref{eq:errors-in-variables} are {\em maximum likelihood estimates (MLE)} and {\em generalized least squares estimators (GLSE)}. The estimators in MLE are derived under assumption of certain ditributions of the errors. In GLSE, the only assumption on errors is that they are independent, zero-mean and with a common covariance matrix. Then, $\tilde{X} - U$ and $\tilde{Y} - UA$ are zero-mean and estimates for $U$ and $B$ can be found by optimizing some norm of these expressions. \tr{TODO: Comment on the fact that they are equivalent under reasonable assumptions}
+The problem of estimating parameters in \eqref{eq:errors-in-variables} has been extensively studied in literature dating back to \citet{adcock1878problem}. Two main methods for estimating parameters in \eqref{eq:errors-in-variables} are {\em maximum likelihood estimates (MLE)} and {\em generalized least squares estimators (GLSE)}. The estimators in MLE are derived under the assumption of certain ditributions of the errors. In GLSE, the only assumption on errors is that they are independent, zero-mean, and they have a common covariance matrix. Then, $\tilde{X} - W$ and $\tilde{Y} - WA$ are zero-mean and estimates for $W$ and $B$ can be found by optimizing some norm of these expressions. \citet{gleser1973estimation} show that in the no-interecept model for $\tilde{X}$ and $\tilde{Y}$ of the same size (as in our case) and under the assumption of gaussian errors, MLE and GLSE give the same estimates for $B$, if GLSE is optimized with the Frobenius norm.
 
 % We assume $\rank(U) = k$, where $k < K$. 
 
-In this work we focus on the GLSE approach as it can be directly solved in our matrix factorization framework and we find it easier to deploy in practice. We consider the optimization problem
+In this work we focus on the GLSE approach as it can be directly solved in our matrix factorization framework and we find it easier to deploy and extend in practice. \cite{gleser1981estimation} show that if variances of the noise are known, we can transform the data in such way that the variance matrices of the noise in variables are of the form $\Sigma_Y = \sigma^2_XI_T$ and $\Sigma_Y = \sigma^2_YI_T$. To account for different magnitudes of the noise in $X$ and $Y$, we consider the optimization problem
 %Now, in order to estimate the low-rank decomposition of $Y$ we consider %the problem \eqref{eq:rank-restricted} to
 \begin{align}\label{eq:lag:bivariate}
-  \minimize_{A,U} & \frac{1}{\sigma_Y^2} \| Y - UAB' \|_F^2 + \frac{1}{\sigma_X^2}\|X - UB' \|_F^2.%\nonumber\\
+  \minimize_{A,U} & \frac{1}{\sigma_Y^2} \| Y - WAB' \|_F^2 + \frac{1}{\sigma_X^2}\|X - WB' \|_F^2.%\nonumber\\
   %\subjectto & \rank(U) = k.
 \end{align}
 Let $\gamma = \sigma_Y^2 / \sigma_X^2$. Then \eqref{eq:lag:bivariate} can be written as
 \begin{align}\label{eq:lag:bivariate2}
-<<<<<<< HEAD
-  \minimize_{A,\tilde{X}} & \| (Y:\gamma X) - (\tilde{X}A'B':\gamma \tilde{X}B') \|_F^2,\nonumber\\
-  \subjectto & \rank(\tilde{X}) = k,
-=======
-  \minimize_{A,U} & \| (Y:\gamma X) - U(AB':\gamma B') \|_F^2,%\nonumber\\
+  \minimize_{A,U} & \| (Y:\gamma X) - W(AB':\gamma B') \|_F^2,%\nonumber\\
   %\subjectto & \rank(U) = k,
->>>>>>> e80be8cf4467162a3b48a2d54aa0c7fe89f699e1
 \end{align}
 which we solve by computing the SVD of $(YB:\gamma XB)$.
 
-<<<<<<< HEAD
-Although we motivate the problem \eqref{eq:lag:bivariate2} as a regression of $Y$ on $X$, the two variables are symmetric. Therefore, the solution $\tilde{X}$ can be interpreted as a latent representation of the two processes. To emphasize this, we introduce a $N \times K$ latent matrix $W$, and we rewrite the problem as
-\begin{align}\label{eq:lag:bivariate2}
-  \minimize_{W,A_X,A_Y} & \| (Y:\gamma X) - (WA_Y'B':WA_X'B') \|_F^2,\nonumber\\
-  \subjectto & \rank(W) = k.
-\end{align}
-As in \eqref{eq:rank-restricted}, the rank constrain can be relaxed to the nuclear norm. Then, Lagrangian takes form
-\begin{align}
-  \argmin_{W,A_X,A_Y} \| (Y:\gamma X) - (WA_Y'B':WA_X'B') \|_F^2 + \lambda \| W \|_*  \label{eq:final-bivariate},
-\end{align}
-and we apply methodology from Section \ref{ss:matrix-factorization} for finding $W,A_X$ and $A_Y$.
+%% Although we motivate the problem \eqref{eq:lag:bivariate2} as a regression of $Y$ on $X$, the two variables are symmetric. Therefore, the solution $\tilde{X}$ can be interpreted as a latent representation of the two processes. To emphasize this, we introduce a $N \times K$ latent matrix $W$, and we rewrite the problem as
+%% \begin{align}\label{eq:lag:bivariate2}
+%%   \minimize_{W,A_X,A_Y} & \| (Y:\gamma X) - (WA_Y'B':WA_X'B') \|_F^2,\nonumber\\
+%%   \subjectto & \rank(W) = k.
+%% \end{align}
+%% As in \eqref{eq:rank-restricted}, the rank constrain can be relaxed to the nuclear norm. Then, Lagrangian takes form
+%% \begin{align}
+%%   \argmin_{W,A_X,A_Y} \| (Y:\gamma X) - (WA_Y'B':WA_X'B') \|_F^2 + \lambda \| W \|_*  \label{eq:final-bivariate},
+%% \end{align}
+%% and we apply methodology from Section \ref{ss:matrix-factorization} for finding $W,A_X$ and $A_Y$.
 
-The low-rank matrix $W$ is a joint low-rank representation of matrices $X$ and $Y$, and thus our method can be seen as a dimensionality reduction technique. In Section \ref{ss:dim-red} we extended this idea to a larger number of variables. In Section \ref{ss:regression} we discuss how this approach can be used for regression.
+%% The low-rank matrix $W$ is a joint low-rank representation of matrices $X$ and $Y$, and thus our method can be seen as a dimensionality reduction technique. In Section \ref{ss:dim-red} we extended this idea to a larger number of variables. In Section \ref{ss:regression} we discuss how this approach can be used for regression.
 
-Note that the approach presented in this section has an analogy in the matrix completion context. \citet{condli1999bayesian} showed that for improving prediction of unknown entries in some matrix $G$ one might consider a low-rank decomposition of $(G:H)$, where $H$ are additional covariates for each row, e.g., demographic features of individuals. The idea of stacking the matrices together motivates the dimensionality reduction technique discussed in Section~\ref{ss:dim-red}.
-=======
-Although we motivate the problem \eqref{eq:lag:bivariate2} as a regression of $Y$ on $X$, the two variables are symmetric. Therefore, the solution $U$ can be interpreted as a latent representation of the two processes. To emphasize this, we rewrite the problem as
-\begin{align}\label{eq:lag:bivariate2-symmetric}
-  \minimize_{U,A_X,A_Y} & \| (Y:\gamma X) - U(A_Y'B':A_X'B') \|_F^2.\nonumber
-\end{align}
+%% Note that the approach presented in this section has an analogy in the matrix completion context. \citet{condli1999bayesian} showed that for improving prediction of unknown entries in some matrix $G$ one might consider a low-rank decomposition of $(G:H)$, where $H$ are additional covariates for each row, e.g., demographic features of individuals. The idea of stacking the matrices together motivates the dimensionality reductio ntechnique discussed in Section~\ref{ss:dim-red}.
+% Therefore, the solution $U$ can be interpreted as a latent representation of the two processes. %% To emphasize this, we rewrite the problem as
+%% \begin{align}\label{eq:lag:bivariate2-symmetric}
+%%   \minimize_{U,A_X,A_Y} & \| (Y:\gamma X) - U(A_Y'B':A_X'B') \|_F^2.\nonumber
+%% \end{align}
 %% As in \eqref{eq:rank-restricted}, the rank constrain can be relaxed to the nuclear norm. Then, Lagrangian takes form
 %% \begin{align}
 %%   \argmin_{U,A_X,A_Y} \| (Y:\gamma X) - U(A_Y'B':A_X'B') \|_F^2 + \lambda \| U \|_*  \label{eq:final-bivariate},
@@ -662,17 +659,20 @@ Although we motivate the problem \eqref{eq:lag:bivariate2} as a regression of $Y
 
 For partially observed data, if they are very sparse, it might be essential to constrain the rank of the solution. The partially-observed and rank-constained problem \eqref{eq:lag:bivariate2} takes form 
 \begin{align*}%\label{eq:lag:bivariate2-partial}
-  \minimize_{A,U} & \| P_{\Omega:\Omega}((Y:\gamma X) - U(AB':\gamma B')) \|_F^2,\nonumber\\
-  \subjectto & \rank(U) = k,
+  \minimize_{A,U} & \| P_{\Omega:\Omega}((Y:\gamma X) - W(AB':\gamma B')) \|_F^2,\nonumber\\
+  \subjectto & \rank(W) = k,
 \end{align*}
-where $k$ is the desired rank of the solution, $P_{\Omega:\Omega}$ is a projection on $(\Omega:\Omega) = \{(q,r): (q,r) \in \Omega \text{ or } (q,r-T) \in \Omega\}$. The algorithm in a general case of multiple processes will be given in Section \ref{ss:dim-red}.
+where $k$ is the desired rank of the solution, $P_{\Omega:\Omega}$ is a projection on $(\Omega:\Omega) = \{(q,r): (q,r) \in \Omega \text{ or } (q,r-T) \in \Omega\}$. As previously for $k$ unknown we can introduce a rank penalty and we relax it to the nuclear norm
+\begin{align}\label{eq:lag:bivariate2-partial}
+  \minimize_{A,U} & \| P_{\Omega:\Omega}((Y:\gamma X) - W(AB':\gamma B')) \|_F^2 + \lambda\|W\|_*.
+\end{align}
+The truncated SVD solves the optimization problem. The algorithm in a general case of multiple processes is given in Section \ref{ss:dim-red}.
 
-The low-rank matrix $U$ is a joint low-rank representation of matrices $X$ and $Y$ and thus our method can be seen as a dimensionality reduction technique or as a latent space model. In Section \ref{ss:dim-red} we extended this idea to a larger number of variables. In Section \ref{ss:regression} we discuss how this approach can be used for regression.
+Although we motivate the problem as a regression of $Y$ on $X$, note that $X$ and $Y$ are symmetric in \eqref{eq:lag:bivariate2}. The low-rank matrix $W$ is a joint low-rank representation of matrices $X$ and $Y$ and thus our method can be seen as a dimensionality reduction technique or as a latent space model. In Section \ref{ss:dim-red} we extended this idea to a larger number of variables. In Section \ref{ss:regression} we discuss how this approach can be used for regression.
 
-The linear structure of \eqref{eq:almost-errors-in-variables} allows us to draw analogy not only to the errors-in-variables models but also to vast literature on {\em canonical corroletaion analysis (CCA)}, {\em partial least squares (PLS)}, {\em factor analysis (FA)}, and {\em linear functional equation (LFE) models}. One can show that solving the problem \eqref{eq:lag:bivariate} is equivalent to finding the first $k$ principal directions in the canonical correlation analysis (CCA) \citep{hotelling1936relations}. Moreover, if $\gamma=1$ the problem is equivalent to PLS \citep{wold1975soft}. Solutions of CCA and PLS can be derived from the SVD of $(YB:\gamma XB)$ \citep{borga1997unified}. For discussion on relation between errors-in-variables, FA and CCA please refer to \cite{gleser1981}.
+The linear structure of \eqref{eq:almost-errors-in-variables} allows us to draw analogy not only to the errors-in-variables models but also to vast literature on {\em canonical corroletaion analysis (CCA)}, {\em partial least squares (PLS)}, {\em factor analysis (FA)}, and {\em linear functional equation (LFE) models}. One can show that solving the problem \eqref{eq:lag:bivariate} is equivalent to finding the first $k$ principal directions in the canonical correlation analysis (CCA) \citep{hotelling1936relations}. Moreover, if $\gamma=1$ the problem is equivalent to PLS \citep{wold1975soft}. Solutions of CCA and PLS can be derived from the SVD of $(YB:\gamma XB)$ \citep{borga1997unified}. For discussion on relation between errors-in-variables, FA and CCA please refer to \cite{gleser1981estimation}.
 
-Finally, note that the approach presented in this section has also an analogy in the recommender systems context. \citet{condli1999bayesian} showed that for improving prediction of unknown entries in some matrix $A$ one might consider a low-rank decomposition of $(A:B)$, where $B$ are additional covariates for each row, e.g. demographic features of individuals. %The idea of stacking the matrices together motivates the dimensionality reduction technique discussed in Section~\ref{ss:dim-red}.
->>>>>>> e80be8cf4467162a3b48a2d54aa0c7fe89f699e1
+Finally, note that the approach presented in this section has also an analogy in the recommender systems context. \citet{condli1999bayesian} showed that for improving prediction of unknown entries in some matrix $Q$ one might consider a low-rank decomposition of $(Q:R)$, where $R$ are additional covariates for each row, e.g. demographic features of individuals. %The idea of stacking the matrices together motivates the dimensionality reduction technique discussed in Section~\ref{ss:dim-red}.
 
 %% Using SVD any solution can be written as $(\hat{X} : \hat{Y}) = W (V_X'M' : V_Y'M')$. Now let $\hat{X} = WV_X'M'$ and $\hat{Y} = WV_Y'M'$. 
 %% The problem \eqref{eq:two-vars} can be becomes
@@ -687,20 +687,16 @@ Finally, note that the approach presented in this section has also an analogy in
 
 \subsection{Dimensionality reduction}\label{ss:dim-red}
 
-<<<<<<< HEAD
-Suppose that for every individual we observe multiple variables varying in time, e.g., results of several medical tests at different times in a clinic, and we want to find a projection on $\R^d$ maximizing the variance explained for some $d \in \N$. %For fully observed $X_1,...,X_p$ this would correspond to the reduced-rank SVD of concatenated matrices $X_1~:~X_2~:~...~:~X_p$. %In this section, we introduce a method for finding such projection when the data is sparsely observed. We illustrate the method on bivariate processes, however it can be easily extended to any $p$-dimensional processes. 
-=======
 Suppose that for every individual we observe multiple variables varying in time (e.g. results of multiple medical tests at different times in a clinic) and we want to find a projection on $\R^d$ maximizing the variance explained for some $d \in \N$. %For fully observed $X_1,...,X_p$ this would correspond to the reduced-rank SVD of concatenated matrices $X_1~:~X_2~:~...~:~X_p$. %In this section, we introduce a method for finding such projection when the data is sparsely observed. We illustrate the method on bivariate processes, however it can be easily extended to any $p$-dimensional processes. 
->>>>>>> e80be8cf4467162a3b48a2d54aa0c7fe89f699e1
 
-We extend the equation \eqref{eq:final-bivariate} to account for a larger number of covariates
+We extend the equation \eqref{eq:lag:bivariate2} to account for a larger number of covariates
 \begin{align*}%\label{eq:multivar}
 \argmin_{W,A_1,...,A_p} &\| (X_1:X_2:...:X_p) -  (WA_1'B_1':WA_2'B_2':...:WA_p'B_p') \|_F^2 + \lambda\|W\|_*,
 \end{align*}
 where $B_{i}$ is a basis selected for approximation of processes $X_{i}$ for $1 \leq i \leq p$. 
 
 Note that by allowing a different basis for each process, we also allow for covariates constant in time if $X_i$ is a $N\times 1$ matrix and $B_{(i)} = 1$ for some $1 \leq i \leq p$.
-Finally, if measurements are on different scales, we may normalize them using some scaling $\gamma_1, \gamma_2,..., \gamma_p > 0$, and taking
+Finally, if measurements are on different scales, we may normalize them using scaling $\gamma_1, \gamma_2,..., \gamma_p > 0$, and taking
 \begin{align*}%\label{eq:multivar-scaled}
 \argmin_{W,A_1,...,A_p} &\| (\gamma_1 X_{1}:\gamma_2 X_{2}:...:\gamma_p X_{p}) - (WA_1'B_1':WA_2'B_2':...:WA_p'B_p') \|_F^2\\ &+ \lambda\|W\|_*.
 \end{align*}
@@ -715,17 +711,10 @@ See Algorithm \ref{alg:soft-PCA} for the detailed description of the procedure. 
 \begin{enumerate}
 \item Repeat:
 \begin{enumerate}
-<<<<<<< HEAD
-\item Compute $A^{prj}_i = (P_\Omega(X_i) + P_\Omega^\perp(W^{old}A_i^{old}B'))B$ for $i \in \{1,...,p\}$,
-\item Compute $W^{new} (A_1^{new}:...:A_p^{new}) \leftarrow S_{\lambda_k}( A^{prj}_1 : ... : A^{prj}_p )$.
-\item If $\frac{\|W^{new} - W^{old}\|_F^2}{\|W^{old}\|_F^2} < \varepsilon$ exit,
-\item Assign $W^{old} \leftarrow W^{new}$ and $A_i^{old} \leftarrow A_i^{new}$ for $i \in \{1,...,p\}$.
-=======
 \item Compute $W^{prj}_i = (P_\Omega(X_i) + P_\Omega^\perp(W_i^{old}B'))B$ for $i \in \{1,...,p\}$,
 \item Compute $W^{new} \leftarrow S_{\lambda_k}( W^{prj}_1 : ... : W^{prj}_p )$.
 \item If $\frac{\|W^{new} - W^{old}\|_F^2}{\|W^{old}\|_F^2} < \varepsilon$ exit.
 \item Assign $W^{old} \leftarrow W^{new}$
->>>>>>> e80be8cf4467162a3b48a2d54aa0c7fe89f699e1
 \end{enumerate}
 \item Assign $\hat{W}_{\lambda_k} \leftarrow W^{new}$
 \end{enumerate}
