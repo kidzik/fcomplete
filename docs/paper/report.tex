@@ -477,7 +477,7 @@ Intuitively we might expect similarity between the principal directions derived 
 
 For simplicity, we start with the case where the mean $\mu = 0$ and the data is fully observed on a grid $G$ of $T$ time-points. Assume that observations $i \in \{1,2,...,N\}$ come from the mixed-effect model
 \begin{align}
-  \by_i | \bw_i &\sim \cN(\bw_i B', \sigma^2 I_T), \label{eq:model-y}\\
+  \by_i | \bw_i &\sim \cN( B \bw_i, \sigma^2 I_T), \label{eq:model-y}\\
   \bw_i &\sim \cN(0 , \Sigma), \nonumber%\label{eq:model-w}
 \end{align}
 % V \Lambda V'
@@ -594,13 +594,13 @@ We explore two cases: (1) dimensionality reduction, where we project sparsely sa
 
 %% \tr{TODO: Comments on how to do it directly - the probabilistic approach}
 
-Suppose, as previously, that the true processes are in a low-dimensional space of splines and that we observe them with noise. More precisely, let
+Suppose, as previously, that the true processes are in a low-dimensional space of some continous functions (e.g. splines) and that we observe them with noise. More precisely, let
 \begin{align}\label{eq:definitions-xy}
-  \bx_i' = \bw_i'B' + \be_{x,i}' \text{\ \ and\ \ } \by_i' = \bu_i'B' + \be_{y,i}',
+  \bx_i = B\bw_i + \be_{x,i} \text{\ \ and\ \ } \by_i = B\bu_i + \be_{y,i},
 \end{align}
-for $1 \leq i \leq N$, where $\bx_i,\by_i,\be_{x,i},\be_{y,i}$ are $T \times 1$ vectors, $\bw_i, \bu_i$ are $K \times 1$ vectors and $B$ is a $T \times K$ matrix of $K$ splines evaluated on a grid of $T$ points. We assume zero-mean independent errors $\be_{x,i},\be_{y,i}$ with fixed covariance matrices $\Sigma_X,\Sigma_Y$ respectively, and that the true processes underlying the observed $\bx_i$ and $\by_i$ follow a linear relation in the spline space, i.e.
+for $1 \leq i \leq N$, where $\bx_i,\by_i,\be_{x,i},\be_{y,i}$ are $1 \times T$ vectors, $\bw_i, \bu_i$ are $1 \times K$ vectors and $B$ is a $T \times K$ matrix of $K$ splines evaluated on a grid of $T$ points. We assume zero-mean independent errors $\be_{x,i},\be_{y,i}$ with fixed covariance matrices $\Sigma_X,\Sigma_Y$ respectively, and that the true processes underlying the observed $\bx_i$ and $\by_i$ follow a linear relation in the spline space, i.e.
 \begin{align}\label{eq:linear-xy}
-  \bu_i' = \bw_i'A,
+  \bu_i = A\bw_i,
 \end{align}
 where $A$ is an unknown $K \times K$ matrix.
 
@@ -608,13 +608,13 @@ Let $X,Y,U,W$ be matrices formed from $\bx_i',\by_i',\bw_i',\bu_i'$ stacked vert
 \begin{align}\label{eq:almost-errors-in-variables}
 X = WB' + E_X \text{ \ and \ } Y = WA B' + E_{Y},
 \end{align}
-where $E_X,E_Y$ are matrices of observation noise.
+where $E_X,E_Y$ are matrices of observation noise. Without loss of generality we assume that $B$ is orthonormal. We have freedom to choose the basis $B$ and any basis can be orthogonalized using, for example, singular value decomposition. 
 
-Note that by multiplying both expressions in \eqref{eq:definitions-xy} or in \eqref{eq:almost-errors-in-variables} by $B^{-1}$ we can map the problem to a classical multivariate {\em errors-in-variables models}. Let
+Note that by multiplying both expressions in \eqref{eq:definitions-xy} or in \eqref{eq:almost-errors-in-variables} by $B$ we can map the problem to a classical multivariate {\em errors-in-variables models}. Let
 \begin{align}\label{eq:errors-in-variables}
-  \tilde{X} = XB^{-1} = W + \tilde{E}_X \text{ and } \tilde{Y} = YB^{-1} = WA + \tilde{E}_Y,
+  \tilde{X} = XB = W + \tilde{E}_X \text{ and } \tilde{Y} = YB = WA + \tilde{E}_Y,
 \end{align}  
-where $\tilde{E}_X = E_XB^{-1}$ and $\tilde{E}_Y = E_YB^{-1}$. In errors-in-variables models it is assumed that the parameters $W$ and $A$ are unknown, and are to be estimated. Both regressors and responses are measured with noise (here $\tilde{E}_X$ and $\tilde{E}_Y$). The parameter $W$ can be seen as a latent representation of both $\tilde{X}$ and $\tilde{Y}$.
+where $\tilde{E}_X = E_XB$ and $\tilde{E}_Y = E_YB$. In errors-in-variables models it is assumed that the parameters $W$ and $A$ are unknown, and are to be estimated. Both regressors and responses are measured with noise (here $\tilde{E}_X$ and $\tilde{E}_Y$). The parameter $W$ can be seen as a latent representation of both $\tilde{X}$ and $\tilde{Y}$.
 
 The problem of estimating parameters in \eqref{eq:errors-in-variables} has been extensively studied in literature dating back to \citet{adcock1878problem}. Two main methods for estimating parameters in \eqref{eq:errors-in-variables} are {\em maximum likelihood estimates (MLE)} and {\em generalized least squares estimators (GLSE)}. The estimators in MLE are derived under the assumption of certain ditributions of the errors. In GLSE, the only assumption on errors is that they are independent, zero-mean, and they have a common covariance matrix. Then, $\tilde{X} - W$ and $\tilde{Y} - WA$ are zero-mean and estimates for $W$ and $B$ can be found by optimizing some norm of these expressions. \citet{gleser1973estimation} show that in the no-interecept model for $\tilde{X}$ and $\tilde{Y}$ of the same size (as in our case) and under the assumption of gaussian errors, MLE and GLSE give the same estimates for $B$, if GLSE is optimized with the Frobenius norm.
 
@@ -622,20 +622,35 @@ The problem of estimating parameters in \eqref{eq:errors-in-variables} has been 
 
 In this work we focus on the GLSE approach as it can be directly solved in our matrix factorization framework and we find it easier to deploy and extend in practice. \cite{gleser1981estimation} shows that if variances of the noise are known, we can transform the data in such way that the variance matrices of the noise in variables are of the form $\Sigma_Y = \sigma^2_XI_T$ and $\Sigma_Y = \sigma^2_YI_T$. To account for different magnitudes of the noise in $X$ and $Y$, we consider the optimization problem
 \begin{align}\label{eq:lag:bivariate}
-  \minimize_{A,W} & \frac{1}{\sigma_Y^2} \| Y - WAB' \|_F^2 + \frac{1}{\sigma_X^2}\|X - WB' \|_F^2.%,\nonumber\\
+  \minimize_{A,W} & \frac{1}{\sigma_X^2}\|XB - W \|_F^2 + \frac{1}{\sigma_Y^2} \| YB - WA \|_F^2.
 %  \subjectto & \rank(W) = k.
 \end{align}
 Let $\gamma = \sigma_X^2 / \sigma_Y^2$. Then \eqref{eq:lag:bivariate} can be written as
-\begin{align}\label{eq:lag:bivariate2}
-  \minimize_{A,W} & \| (\gamma Y:X) - W(\gamma AB':B') \|_F^2.%,\nonumber\\
-%  \subjectto & \rank(W) = k.
-\end{align}
-Without loss of generality we assume that $B$ is orthonormal. We have freedom to choose the basis $B$ and any basis can be orthogonalized using, for example, singular value decomposition. Then \eqref{eq:lag:bivariate2} is equivalent to 
+%% \begin{align}\label{eq:lag:bivariate2}
+%%   \minimize_{A,W} & \| (\gamma Y:X) - W(\gamma AB':B') \|_F^2.%,\nonumber\\
+%% %  \subjectto & \rank(W) = k.
+%% \end{align}
+%% Then \eqref{eq:lag:bivariate2} is equivalent to 
 \begin{align}\label{eq:lag:bivariate3}
-  \minimize_{A,W} & \| (\gamma YB:XB) - W(\gamma A:I) \|_F^2.%,\nonumber\\
+  \minimize_{A,W} & \| (XB : \gamma YB) - W(I: \gamma A) \|_F^2.%,\nonumber\\
 %  \subjectto & \rank(W) = k.
 \end{align}
-To solve \eqref{eq:lag:bivariate3}, we factorize $(\gamma YB: XB)$ to $\tilde{W}SV'$ using singular value decomposition. \tr{By the model assumption \eqref{eq:linear-xy}, matrix $(\gamma YB: XB)$ is rank $K$ (TODO: This is only ``almost'' true)}. Therefore, we can transform the decomposition such that $(\gamma A:I) = RV'$ and $W = \tilde{W}SR^{-1}$
+To solve \eqref{eq:lag:bivariate3}, we show that the SVD of $(XB : \gamma YB)$ truncated to the first $K$ dimensions, can be decomposed to $W(I: \gamma A)$. Let $USV'$ be the singular value decomposition of $(XB : \gamma YB)$, where
+\[
+U = \begin{bmatrix}
+  U_1 & U_2
+\end{bmatrix},
+S = \begin{bmatrix}
+      S_{11} & S_{12}\\
+      S_{21} & S_{22}
+\end{bmatrix} 
+\text{ and }
+V = \begin{bmatrix}
+      V_{11} & V_{12}\\
+      V_{21} & V_{22}
+    \end{bmatrix},
+\]
+where each $S_{ij}$ and $V_{ij}$ is a $K\times K$ matrix for $1 \leq i,j \leq 2$ and $U_i$ is a $N \times K$ matrix for $1 \leq i \leq 2$. By Lemma 2.1 and Lemma 2.2 in \citep{gleser1981estimation} matrix $V_{11}$ is almost surely nonsingular. Therefore, we can transform the decomposition such that $(I : \gamma A) = (V_{11}')^{-1}\begin{bmatrix}V_{11}' & V_{21}'\end{bmatrix}$ and $W = U_1 S_{11} V_{11}'$.
 
 %% Although we motivate the problem \eqref{eq:lag:bivariate2} as a regression of $Y$ on $X$, the two variables are symmetric. Therefore, the solution $\tilde{X}$ can be interpreted as a latent representation of the two processes. To emphasize this, we introduce a $N \times K$ latent matrix $W$, and we rewrite the problem as
 %% \begin{align}\label{eq:lag:bivariate2}
@@ -661,18 +676,18 @@ To solve \eqref{eq:lag:bivariate3}, we factorize $(\gamma YB: XB)$ to $\tilde{W}
 %% \end{align}
 %% and we apply methodology from Section \ref{ss:matrix-factorization} for finding $U,A_X$ and $A_Y$.
 
-For partially observed data, if they are very sparse, it might be essential to constrain the rank of the solution. The partially-observed and rank-constained problem \eqref{eq:lag:bivariate2} takes form 
+For partially observed data, if they are very sparse, it might be essential to constrain the rank of the solution. The partially-observed and rank-constained problem \eqref{eq:lag:bivariate3} takes form 
 \begin{align*}%\label{eq:lag:bivariate2-partial}
   \minimize_{A,U} & \| P_{\Omega:\Omega}((Y:\gamma X) - W(AB':\gamma B')) \|_F^2,\nonumber\\
   \subjectto & \rank(W) = k,
 \end{align*}
-where $k$ is the desired rank of the solution, $P_{\Omega:\Omega}$ is a projection on $(\Omega:\Omega) = \{(q,r): (q,r) \in \Omega \text{ or } (q,r-T) \in \Omega\}$. As previously for $k$ unknown we can introduce a rank penalty and we relax it to the nuclear norm
+where $k$ is the desired rank of the solution, $P_{\Omega:\Omega}$ is a projection on $(\Omega:\Omega) = \{(q,r): (q,r) \in \Omega \text{ or } (q,r-T) \in \Omega\}$. As previously for an unknown $k$ we can introduce a rank penalty and we relax it to the nuclear norm
 \begin{align}\label{eq:lag:bivariate2-partial}
   \minimize_{A,U} & \| P_{\Omega:\Omega}((Y:\gamma X) - W(AB':\gamma B')) \|_F^2 + \lambda\|W\|_*.
 \end{align}
-The truncated SVD solves the optimization problem. The algorithm in a general case of multiple processes is given in Section \ref{ss:dim-red}.
+The thresholded SVD solves the optimization problem. The algorithm in a general case of multiple processes is given in Section \ref{ss:dim-red}.
 
-Although we motivate the problem as a regression of $Y$ on $X$, note that $X$ and $Y$ are symmetric in \eqref{eq:lag:bivariate2}. The low-rank matrix $W$ is a joint low-rank representation of matrices $X$ and $Y$ and thus our method can be seen as a dimensionality reduction technique or as a latent space model. In Section \ref{ss:dim-red} we extended this idea to a larger number of variables. In Section \ref{ss:regression} we discuss how this approach can be used for regression.
+Although we motivate the problem as a regression of $Y$ on $X$, note that $X$ and $Y$ are symmetric in \eqref{eq:lag:bivariate3}. The low-rank matrix $W$ is a joint low-rank representation of matrices $X$ and $Y$ and thus our method can be seen as a dimensionality reduction technique or as a latent space model. In Section \ref{ss:dim-red} we extended this idea to a larger number of variables. In Section \ref{ss:regression} we discuss how this approach can be used for regression.
 
 The linear structure of \eqref{eq:almost-errors-in-variables} allows us to draw analogy not only to the errors-in-variables models but also to vast literature on {\em canonical corroletaion analysis (CCA)}, {\em partial least squares (PLS)}, {\em factor analysis (FA)}, and {\em linear functional equation (LFE) models}. One can show that solving the problem \eqref{eq:lag:bivariate} is equivalent to finding the first $k$ principal directions in the canonical correlation analysis (CCA) \citep{hotelling1936relations}. Moreover, if $\gamma=1$ the problem is equivalent to PLS \citep{wold1975soft}. Solutions of CCA and PLS can be derived from the SVD of $(YB:\gamma XB)$ \citep{borga1997unified}. For discussion on relation between errors-in-variables, FA and CCA please refer to \cite{gleser1981estimation}.
 
