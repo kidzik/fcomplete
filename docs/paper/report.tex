@@ -620,18 +620,22 @@ The problem of estimating parameters in \eqref{eq:errors-in-variables} has been 
 
 % We assume $\rank(U) = k$, where $k < K$. 
 
-In this work we focus on the GLSE approach as it can be directly solved in our matrix factorization framework and we find it easier to deploy and extend in practice. \cite{gleser1981estimation} show that if variances of the noise are known, we can transform the data in such way that the variance matrices of the noise in variables are of the form $\Sigma_Y = \sigma^2_XI_T$ and $\Sigma_Y = \sigma^2_YI_T$. To account for different magnitudes of the noise in $X$ and $Y$, we consider the optimization problem
-%Now, in order to estimate the low-rank decomposition of $Y$ we consider %the problem \eqref{eq:rank-restricted} to
+In this work we focus on the GLSE approach as it can be directly solved in our matrix factorization framework and we find it easier to deploy and extend in practice. \cite{gleser1981estimation} shows that if variances of the noise are known, we can transform the data in such way that the variance matrices of the noise in variables are of the form $\Sigma_Y = \sigma^2_XI_T$ and $\Sigma_Y = \sigma^2_YI_T$. To account for different magnitudes of the noise in $X$ and $Y$, we consider the optimization problem
 \begin{align}\label{eq:lag:bivariate}
-  \minimize_{A,U} & \frac{1}{\sigma_Y^2} \| Y - WAB' \|_F^2 + \frac{1}{\sigma_X^2}\|X - WB' \|_F^2.%\nonumber\\
-  %\subjectto & \rank(U) = k.
+  \minimize_{A,W} & \frac{1}{\sigma_Y^2} \| Y - WAB' \|_F^2 + \frac{1}{\sigma_X^2}\|X - WB' \|_F^2.%,\nonumber\\
+%  \subjectto & \rank(W) = k.
 \end{align}
-Let $\gamma = \sigma_Y^2 / \sigma_X^2$. Then \eqref{eq:lag:bivariate} can be written as
+Let $\gamma = \sigma_X^2 / \sigma_Y^2$. Then \eqref{eq:lag:bivariate} can be written as
 \begin{align}\label{eq:lag:bivariate2}
-  \minimize_{A,U} & \| (Y:\gamma X) - W(AB':\gamma B') \|_F^2,%\nonumber\\
-  %\subjectto & \rank(U) = k,
+  \minimize_{A,W} & \| (\gamma Y:X) - W(\gamma AB':B') \|_F^2.%,\nonumber\\
+%  \subjectto & \rank(W) = k.
 \end{align}
-which we solve by computing the SVD of $(YB:\gamma XB)$.
+Without loss of generality we assume that $B$ is orthonormal. We have freedom to choose the basis $B$ and any basis can be orthogonalized using, for example, singular value decomposition. Then \eqref{eq:lag:bivariate2} is equivalent to 
+\begin{align}\label{eq:lag:bivariate3}
+  \minimize_{A,W} & \| (\gamma YB:XB) - W(\gamma A:I) \|_F^2.%,\nonumber\\
+%  \subjectto & \rank(W) = k.
+\end{align}
+To solve \eqref{eq:lag:bivariate3}, we factorize $(\gamma YB: XB)$ to $\tilde{W}SV'$ using singular value decomposition. \tr{By the model assumption \eqref{eq:linear-xy}, matrix $(\gamma YB: XB)$ is rank $K$ (TODO: This is only ``almost'' true)}. Therefore, we can transform the decomposition such that $(\gamma A:I) = RV'$ and $W = \tilde{W}SR^{-1}$
 
 %% Although we motivate the problem \eqref{eq:lag:bivariate2} as a regression of $Y$ on $X$, the two variables are symmetric. Therefore, the solution $\tilde{X}$ can be interpreted as a latent representation of the two processes. To emphasize this, we introduce a $N \times K$ latent matrix $W$, and we rewrite the problem as
 %% \begin{align}\label{eq:lag:bivariate2}
