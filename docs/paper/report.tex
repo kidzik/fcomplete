@@ -35,6 +35,7 @@
 \newcommand{\bw}{\mathbf{w}}
 \newcommand{\bu}{\mathbf{u}}
 \newcommand{\be}{\mathbf{e}}
+\newcommand{\bB}{\mathbf{B}}
 
 \DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator*{\diag}{diag}
@@ -598,7 +599,7 @@ Suppose, as previously, that the true processes are in a low-dimensional space o
 \begin{align}\label{eq:definitions-xy}
   \bx_i = B\bw_i + \be_{x,i} \text{\ \ and\ \ } \by_i = B\bu_i + \be_{y,i},
 \end{align}
-for $1 \leq i \leq N$, where $\bx_i,\by_i,\be_{x,i},\be_{y,i}$ are $1 \times T$ vectors, $\bw_i, \bu_i$ are $1 \times K$ vectors and $B$ is a $T \times K$ matrix of $K$ splines evaluated on a grid of $T$ points. We assume zero-mean independent errors $\be_{x,i},\be_{y,i}$ with fixed covariance matrices $\Sigma_X,\Sigma_Y$ respectively, and that the true processes underlying the observed $\bx_i$ and $\by_i$ follow a linear relation in the spline space, i.e.
+for $1 \leq i \leq N$, where $\bx_i,\by_i,\be_{x,i},\be_{y,i}$ are $T \times 1$ vectors, $\bw_i, \bu_i$ are $K \times 1$ vectors and $B$ is a $T \times K$ matrix of $K$ splines evaluated on a grid of $T$ points. We assume zero-mean independent errors $\be_{x,i},\be_{y,i}$ with fixed covariance matrices $\Sigma_X,\Sigma_Y$ respectively, and that the true processes underlying the observed $\bx_i$ and $\by_i$ follow a linear relation in the spline space, i.e.
 \begin{align}\label{eq:linear-xy}
   \bu_i = A\bw_i,
 \end{align}
@@ -616,7 +617,7 @@ Note that by multiplying both expressions in \eqref{eq:definitions-xy} or in \eq
 \end{align}  
 where $\tilde{E}_X = E_XB$ and $\tilde{E}_Y = E_YB$. In errors-in-variables models it is assumed that the parameters $W$ and $A$ are unknown, and are to be estimated. Both regressors and responses are measured with noise (here $\tilde{E}_X$ and $\tilde{E}_Y$). The parameter $W$ can be seen as a latent representation of both $\tilde{X}$ and $\tilde{Y}$.
 
-The problem of estimating parameters in \eqref{eq:errors-in-variables} has been extensively studied in literature dating back to \citet{adcock1878problem}. Two main methods for estimating parameters in \eqref{eq:errors-in-variables} are {\em maximum likelihood estimates (MLE)} and {\em generalized least squares estimators (GLSE)}. The estimators in MLE are derived under the assumption of certain ditributions of the errors. In GLSE, the only assumption on errors is that they are independent, zero-mean, and they have a common covariance matrix. Then, $\tilde{X} - W$ and $\tilde{Y} - WA$ are zero-mean and estimates for $W$ and $B$ can be found by optimizing some norm of these expressions. \citet{gleser1973estimation} show that in the no-interecept model for $\tilde{X}$ and $\tilde{Y}$ of the same size (as in our case) and under the assumption of gaussian errors, MLE and GLSE give the same estimates for $B$, if GLSE is optimized with the Frobenius norm.
+The problem of estimating parameters in \eqref{eq:errors-in-variables} has been extensively studied in literature dating back to \citet{adcock1878problem}. Two main methods for estimating parameters in \eqref{eq:errors-in-variables} are {\em maximum likelihood estimates (MLE)} and {\em generalized least squares estimators (GLSE)}. The estimators in MLE are derived under the assumption of certain ditributions of the errors. In GLSE, the only assumption on errors is that they are independent, zero-mean, and they have a common covariance matrix. Then, $\tilde{X} - W$ and $\tilde{Y} - WA$ are zero-mean and estimates for $W$ and $B$ can be found by optimizing some norm of these expressions. \citet{gleser1973estimation} show that in the no-interecept model for $\tilde{X}$ and $\tilde{Y}$ of the same size (as in our case) and under the assumption of gaussian errors, MLE and GLSE give the same estimates for $A$, if GLSE is optimized with the Frobenius norm.
 
 % We assume $\rank(U) = k$, where $k < K$. 
 
@@ -678,20 +679,20 @@ where each $S_{ij}$ and $V_{ij}$ is a $K\times K$ matrix for $1 \leq i,j \leq 2$
 
 For partially observed data, if they are very sparse, it might be essential to constrain the rank of the solution. The partially-observed and rank-constained problem \eqref{eq:lag:bivariate3} takes form 
 \begin{align*}%\label{eq:lag:bivariate2-partial}
-  \minimize_{A,U} & \| P_{\Omega:\Omega}((Y:\gamma X) - W(AB':\gamma B')) \|_F^2,\nonumber\\
-  \subjectto & \rank(W) = k,
+  \minimize_{A,W} & \| P_{\tilde\Omega}((X:\gamma Y) - W(B':\gamma A B')) \|_F^2,\nonumber\\
+  \subjectto & \rank(W(B':\gamma A B')) = k,
 \end{align*}
-where $k$ is the desired rank of the solution, $P_{\Omega:\Omega}$ is a projection on $(\Omega:\Omega) = \{(q,r): (q,r) \in \Omega \text{ or } (q,r-T) \in \Omega\}$. As previously for an unknown $k$ we can introduce a rank penalty and we relax it to the nuclear norm
+where $k$ is the desired rank of the solution, $P_{\tilde\Omega}$ is a projection on \[\tilde\Omega = \{(q,r): (q,r) \in \Omega \text{ or } (q,r-T) \in \Omega\}. \] As previously for an unknown $k$ we can introduce a rank penalty and we relax it to the nuclear norm
 \begin{align}\label{eq:lag:bivariate2-partial}
-  \minimize_{A,U} & \| P_{\Omega:\Omega}((Y:\gamma X) - W(AB':\gamma B')) \|_F^2 + \lambda\|W\|_*.
+  \minimize_{A,W} & \| P_{\tilde\Omega}((X:\gamma Y) - W(B':\gamma A B')) \|_F^2 + \lambda\|W(B':\gamma A B')\|_*.
 \end{align}
-The thresholded SVD solves the optimization problem. The algorithm in a general case of multiple processes is given in Section \ref{ss:dim-red}.
+The algorithm in the general case of multiple processes is given in Section \ref{ss:dim-red}.
 
 Although we motivate the problem as a regression of $Y$ on $X$, note that $X$ and $Y$ are symmetric in \eqref{eq:lag:bivariate3}. The low-rank matrix $W$ is a joint low-rank representation of matrices $X$ and $Y$ and thus our method can be seen as a dimensionality reduction technique or as a latent space model. In Section \ref{ss:dim-red} we extended this idea to a larger number of variables. In Section \ref{ss:regression} we discuss how this approach can be used for regression.
 
-The linear structure of \eqref{eq:almost-errors-in-variables} allows us to draw analogy not only to the errors-in-variables models but also to vast literature on {\em canonical corroletaion analysis (CCA)}, {\em partial least squares (PLS)}, {\em factor analysis (FA)}, and {\em linear functional equation (LFE) models}. One can show that solving the problem \eqref{eq:lag:bivariate} is equivalent to finding the first $k$ principal directions in the canonical correlation analysis (CCA) \citep{hotelling1936relations}. Moreover, if $\gamma=1$ the problem is equivalent to PLS \citep{wold1975soft}. Solutions of CCA and PLS can be derived from the SVD of $(YB:\gamma XB)$ \citep{borga1997unified}. For discussion on relation between errors-in-variables, FA and CCA please refer to \cite{gleser1981estimation}.
+The linear structure of \eqref{eq:almost-errors-in-variables} allows us to draw analogy not only to the errors-in-variables models but also to vast literature on {\em canonical corroletaion analysis (CCA)}, {\em partial least squares (PLS)}, {\em factor analysis (FA)}, and {\em linear functional equation (LFE) models}. One can show that solving the problem \eqref{eq:lag:bivariate} is equivalent to finding the first $k$ principal directions in the canonical correlation analysis (CCA) \citep{hotelling1936relations}. Moreover, if $\gamma=1$ the problem is equivalent to PLS \citep{wold1975soft}. Solutions of CCA and PLS can be derived from the SVD of $(YB:\gamma XB)$ \citep{borga1997unified}. For discussion on relation between errors-in-variables, FA and CCA refer to \cite{gleser1981estimation}.
 
-Finally, note that the approach presented in this section has also an analogy in the recommender systems context. \citet{condli1999bayesian} showed that for improving prediction of unknown entries in some matrix $Q$ one might consider a low-rank decomposition of $(Q:R)$, where $R$ are additional covariates for each row, e.g. demographic features of individuals. %The idea of stacking the matrices together motivates the dimensionality reduction technique discussed in Section~\ref{ss:dim-red}.
+Finally, note that the method of using SVD for stacked matrices $X$ and $Y$ as in \eqref{eq:lag:bivariate2-partial} also an analogy in the recommender systems context. \citet{condli1999bayesian} showed that for improving prediction of unknown entries in some matrix $Q$ one might consider a low-rank decomposition of $(Q:R)$, where $R$ are additional covariates for each row, e.g. demographic features of individuals. %The idea of stacking the matrices together motivates the dimensionality reduction technique discussed in Section~\ref{ss:dim-red}.
 
 %% Using SVD any solution can be written as $(\hat{X} : \hat{Y}) = W (V_X'M' : V_Y'M')$. Now let $\hat{X} = WV_X'M'$ and $\hat{Y} = WV_Y'M'$. 
 %% The problem \eqref{eq:two-vars} can be becomes
@@ -706,40 +707,54 @@ Finally, note that the approach presented in this section has also an analogy in
 
 \subsection{Dimensionality reduction}\label{ss:dim-red}
 
-Suppose that for every individual we observe multiple variables varying in time (e.g. results of multiple medical tests at different times in a clinic) and we want to find a projection on $\R^d$ maximizing the variance explained for some $d \in \N$. %For fully observed $X_1,...,X_p$ this would correspond to the reduced-rank SVD of concatenated matrices $X_1~:~X_2~:~...~:~X_p$. %In this section, we introduce a method for finding such projection when the data is sparsely observed. We illustrate the method on bivariate processes, however it can be easily extended to any $p$-dimensional processes. 
+Suppose that for every individual we observe multiple variables varying in time (e.g. results of multiple medical tests at different times in a clinic) and we want to find a projection on $\R^d$ maximizing the variance explained for some $d \in \N$. This would correspond to characterizing patients by their progression trends.
 
-We extend the equation \eqref{eq:lag:bivariate2} to account for a larger number of covariates
-\begin{align*}%\label{eq:multivar}
-\argmin_{W,A_1,...,A_p} &\| (X_1:X_2:...:X_p) -  (WA_1'B_1':WA_2'B_2':...:WA_p'B_p') \|_F^2 + \lambda\|W\|_*,
+%For fully observed $X_1,...,X_p$ this would correspond to the reduced-rank SVD of concatenated matrices $X_1~:~X_2~:~...~:~X_p$. %In this section, we introduce a method for finding such projection when the data is sparsely observed. We illustrate the method on bivariate processes, however it can be easily extended to any $p$-dimensional processes. 
+
+We extend the equation \eqref{eq:lag:bivariate3} to account for a larger number of covariates and we do not impose decomposition of the solution yet. We formulate the following optimization problem
+\begin{align*}\label{eq:multivar}
+  \argmin_{Z} &\| (X_1B:X_2B:...:X_pB) - Z \|_F^2 + \lambda\|Z\|_*,
 \end{align*}
-where $B_{i}$ is a basis selected for approximation of processes $X_{i}$ for $1 \leq i \leq p$. 
+where $X_i$ are some $N \times T$ matrices corresponding to the processes measured on a grid of $T$ points, while $B$ is a basis evaluated on the same grid and orthogonalized. The matrix $B$ is $T \times K$ dimensional.
 
-Note that by allowing a different basis for each process, we also allow for covariates constant in time if $X_i$ is a $N\times 1$ matrix and $B_{(i)} = 1$ for some $1 \leq i \leq p$.
-Finally, if measurements are on different scales, we may normalize them using scaling $\gamma_1, \gamma_2,..., \gamma_p > 0$, and taking
+%where $W$ is a $N \times d$ matrix, $A = (A_1:A_2:...:A_p)$ with each $A_i$ is $d \times d_i$ for some $d_i \geq 1$ and $B_{i}$ is a basis selected for approximation of processes $X_{i}$ for $1 \leq i \leq p$. Each basis $B_i$ is $d_i$ dimensional and it is evaluated on some time-grid $T_i$.
+
+%Note that by allowing a different basis for each process, we also allow for covariates constant in time if $X_i$ is a $N\times 1$ matrix and $B_i = \begin{bmatrix} 1 \end{bmatrix}$ for some $1 \leq i \leq p$. If measurements are on different scales, we may normalize them using scaling $\gamma_1, \gamma_2,..., \gamma_p > 0$, and taking
+%% \begin{align}\label{eq:multivar-scaled}
+%% \argmin_{Z} &\| (\gamma_1 X_{1}B_1:\gamma_2 X_{2}B_2:...:\gamma_p X_{p}B_p) - Z \|_F^2 + \lambda\|Z\|_*.
+%% \end{align}
+
+Let $ \bB = I_p \otimes B $ be the Kronecker product of $p \times p$ identity and $B$, i.e. a $pT \times pK$ matrix with $B$ stacked $p$ times on the diagonal, and let $\bX = (X_{1}: X_{2}:...: X_{p})$. Note that $\bB$ is orthogonal and therefore results developped in \eqref{ss:reduced-rank} apply here. In particular, singular value thresholding solves
+\begin{align*}\label{eq:multivar-scaled}
+\argmin_{Z} &\| \bX - Z \bB' \|_F^2 + \lambda\|Z\|_*
+\end{align*}
+and we can use Algorithm \ref{alg:soft-impute} for 
 \begin{align*}%\label{eq:multivar-scaled}
-\argmin_{W,A_1,...,A_p} &\| (\gamma_1 X_{1}:\gamma_2 X_{2}:...:\gamma_p X_{p}) - (WA_1'B_1':WA_2'B_2':...:WA_p'B_p') \|_F^2\\ &+ \lambda\|W\|_*.
+\argmin_{Z} &\| P_{\Omega}\left(\bX - Z\bB\right) \|_F^2 + \lambda\|Z\|_*,
 \end{align*}
-See Algorithm \ref{alg:soft-PCA} for the detailed description of the procedure. Note that \textsc{Hard-Longitudinal-Impute} can be analogically extended to the multivariate setting. %Similarly, the proof of convergence follows from the proof in Section \ref{s:convergence}.
+where $P_{\tilde{\Omega}}$ is the projection on observed indices $\Omega$.
 
-\begin{algorithm}
-\caption{\textsc{Soft-Longitudinal-PCA}\label{alg:soft-PCA}}
-\begin{enumerate}
-\item Normalize $X_1,...,X_p$ (optional)
-\item Initialize $W^{old},A^{old}_1,...,A^{old}_p$ with zeros
-\item Do for $\lambda_1 > \lambda_2 > ... > \lambda_k$:
-\begin{enumerate}
-\item Repeat:
-\begin{enumerate}
-\item Compute $W^{prj}_i = (P_\Omega(X_i) + P_\Omega^\perp(W_i^{old}B'))B$ for $i \in \{1,...,p\}$,
-\item Compute $W^{new} \leftarrow S_{\lambda_k}( W^{prj}_1 : ... : W^{prj}_p )$.
-\item If $\frac{\|W^{new} - W^{old}\|_F^2}{\|W^{old}\|_F^2} < \varepsilon$ exit.
-\item Assign $W^{old} \leftarrow W^{new}$
-\end{enumerate}
-\item Assign $\hat{W}_{\lambda_k} \leftarrow W^{new}$
-\end{enumerate}
-\item Output $\hat{W}_{\lambda_1}, \hat{W}_{\lambda_2}, ... , \hat{W}_{\lambda_k}$.
-\end{enumerate}
-\end{algorithm}
+%% See Algorithm \ref{alg:soft-PCA} for the detailed description of the procedure. Note that \textsc{Hard-Longitudinal-Impute} can be analogically extended to the multivariate setting. %Similarly, the proof of convergence follows from the proof in Section \ref{s:convergence}.
+
+%% \begin{algorithm}
+%% \caption{\textsc{Soft-Longitudinal-PCA}\label{alg:soft-PCA}}
+%% \begin{enumerate}
+%% \item Normalize $X_1,...,X_p$ (optional)
+%% \item Initialize $W^{old},A^{old}_1,...,A^{old}_p$ with zeros
+%% \item Do for $\lambda_1 > \lambda_2 > ... > \lambda_k$:
+%% \begin{enumerate}
+%% \item Repeat:
+%% \begin{enumerate}
+%% \item Compute $W^{prj}_i = (P_\Omega(X_i) + P_\Omega^\perp(W_i^{old}B'))B$ for $i \in \{1,...,p\}$,
+%% \item Compute $W^{new} \leftarrow S_{\lambda_k}( W^{prj}_1 : ... : W^{prj}_p )$.
+%% \item If $\frac{\|W^{new} - W^{old}\|_F^2}{\|W^{old}\|_F^2} < \varepsilon$ exit.
+%% \item Assign $W^{old} \leftarrow W^{new}$
+%% \end{enumerate}
+%% \item Assign $\hat{W}_{\lambda_k} \leftarrow W^{new}$
+%% \end{enumerate}
+%% \item Output $\hat{W}_{\lambda_1}, \hat{W}_{\lambda_2}, ... , \hat{W}_{\lambda_k}$.
+%% \end{enumerate}
+%% \end{algorithm}
 
 \subsection{Regression}\label{ss:regression}
 
@@ -752,7 +767,7 @@ The method proposed in Section \ref{ss:dim-red} can be directly applied for find
 For the regression problem, we suggest a two-step procedure motivated by principal component regression. We first find a joint low-rank decomposition $W$ of covariates $X_1,...,X_p$ and then regress $Y$ on $W$. Note that the latent representation $W$ can be constructed either by applying sparse functional PCA, by \textsc{Soft-Longitudinal-Impute}, jointly by \textsc{Soft-Longitudinal-PCA} or by other low-rank representation of $(X_1,...,X_p)$.
 
 % Let $W$ be a latent representation of $X_1, X_2, ..., X_p$, derived using one of the methods above.
-Let us assume that $W$ is a $N \times d$ orthonormal matrix, where $d$ is the number of latent components. We find a $d \times K$ matrix $A$ such that
+Let us assume that $W$ is a $N \times d$ orthonormal matrix, where $d$ is the number of latent components. We find a $d \times K$ matrix $A$ minimizing
 \begin{align}\label{eq:pcr}
 \minimize_A \|P_\Omega(Y - WA'B')\|_F^2,
 \end{align}
