@@ -11,3 +11,7 @@
 *.png
 *.bbl
 *.blg
+*.toc
+*.out
+*.xml
+*.bcf
