@@ -407,13 +407,13 @@ As our stopping criterion we compute the change between subsequent solution, rel
 \begin{enumerate}
 \item Repeat:
 \begin{enumerate}
-\item Compute $W^{new} \leftarrow S_{\lambda_k}( (P_\Omega(Y) + P_\Omega^\perp(W^{old}B'))B )$.
-\item If $\frac{\|W^{new} - W^{old}\|_F^2}{\|W^{old}\|_F^2} < \varepsilon$ exit.
+\item Compute $W^{new} \leftarrow S_{\lambda_i}( (P_\Omega(Y) + P_\Omega^\perp(W^{old}B'))B )$
+\item If $\frac{\|W^{new} - W^{old}\|_F^2}{\|W^{old}\|_F^2} < \varepsilon$ exit
 \item Assign $W^{old} \leftarrow W^{new}$
 \end{enumerate}
-\item Assign $\hat{W}_{\lambda_k} \leftarrow W^{new}$
+\item Assign $\hat{W}_{\lambda_i} \leftarrow W^{new}$
 \end{enumerate}
-\item Output $\hat{W}_{\lambda_1}, \hat{W}_{\lambda_2}, ... , \hat{W}_{\lambda_k}$.
+\item Output $\hat{W}_{\lambda_1}, \hat{W}_{\lambda_2}, ... , \hat{W}_{\lambda_k}$
 \end{enumerate}
 \end{algorithm}
 
@@ -456,13 +456,13 @@ has a solution $W = \cS_\lambda^H (YB)$, where $\cS_\lambda^H(X) = UD_\lambda^H 
 \begin{enumerate}
 \item Repeat:
 \begin{enumerate}
-\item Compute $W^{new} \leftarrow S_{\lambda_k}^H( (P_\Omega(Y) + P_\Omega^\perp(W^{old}B'))B )$.
-\item If $\frac{\|W^{new} - W^{old}\|_F^2}{\|W^{old}\|_F^2} < \varepsilon$ exit.
+\item Compute $W^{new} \leftarrow S_{\lambda_i}^H( (P_\Omega(Y) + P_\Omega^\perp(W^{old}B'))B )$
+\item If $\frac{\|W^{new} - W^{old}\|_F^2}{\|W^{old}\|_F^2} < \varepsilon$ exit
 \item Assign $W^{old} \leftarrow W^{new}$
 \end{enumerate}
-\item Assign $\hat{W}_{\lambda_k} \leftarrow W^{new}$
+\item Assign $\hat{W}_{\lambda_i} \leftarrow W^{new}$
 \end{enumerate}
-\item Output $\hat{W}_{\lambda_1}, \hat{W}_{\lambda_2}, ... , \hat{W}_{\lambda_k}$.
+\item Output $\hat{W}_{\lambda_1}, \hat{W}_{\lambda_2}, ... , \hat{W}_{\lambda_k}$
 \end{enumerate}
 \end{algorithm}
 
@@ -767,18 +767,18 @@ The method proposed in Section \ref{ss:dim-red} can be directly applied for find
 
 % using the method from Section \ref{ss:dim-red} as a basis for the principal component regression.
 
-For the regression problem, we suggest a two-step procedure motivated by principal component regression. We first find a joint low-rank decomposition $W$ of covariates $X_1,...,X_p$ and then regress $Y$ on $W$. Note however that this way we are not levaraging the intrinsic structure of $Y$. To incorporate the trends of variability in $Y$ independent of $X_i, 1 \leq i \leq p$ we introduce an additional latent space $U$.
+For the regression problem, we suggest a two-step procedure motivated by principal component regression. We first find a joint low-rank decomposition $W$ of covariates $X_1,...,X_p$ and then regress $Y$ on $W$. Additionally, we want to leverage the intrinsic structure of $Y$. To incorporate the trends of variability in $Y$ independent of $X_i, 1 \leq i \leq p$ we introduce an additional latent space $U$.
 
 %Note that the latent representation $W$ can be constructed either by applying sparse functional PCA, by \textsc{Soft-Longitudinal-Impute}, jointly by \textsc{Soft-Longitudinal-PCA} or by other low-rank representation of $(X_1,...,X_p)$.
 
 % Let $W$ be a latent representation of $X_1, X_2, ..., X_p$, derived using one of the methods above.
-Let $U$ be an unknown $N \times d_1$ matrix, $W$ be a $N \times d_2$ orthogonal matrix, where $d_1, d_2$ are the numbers of latent components. We are searching for $U$ and a $(d_1 + d_2) \times K$ matrix $A$
+Let $U$ be an unknown $N \times d_1$ matrix, $W$ be a $N \times d_2$ orthogonal matrix derived from $(X_1,...,X_p)$, where $d_1, d_2$ are the numbers of latent components. We are searching for $U$, a $d_1 \times K$ matrix $A_1$ and a $d_2 \times K$ matrix $A_2$ solving
 \begin{align}\label{eq:pcr}
-\minimize_{U,A} \|P_\Omega(Y - (U:W)AB')\|_F^2,
+\minimize_{A,Z} \|P_\Omega(Y - ZB' - WAB')\|_F^2 + \lambda\|Z\|_*,
 \end{align}
 where $P_\Omega$ is a projection on a set of observed coefficients.
 
-We propose an iterative algorithm based on alternating least squares method (ALS). We assign random values to U and regress Y on $(U:W)$, obtaining $A$. Next, we regress $Y$ on $A$ but only allowing $U$ to change. We refer to Algorithm \ref{alg:sparse-regression} for the full description of the procedure.
+For a known $A_2$, we can find the $UA_1B'$ by applying methodology developped in \label{ss:reduced-rank} to the partially observed matrix $(Y - WA_2B')$. For a given $UA_1B'$, the problem \eqref{eq:pcr} is just a regression of $Y - UA_1B'$ on $W$. Based on this observation we propose an iterative algorithm. We refer to Algorithm \ref{alg:sparse-regression} for the full description of the procedure.
 
 % where we fill in the missing values in $Y$ with zeros, multiply the expression by $B$, regress $YB$ on $WA'$, and use the new $A$ for filling in the missing values, till convergence. We refer to Algorithm \ref{alg:sparse-regression} for the full description of the procedure.
 
@@ -827,23 +827,27 @@ We propose an iterative algorithm based on alternating least squares method (ALS
 \textbf{Step 1: Latent representation}
 \end{flushleft}
 \begin{enumerate}
-\item For sparsely observed $X_1,X_2,...,X_p$ find a latent representation $W$
+\item For sparsely observed $\bX = (X_1,X_2,...,X_p)$ find a latent scores $W$ (Algorithm \ref{alg:soft-impute})
 %\item Define $W = W_1:W_2:...:W_p$
-\item Orthogonalize $W$
+%\item Orthogonalize $W$
 \end{enumerate}
 \begin{flushleft}
 \textbf{Step 2: Regression}
 \end{flushleft}
 \begin{enumerate}
-\item Initialize $A$ zeros
-\item Repeat till convergence:
-\begin{enumerate}
-\item Impute regressed values $\hat{Y} = P_\Omega(Y) + P_\Omega^\perp(WAB')$
-\item Compute $A^{new} \leftarrow W'\hat{Y}B$
-\item If $\frac{\|A^{new} - A\|_F^2}{\|A\|_F^2} < \varepsilon$ exit
-\item Assign $A \leftarrow A^{new}$
-\end{enumerate}
-\item Return $A$
+\item For each $\lambda_1,\lambda_2,...,\lambda_k$
+  \begin{enumerate}
+  \item Initialize $A_0,Z_0$ with zeros
+  \item Repeat until convergence:
+    \begin{enumerate}
+    \item Get $Z^{new}$ by solving $\|P_\Omega( (Y - WA_0B') - ZB')\|_F^2 + \lambda_i\|Z\|_*$ (Algorithm \ref{alg:soft-impute})
+    \item Find $A^{new}$ by solving $\|P_\Omega( (Y - Z^{new}B') - WAB')\|_F^2$ (Algorithm \ref{alg:regression})
+    \item If $\frac{\|A^{new} - A_0\|_F^2}{\|A_0\|_F^2} + \frac{\|Z^{new} - Z_0\|_F^2}{\|Z_0\|_F^2} < \varepsilon$ exit
+    \item Assign $A_0 \leftarrow A^{new},Z_0 \leftarrow Z^{new}$
+    \end{enumerate}
+  \item Assign $A_{\lambda_i} \leftarrow A_0, Z_{\lambda_i} \leftarrow Z_0$
+  \end{enumerate}
+\item Output $(A_{\lambda_1},Z_{\lambda_1}), (A_{\lambda_2},Z_{\lambda_2}), ..., (A_{\lambda_k},Z_{\lambda_k})$
 \end{enumerate}
 \end{algorithm}
 
