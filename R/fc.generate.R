@@ -23,7 +23,7 @@ generate.matrix = function(n, d)
   # split into two groups
   subst = 1:n > n/3
   Ycoef = Ycoef1
-  Ycoef[subst,] = Ycoef2[subst,]
+#  Ycoef[subst,] = Ycoef2[subst,]
   Ycoef
 }
 
@@ -74,7 +74,7 @@ fsimulate = function(
   # GENERATE DATA
   Xcoef = generate.matrix(n,d)
   Zcoef = generate.matrix(n,d)
-  Ycoef = Xcoef + Zcoef #+ generate.matrix() * 0.1
+  Ycoef = Xcoef + Zcoef
 
   Ztrue = Zcoef %*% t(S)
   Xtrue = Xcoef %*% t(S)

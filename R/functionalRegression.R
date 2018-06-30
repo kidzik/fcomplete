@@ -43,7 +43,7 @@ functionalRegression.one= function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 
 
     err = sqrt(mean( ((Yhat - Y)[!ynas])**2))
   }
-  list(fit = Yhat, id = row.names(Y), grid = as.numeric(colnames(Y)), err = err)
+  list(fit = Yhat, coef = B, id = row.names(Y), grid = as.numeric(colnames(Y)), err = err)
 }
 
 #' Parse the formula "response ~ covariates | groups"
@@ -68,7 +68,7 @@ parse.formula <- function(formula) {
 #'
 #' @noRd
 # @export
-functionalRegression = function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 1e-4, K = dim(X)[2], mask = NULL){
+functionalRegression = function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 1e-4, K = dim(X)[2], mask = NULL, verbose=1){
   err = 1e9
   bestLambda = NULL
   bestModel = NULL
@@ -103,7 +103,8 @@ functionalRegression = function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 1e-
       # print((args.smpl[["Y"]]$test - model$fit)[args.smpl[["Y"]]$test.mask]**2 )
       err.new = sqrt(mean((args.smpl[["Y"]]$test - model$fit)[args.smpl[["Y"]]$test.mask]**2))
 
-      cat(paste("Error with lambda=",l,"\t",err.new,"\n"))
+      if(verbose > 0)
+        cat(paste("Error with lambda=",l,"\t",err.new,"\n"))
       cv.err = c(cv.err, err.new)
       fit.err = c(fit.err, model$err)
 

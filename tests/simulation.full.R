@@ -2,20 +2,21 @@
 library("roxygen2") ; roxygenize()
 library("devtools") ; devtools::install(".")
 library("fcomplete")
+library("ggplot2")
 
 #rm(list = ls())
 res = list()
-nexp = 1
-dgrid = 51
+nexp = 100
+dgrid = 31
 
 for(exp.id in 1:nexp){
 
 # SIMULATE DATA
 set.seed(323 + exp.id)
-simulation = fsimulate(dgrid = dgrid,clear = 0.95, n = 100,noise.mag = 0.03,)
+simulation = fsimulate(dgrid = dgrid,clear = 0.9, n = 100, noise.mag = 0.05, d = 7, K = 3)
 data = simulation$data
 ftrue = simulation$ftrue
-K = 6 #simulation$params$K
+K = simulation$params$K
 
 # REGRESSION
 model.mean = fregression(Y:time ~ 1 | id, data, method = "mean", bins = dgrid)
@@ -23,9 +24,10 @@ model.fpca = fregression(Y:time ~ 1 | id, data, lambda = 0, K = 2:K, thresh = 1e
 
 lambdas = seq(0,10,length.out = 20)
 model.fimp = fregression(Y:time ~ 1 | id, data, lambda = lambdas, thresh = 0, final = "soft", maxIter = 100, fold = 5, cv.ratio = 0.05, K = K, bins = dgrid)
-model.fcmp = fregression(0:time ~ Y + X1 + X2 | id, data, lambda = lambdas, K = K, final = "soft")
+model.fcmp = fregression(0:time ~ Y + X1 + X2 | id, data, lambda = lambdas, K = K, final = "soft", bins = dgrid)
 lambdas = seq(0,2,length.out = 10)
-model.freg = fregression(Y:time ~ X1 + X2 | id, data, lambda = lambdas, thresh = 1e-5, lambda.reg = 0.1 * 5:20, method = "fimpute", K = K)
+model.freg = fregression(Y:time ~ X1 + X2 | id, data, lambda = lambdas, thresh = 1e-4, lambda.reg = 0.1 * 5:20, method = "fimpute", K = K, bins = dgrid)
+model.freg.withY = fregression(Y:time ~ Y + X1 + X2 | id, data, lambda = lambdas, thresh = 1e-4, lambda.reg = 0.1 * 5:20, method = "fimpute", K = K, bins = dgrid)
 
 # REPORT RESULTS
 idx = unique(data$id)
@@ -34,7 +36,8 @@ errors = c(
   mean((ftrue[idx,] - model.fpca$fit)**2),
   mean((ftrue[idx,] - model.fimp$fit)**2),
   mean((ftrue[idx,] - model.fcmp$fit)**2),
-  mean((ftrue[idx,] - model.freg$fit)**2)
+  mean((ftrue[idx,] - model.freg$fit)**2),
+  mean((ftrue[idx,] - model.freg.withY$fit)**2)
 )
 errors
 model.fimp$meta
@@ -44,8 +47,15 @@ tbl.true = cbind(
   100*(1-errors/errors[1])
 )
 colnames(tbl.true) = c("MSE","% expl")
-rownames(tbl.true) = c("mean","fpca","fimpute","fcompress","regression")
+rownames(tbl.true) = c("mean","fpca","fimpute","fcompress","regression","regression with Y")
 print(tbl.true)
+
+curveid = 4
+plot(ftrue[curveid,])
+lines(model.freg.withY$fitI[curveid,],col=2)
+lines(model.freg.withY$fitR[curveid,],col=3)
+lines(model.freg.withY$fit[curveid,],col=4,lwd=2)
+lines(model.freg$fit[curveid,],col=5,lwd=2)
 
 res[[exp.id]] = list()
 res[[exp.id]]$tbl = tbl.true
@@ -83,7 +93,7 @@ title("Functional regression")
 par(mfrow=c(1,2), cex=1.3)
 matplot(t(-model.fimp$v)[,1:3],t='l',lwd = 4)
 title("First 3 PCs from fPCA method")
-matplot(t(model.fpca$v)[,1:3],t='l', lwd = 4)
+matplot(t(model.fpca$v)[,1:min(3,nrow(model.fpca$v))],t='l', lwd = 4)
 title("First 3 singular vectors from SFI method")
 
 par(mfrow=c(1,2), cex=1.3)
@@ -99,8 +109,10 @@ n = nrow(model.fcmp$u)
 }
 
 joint.tbl = res[[1]]$tbl
+boxplot.data = res[[1]]$tbl[,2]
 for (i in 2:length(res)){
   joint.tbl = joint.tbl + res[[i]]$tbl
+  boxplot.data = cbind(boxplot.data, res[[i]]$tbl[,2])
 }
 joint.tbl = joint.tbl/length(res)
 res[[1]]$fimpute$meta
@@ -140,7 +152,7 @@ pp = ggplot(aes(x = time, y = Y, color = id), data = dd[data$id %in% ids,]) +
   stat_function(fun = approxfun(gg, simulation$basis[,6]) , color = stdPalette[6], size=1) +
   stat_function(fun = approxfun(gg, simulation$basis[,7]) , color = stdPalette[7], size=1)
 pp
-ggsave(paste0("~/Dropbox/Presentations/Mobilize17/images/fcomplete/splines.pdf"))
+ggsave(paste0("docs/plots/splines.pdf"))
 
 pp = ggplot(aes(x = time, y = Y, color = id), data = dd[data$id %in% ids,]) +
   scale_fill_manual(values = cbPalette[[pid]]) + scale_colour_manual(values = cbPalette[[pid]]) +
@@ -155,9 +167,7 @@ pp = ggplot(aes(x = time, y = Y, color = id), data = dd[data$id %in% ids,]) +
   # stat_function(fun = approxfun(gg, simulation$basis[,6]) , color = stdPalette[6], size=1) +
   # stat_function(fun = approxfun(gg, simulation$basis[,7]) , color = stdPalette[7], size=1)
 pp
-ggsave(paste0("~/Dropbox/Presentations/Mobilize17/images/fcomplete/fpca-basis.pdf"))
-
-
+ggsave(paste0("docs/plots/fpca-basis.pdf"))
 
 
 pp = ggplot(aes(x = time, y = Y, color = id), data = dd[data$id %in% ids,]) +
@@ -173,7 +183,7 @@ pp = pp +
   # stat_function(fun = approxfun(gg, simulation$ftrue[ids[3],]) , color = cbPalette[3], size=1, linetype='dashed')
   # stat_function(fun = approxfun(gg, simulation$ftrue[4,]) , color = cbPalette[4], size=1, linetype='dashed')
 pp
-ggsave(paste0("~/Dropbox/Presentations/Mobilize17/images/fcomplete/observed-",pid,".pdf"))
+ggsave(paste0("docs/plots/observed-",pid,".pdf"))
 
 
 pp + ggtitle("Individual mean") +
@@ -181,20 +191,20 @@ pp + ggtitle("Individual mean") +
   stat_function(fun = approxfun(gg, model.mean$fit[ids[2],]) , color = cbPalette[[pid]][2], size=1.5, alpha = min(1,1.005 - (pid==1) ))
   # stat_function(fun = approxfun(gg, model.mean$fit[ids[3],]) , color = cbPalette[3], size=1.5)
   # stat_function(fun = approxfun(gg, model.mean$fit[4,]) , color = cbPalette[4], size=1.5)
-ggsave(paste0("~/Dropbox/Presentations/Mobilize17/images/fcomplete/2-curves-mean-",pid,".pdf"))
+ggsave(paste0("docs/plots/2-curves-mean-",pid,".pdf"))
 
 pp + ggtitle("Sparse PCA") +
   stat_function(fun = approxfun(gg, model.fpca$fit[ids[1],]) , color = cbPalette[[pid]][1], size=1.5, alpha = min(1,1.005 - (pid==2) )) +
   stat_function(fun = approxfun(gg, model.fpca$fit[ids[2],]) , color = cbPalette[[pid]][2], size=1.5, alpha = min(1,1.005 - (pid==1) ))
   # stat_function(fun = approxfun(gg, model.fimp$fit[ids[3],]) , color = cbPalette[3], size=1.5)
   # stat_function(fun = approxfun(gg, model.fimp$fit[4,]) , color = cbPalette[4], size=1.5)
-ggsave(paste0("~/Dropbox/Presentations/Mobilize17/images/fcomplete/2-curves-fpca-",pid,".pdf"))
+ggsave(paste0("docs/plots/2-curves-fpca-",pid,".pdf"))
 
 pp + ggtitle("Sparse Impute") +
   stat_function(fun = approxfun(gg, model.fimp$fit[ids[1],]) , color = cbPalette[[pid]][1], size=1.5, alpha = min(1,1.005 - (pid==2) )) +
   stat_function(fun = approxfun(gg, model.fimp$fit[ids[2],]) , color = cbPalette[[pid]][2], size=1.5, alpha = min(1,1.005 - (pid==1) ) )
   # stat_function(fun = approxfun(gg, model.fpca$fit[ids[3],]) , color = cbPalette[3], size=1.5)
   # stat_function(fun = approxfun(gg, model.fpca$fit[4,]) , color = cbPalette[4], size=1.5)
-ggsave(paste0("~/Dropbox/Presentations/Mobilize17/images/fcomplete/2-curves-fimp-",pid,".pdf"))
+ggsave(paste0("docs/plots/2-curves-fimp-",pid,".pdf"))
 
 

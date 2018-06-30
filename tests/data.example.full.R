@@ -1,5 +1,6 @@
 library("devtools") ; library("roxygen2") ; library("fpca")
 roxygenise() ; install(".") ; library("fcomplete")
+library("ggplot2")
 
 #############################
 # PREPARE DATA

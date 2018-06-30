@@ -30,7 +30,7 @@ project.on.basis = function(Y, basis){
 #'
 #' @noRd
 # @export
-functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda, start = NULL){
+functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda, start = NULL, verbose = 1){
 
   # arange arguments
   args <- list(...)
@@ -78,7 +78,7 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda, sta
 
     # Check if converged
     ratio = norm(Yhat.new - Yhat,"F") / (norm(Yhat,type = "F") + 1e-15)
-    if (i %% 100 == 0)
+    if (verbose && (i %% 100 == 0))
       print(ratio)
     if (ratio < thresh)
       break
@@ -103,7 +103,7 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda, sta
 }
 
 # @export
-functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIter = 1e4, thresh = 1e-5, lambda = 0, final="soft", mask = NULL){
+functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIter = 1e4, thresh = 1e-5, lambda = 0, final="soft", mask = NULL, verbose = 1){
   args <- list(...)
   err = 1e9
   best = NULL
@@ -128,6 +128,7 @@ functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIt
   args.smpl[["K"]] = K
   args.smpl[["maxIter"]] = maxIter
   args.smpl[["thresh"]] = thresh
+  args.smpl[["verbose"]] = verbose
 
   cv.K = c()
   cv.err = c()
@@ -145,7 +146,8 @@ functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIt
       }
 
       print(model$err)
-      cat(paste("Error with lambda=",l,"\t",err.new,"\n"))
+      if (verbose > 0)
+        cat(paste("Error with lambda=",l,"\t",err.new,"\n"))
       cv.K = c(cv.K, sum(model$d > 1e-5))
       cv.err = c(cv.err, err.new)
       fit.err = c(fit.err, model$err)

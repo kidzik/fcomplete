@@ -141,7 +141,8 @@ fregression = function(formula, data,
     return(do.call(functionalMultiImputeCV, args))
   }
 
-  # Case 3: Y ~ X -- do regression
+  # Case 3: Y ~ Y + X -- do principal component regression with Y
+  # Case 4: Y ~ X -- do principal component regression without X
   models = list()
   combinedU = c()
 
@@ -149,26 +150,68 @@ fregression = function(formula, data,
 
   for (i in 1:nvars)
   {
-    X.long[[i]][,3] = scale(X.long[[i]][,3])
-    X.wide[[i]][!is.na(X.wide[[i]])] = scale(X.wide[[i]][!is.na(X.wide[[i]])])
-    if (method == "fpcs"){
-      models[[i]] = fc.fpca(X.long[[i]], d = d, K = K, grid.l = 0:(bins-1)/(bins-1))
-      combinedU = cbind(combinedU, models[[i]]$fpcs)
+    # skip response, it will be used separately
+    if (length(vars$response) == 2 && vars$response[1] != vars$covariates[i])
+    {
+      X.long[[i]][,3] = scale(X.long[[i]][,3])
+      X.wide[[i]][!is.na(X.wide[[i]])] = scale(X.wide[[i]][!is.na(X.wide[[i]])])
+      if (method == "fpcs"){
+        models[[i]] = fc.fpca(X.long[[i]], d = d, K = K, grid.l = 0:(bins-1)/(bins-1))
+        combinedU = cbind(combinedU, models[[i]]$fpcs)
+      }
+      else {
+        models[[i]] = functionalMultiImpute(X.wide[[i]], basis = basis, lambda = lambda, thresh = thresh, K = K, final = final, mask = maskedY)
+        combinedU = cbind(combinedU, models[[i]]$u)
+      }
     }
     else {
-      models[[i]] = functionalMultiImpute(X.wide[[i]], basis = basis, lambda = lambda, thresh = thresh, K = K, final = final, mask = maskedY)
-      combinedU = cbind(combinedU, models[[i]]$u)
+      print(paste("Skipping",vars$response[1]))
     }
   }
 
   if (is.null(K.reg))
     K.reg = ncol(Y.wide)
 
-  res = functionalRegression(Y.wide, combinedU, basis, lambda = lambda.reg, K = K.reg, thresh = 1e-10, mask = maskedY)
-  res$Y = t(t(Y.wide * yscale) + cmeans)
-  res$X = X.wide
-  res$U = combinedU
-  res$X.models = models
-  res$fit = t(t(res$fit * yscale) + cmeans)
+  # Case 3: Y ~ X -- do principal component regression without Y
+  if (length(vars$response) == 2 && !(vars$response[1] %in% vars$covariates)){
+    print("Case 3")
+    res = functionalRegression(Y.wide, combinedU, basis, lambda = lambda.reg, K = K.reg, thresh = 1e-10, mask = maskedY)
+    res$Y = t(t(Y.wide * yscale) + cmeans)
+    res$X = X.wide
+    res$U = combinedU
+    res$X.models = models
+    res$fit = t(t(res$fit * yscale) + cmeans)
+    return(res)
+  }
+
+  # Case 4 experimental: Y ~ Y + X -- do principal component regression with Y
+  print("Case 4")
+  Y.tmp = Y.wide
+
+  lastFitR = 0
+  lastFitI = 0
+  for (i in 1:20){
+    resR = functionalRegression(Y.tmp, combinedU, basis, K = 1, thresh = 1e-10, mask = maskedY, verbose = 0)
+    Y.tmp = Y.wide - resR$fit
+    resI = functionalMultiImpute(Y.tmp, basis = basis, K = 1, thresh = thresh, verbose = 0) #, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter)
+    Y.tmp = Y.wide - resI$fit
+
+    dR = norm(resR$fit - lastFitR, type = "F") / norm(resR$fit, type="F")
+    dI = norm(resI$fit - lastFitI, type = "F") / norm(resI$fit, type="F")
+    print(c(dR, dI))
+
+    if (dR + dI < 0.01)
+      break
+
+    lastFitR = resR$fit
+    lastFitI = resI$fit
+  }
+  res = list()
+  sm = (resI$fit + resR$fit)/2
+  res$fitI = t(t(resI$fit * yscale) + cmeans)
+  res$fitR = t(t(resR$fit * yscale) + cmeans)
+  res$yscale = yscale
+  res$cmeans = cmeans
+  res$fit = t(t(sm * yscale) + cmeans)
   res
 }
