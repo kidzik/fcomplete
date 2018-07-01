@@ -6,7 +6,7 @@ library("ggplot2")
 library("latex2exp")
 
 res = list()
-nexp = 100
+nexp = 10
 dgrid = 31
 d = 7
 
@@ -14,39 +14,36 @@ for(exp.id in 1:nexp)
 {
   # SIMULATE DATA
   set.seed(exp.id)
-  simulation = fsimulate(dgrid = dgrid,clear = 0.9, n = 100, noise.mag = 0.1, d = d, K = 3)
+  simulation = fsimulate(dgrid = dgrid,clear = 0.9, n = 100, noise.mag = 0.05, d = d, K = 1)
   data = simulation$data
   ftrue = simulation$ftrue
   K = simulation$params$K
 
   # TUNING PARAMS
-  lambdas.pca = seq(0,10,length.out = 20)
+  lambdas.pca = seq(0,2,length.out = 20)
   lambdas.reg = seq(0,2,length.out = 10)
 
-  # REGRESSION
   model.mean = fregression(Y:time ~ 1 | id, data, method = "mean", bins = dgrid)
   model.fpca = fregression(Y:time ~ 1 | id, data, lambda = 0, K = 2:d, thresh = 1e-7, method = "fpcs", bins = dgrid)
-  model.fimp = fregression(Y:time ~ 1 | id, data, lambda = lambdas.pca, thresh = 0, final = "soft", maxIter = 100, fold = 5, cv.ratio = 0.05, K = K, bins = dgrid)
+  model.fimp = fregression(Y:time ~ 1 | id, data, lambda = lambdas.pca, K = d, thresh = 0, final = "soft", maxIter = 1000, fold = 5, cv.ratio = 0.05, bins = dgrid)
   model.fcmp = fregression(0:time ~ Y + X1 + X2 | id, data, lambda = lambdas.pca, final = "soft", bins = dgrid)
-  model.freg = fregression(Y:time ~ X1 + X2 | id, data, lambda = lambdas.reg, thresh = 1e-4, lambda.reg = 0.1 * 5:20, method = "fimpute", K = K, bins = dgrid)
-  model.fslr = fregression(Y:time ~ Y + X1 + X2 | id, data, lambda = lambdas.reg, thresh = 1e-4, lambda.reg = 0.1 * 5:20, method = "fimpute", K = K, bins = dgrid)
+  # model.freg = fregression(Y:time ~ X1 + X2 | id, data, lambda = lambdas.reg, thresh = 1e-4, lambda.reg = 0.1 * 1:20, method = "fimpute", bins = dgrid)
+  model.fslr = fregression(Y:time ~ Y + X1 + X2 | id, data, lambda = lambdas.reg, thresh = 1e-4, lambda.reg = 0.1 * 1:20, method = "fimpute", bins = dgrid)
 
   # REPORT RESULTS
-  idx = unique(data$id)
   errors = c(
-    mean((ftrue[idx,] - model.mean$fit)**2),
-    mean((ftrue[idx,] - model.fpca$fit)**2),
-    mean((ftrue[idx,] - model.fimp$fit)**2),
-    mean((ftrue[idx,] - model.fcmp$fit)**2),
-    mean((ftrue[idx,] - model.freg$fit)**2),
-    mean((ftrue[idx,] - model.fslr$fit)**2)
+    mean((ftrue - mean(data$Y))**2),
+    mean((ftrue - model.fpca$fit)**2),
+    mean((ftrue - model.fimp$fit)**2),
+    mean((ftrue - model.fcmp$fit)**2),
+    mean((ftrue - model.fslr$fit)**2)
   )
   tbl.true = cbind(
     errors,
     100*(1-errors/errors[1])
   )
   colnames(tbl.true) = c("MSE","% expl")
-  rownames(tbl.true) = c("mean","fpca","fimpute","fcompress","regression","regression with Y")
+  rownames(tbl.true) = c("mean","fpca","fimpute","fcompress","regression")
   print(tbl.true)
 
   # SAVE EXPERIMENT RESULTS
@@ -55,7 +52,6 @@ for(exp.id in 1:nexp)
   res[[exp.id]]$mean = model.mean
   res[[exp.id]]$fimp = model.fimp
   res[[exp.id]]$fpca = model.fpca
-  res[[exp.id]]$freg = model.fimp
   res[[exp.id]]$fslr = model.fslr
   res[[exp.id]]$simulation = simulation
 }
@@ -70,13 +66,17 @@ for (i in 2:length(res)){
 joint.tbl = joint.tbl/length(res)
 
 # Sanity check for the regression result
-p = 0.65
+p = 0.2
 ps = 0:50 / 50
 er = sapply(ps, function(p){
 fit = (model.fslr$fitI * (1-p) + model.fslr$fitR * p)
-1 - mean((ftrue[idx,] - fit)**2) / errors[1]
+mean((simulation$fobs - fit)**2,na.rm = TRUE)
 })
 plot(ps,er)
+
+fit = (model.fslr$fitI * (1-p) + model.fslr$fitR * p)
+mean((simulation$fobs - model.fslr$fit)**2,na.rm = TRUE)
+mean((ftrue - fit)**2)
 
 ################
 # PLOT RESULTS #
@@ -84,7 +84,7 @@ plot(ps,er)
 source("tests/plot.helpers.R")
 
 # Figure 3:
-exp.show = 6
+exp.show = 8
 res[[exp.show]]$tbl
 #matplot(t(-res[[exp.show]]$fpca$v)[,1:min(3,nrow(res[[exp.show]]$fpca$v))],t='l',lwd = 4)
 
@@ -110,12 +110,11 @@ for (j in 1:length(vlist)){
 }
 
 # Figure 4:
-ind = 1:2 + 10
-idx = as.numeric(model.freg$id)
+ind = 1:2
 
 plot_preds = function(obs, true = NULL, fit = NULL, title = NULL, filename = NULL){
-  cols = gg_color_hue(3)
-  pp = ggplot(data.frame(x=c(0, 1)), aes(x)) + paper.theme + ylim(-6,6) +
+  cols = gg_color_hue(nrow(true))
+  pp = ggplot(data.frame(x=c(0, 1)), aes(x)) + paper.theme + #ylim(-6,6) +
     xlim(0,1) + labs(x = "time", y = "value")
   for (i in 1:nrow(true)){
     df = data.frame(x=0:30/30,y=true[i,],yobs=obs[i,], yfit = fit[i,])
@@ -138,13 +137,14 @@ plot_preds = function(obs, true = NULL, fit = NULL, title = NULL, filename = NUL
   myggsave(filename=paste0("docs/plots/",filename,".pdf"), plot=pp)
 }
 
-plot_preds(simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[idx,][ind,], res[[exp.show]]$mean$fit[ind,],
+ind = 1:3 + 10
+plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$mean$fit[ind,],
            filename="pred-mean", title = "Mean")
-plot_preds(simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[idx,][ind,], res[[exp.show]]$fpca$fit[ind,],
+plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fpca$fit[ind,],
            filename="pred-fpca", title = "Functional PCA")
-plot_preds(simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[idx,][ind,], res[[exp.show]]$fimp$fit[ind,],
+plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fimp$fit[ind,],
            filename="pred-fimp", title = "Sparse Functional Impute")
-plot_preds(simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[idx,][ind,], res[[exp.show]]$fslr$fit[ind,],
+plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fslr$fit[ind,],
            filename="pred-freg", title = "Sparse Functional Regression")
 
 # Figure 5: Sample error by cross-val
@@ -154,12 +154,14 @@ pp = ggplot(data = model.fimp$meta, aes(x=lambda, y=cv.err)) + paper.theme +
   geom_point(size=4) +
   ggtitle("Error by cross-validation") +
   labs(x = TeX("$\\lambda$"), y = "error")
+print(pp)
 myggsave(filename=paste0("docs/plots/error-of-lambda.pdf"), plot=pp)
 
 pp = ggplot(data = model.fimp$meta, aes(x=lambda, y=cv.K)) + paper.theme +
   geom_point(size=4) +
   ggtitle(TeX("Dimension K corresponding to $\\lambda$")) +
   labs(x = TeX("$\\lambda$"), y = "K")
+print(pp)
 myggsave(filename=paste0("docs/plots/K-of-lambda.pdf"), plot=pp)
 
 # Figure 6: Example curves from the simulation
@@ -186,9 +188,8 @@ for (showLines in 0:1){
 # Figure 7: Boxplots for all methods
 library(tidyr)
 tmp = t(boxplot.data)[,-1]
-colnames(tmp)[5] = "regY"
 rownames(tmp) = 1:nrow(tmp)
-methodStats = gather(data.frame(tmp), method, varexp, fpca:regY, factor_key = FALSE)
+methodStats = gather(data.frame(tmp), method, varexp, fpca:regression, factor_key = FALSE)
 
 pp = ggplot(methodStats, aes(x = method, y = varexp)) + paper.theme + labs(x="Method",y="Variance explained (%)") +
   geom_boxplot()

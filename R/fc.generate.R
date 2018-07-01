@@ -2,28 +2,34 @@
 #'
 #' @noRd
 # @export
-generate.matrix = function(n, d)
+generate.matrix = function(n, d, K)
 {
+  r1 = c(1,0.4,0.005,0.1 * exp(-(3:(d-1))))
+#  r2 = c(1.3,0.2,0.005,0.1 * exp(-(3:(d-1))))
+  r1[-(1:K)] = 0
+#  r2[-(1:K)] = 0
+
   # generate covariance matrices
   V = svd(matrix(rnorm(d*d),d))$v
-  D = diag(c(1,0.4,0.005,0.1 * exp(-(3:(d-1))))) * 500
+  D = diag(r1)
   Sigma1 = V %*% D %*% t(V)
-  V = svd(matrix(rnorm(d*d),d))$v
-  D = diag(c(1.3,0.2,0.005,0.1 * exp(-(3:(d-1))))) * 500
-  Sigma2 = V %*% D %*% t(V)
+  # V = svd(matrix(rnorm(d*d),d))$v
+  # D = diag(r2) * 500
+  # Sigma2 = V %*% D %*% t(V)
 
   # fix the mean of one group
   # adjust another group to get overall mean equal zero
-  mm = rnorm(d)*5
+  # mm = rnorm(d)*5
+  mm = rep(0,d)
 
   # Generate matrices
   Ycoef1 = rmvnorm(n = n, sigma = Sigma1, mean = 2*mm)
-  Ycoef2 = rmvnorm(n = n, sigma = Sigma2, mean = -mm)
+  # Ycoef2 = rmvnorm(n = n, sigma = Sigma2, mean = -mm)
 
   # split into two groups
   subst = 1:n > n/3
   Ycoef = Ycoef1
-  Ycoef[subst,] = Ycoef2[subst,]
+  # Ycoef[subst,] = Ycoef2[subst,]
   Ycoef
 }
 
@@ -72,9 +78,9 @@ fsimulate = function(
   S = fda::eval.basis(evalarg = 0:(dgrid-1)/(dgrid-1), basisobj = basis) / sqrt(dgrid)
 
   # GENERATE DATA
-  Xcoef = generate.matrix(n,d)
-  Zcoef = generate.matrix(n,d)
-  Ycoef = generate.matrix(n,d) + Xcoef + Zcoef
+  Xcoef = generate.matrix(n,d,K) * 10
+  Zcoef = generate.matrix(n,d,K) * 10
+  Ycoef = generate.matrix(n,d,K) * 10
 
   Ztrue = Zcoef %*% t(S)
   Xtrue = Xcoef %*% t(S)
@@ -86,9 +92,9 @@ fsimulate = function(
   noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise.mag
   Znoise = Ztrue + noise
   noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise.mag
-  Ynoise = Xnoise + Znoise + noise
+  Ynoise = 0.5*(Xtrue + Ztrue) + Ytrue + noise
 
-  # Remove 99% of points
+  # Remove (1-clear)*100% of points
   nel = prod(dim(Ytrue))
   nna = ceiling(nel * clear)
 
@@ -100,10 +106,13 @@ fsimulate = function(
   Z.wide = Znoise
   Z.wide[remove.points] = NA
 
-  X.wide = X.wide[rowSums(!is.na(Y.wide)) > 0,]
-  Z.wide = Z.wide[rowSums(!is.na(Y.wide)) > 0,]
-  Y.wide = Y.wide[rowSums(!is.na(Y.wide)) > 0,]
+  keep.rows = rowSums(!is.na(Y.wide)) > 0
+  X.wide = X.wide[keep.rows,]
+  Z.wide = Z.wide[keep.rows,]
+  Y.wide = Y.wide[keep.rows,]
   n = nrow(X.wide)
+
+  Ytrue = Ytrue[keep.rows,]
 
   # TO LONG
   time = 0:(dgrid-1)/(dgrid-1)

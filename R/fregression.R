@@ -93,11 +93,14 @@ fregression = function(formula, data,
     Y.wide = fc.long2wide(Y[,1], as.numeric(Y[,2]), as.numeric(Y[,3]), bins = bins)
 
     time = data[[time.var]]
+
+    # Estimate population mean
     LE = lowess(time, data[[y.var]])
     cmeans = approx(x = LE$x, y = LE$y, xout = seq(min(time),max(time),length.out = bins))$y
+
     Y.wide = t(t(Y.wide) - cmeans)
-    yscale = sd(Y.wide[!is.na(Y.wide)])
-    Y.wide[!is.na(Y.wide)] = Y.wide[!is.na(Y.wide)] / yscale
+#    yscale = sd(Y.wide[!is.na(Y.wide)])
+    Y.wide[!is.na(Y.wide)] = Y.wide[!is.na(Y.wide)] #/ yscale
   }
 
   # Case 1: Y ~ 1 -- do functional impute
@@ -105,7 +108,7 @@ fregression = function(formula, data,
   {
     if (method == "fpcs"){
       res = fc.fpca(Y, d = d, K = K, grid.l = 0:(bins-1)/(bins-1))
-      res$fit = t(t(res$fit) - cmeans) / yscale # silly but consistent
+      # res$fit = t(t(res$fit) - cmeans) / yscale # silly but consistent
     }
     else if (method == "mean"){
       res = list(fit = fc.mean(Y.wide))
@@ -113,8 +116,11 @@ fregression = function(formula, data,
     else {
       res = functionalMultiImputeCV(Y.wide, basis = basis, lambda = lambda, K = K, thresh = thresh, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter)
     }
-    res$fit = t(t(res$fit * yscale) + cmeans)
-    res$Y = t(t(Y.wide * yscale) + cmeans)
+    if (method != "fpcs"){
+      res$fit = t(t(res$fit) + cmeans)
+    }
+    res$Y = t(t(Y.wide) + cmeans)
+    res$cmeans = cmeans
     return(res)
   }
 
@@ -176,11 +182,11 @@ fregression = function(formula, data,
   if (length(vars$response) == 2 && !(vars$response[1] %in% vars$covariates)){
     print("Case 3")
     res = functionalRegression(Y.wide, combinedU, basis, lambda = lambda.reg, K = K.reg, thresh = 1e-10, mask = maskedY)
-    res$Y = t(t(Y.wide * yscale) + cmeans)
+    res$Y = t(t(Y.wide) + cmeans)
     res$X = X.wide
     res$U = combinedU
     res$X.models = models
-    res$fit = t(t(res$fit * yscale) + cmeans)
+    res$fit = t(t(res$fit) + cmeans)
     return(res)
   }
 
@@ -208,10 +214,9 @@ fregression = function(formula, data,
   }
   res = list()
   sm = (resI$fit + resR$fit)/2
-  res$fitI = t(t(resI$fit * yscale) + cmeans)
-  res$fitR = t(t(resR$fit * yscale) + cmeans)
-  res$yscale = yscale
   res$cmeans = cmeans
-  res$fit = t(t(sm * yscale) + cmeans)
+  res$fit = t(t(sm) + cmeans)
+  res$fitI = resI$fit
+  res$fitR = resR$fit
   res
 }
