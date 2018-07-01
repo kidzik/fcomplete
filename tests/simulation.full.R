@@ -67,14 +67,14 @@ joint.tbl = joint.tbl/length(res)
 
 # Sanity check for the regression result
 p = 0.2
-ps = 0:50 / 50
+ps = 0:200 / 100
 er = sapply(ps, function(p){
-fit = (model.fslr$fitI * (1-p) + model.fslr$fitR * p)
-mean((simulation$fobs - fit)**2,na.rm = TRUE)
+fit = (model.fslr$fitI * (2-p) + model.fslr$fitR * p)
+mean((simulation$ftrue - fit)**2,na.rm = TRUE)
 })
 plot(ps,er)
 
-fit = (model.fslr$fitI * (1-p) + model.fslr$fitR * p)
+fit = (model.fslr$fitI + model.fslr$fitR)
 mean((simulation$fobs - model.fslr$fit)**2,na.rm = TRUE)
 mean((ftrue - fit)**2)
 

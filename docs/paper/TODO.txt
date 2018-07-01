@@ -1,0 +1,4 @@
+* Update the description of the simulation
+* Update results in the simulation
+* Rerun 100 times, deal somehow tni
+* Rerun data examples
