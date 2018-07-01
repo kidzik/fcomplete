@@ -17,13 +17,13 @@ generate.matrix = function(n, d)
   mm = rnorm(d)*5
 
   # Generate matrices
-  Ycoef1 = rmvnorm(n = n, sigma = Sigma1, mean = mm)
-  Ycoef2 = rmvnorm(n = n, sigma = Sigma2, mean = -2*mm)
+  Ycoef1 = rmvnorm(n = n, sigma = Sigma1, mean = 2*mm)
+  Ycoef2 = rmvnorm(n = n, sigma = Sigma2, mean = -mm)
 
   # split into two groups
   subst = 1:n > n/3
   Ycoef = Ycoef1
-#  Ycoef[subst,] = Ycoef2[subst,]
+  Ycoef[subst,] = Ycoef2[subst,]
   Ycoef
 }
 
@@ -65,7 +65,7 @@ fsimulate = function(
   K = 3,
   dgrid = 51,
   clear = 0.85,
-  noise.mag = 0.2
+  noise.mag = 0.1
 ){
   # Set up a basis
   basis = fda::create.bspline.basis(c(0,1), d, 4)
@@ -74,7 +74,7 @@ fsimulate = function(
   # GENERATE DATA
   Xcoef = generate.matrix(n,d)
   Zcoef = generate.matrix(n,d)
-  Ycoef = Xcoef + Zcoef
+  Ycoef = generate.matrix(n,d) + Xcoef + Zcoef
 
   Ztrue = Zcoef %*% t(S)
   Xtrue = Xcoef %*% t(S)
@@ -86,7 +86,7 @@ fsimulate = function(
   noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise.mag
   Znoise = Ztrue + noise
   noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise.mag
-  Ynoise = Xnoise + Znoise + noise * 4
+  Ynoise = Xnoise + Znoise + noise
 
   # Remove 99% of points
   nel = prod(dim(Ytrue))

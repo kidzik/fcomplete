@@ -22,7 +22,10 @@
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}{Lemma}
 \newcommand{\cN}{\mathcal{N}}
+\newcommand{\cMN}{\mathcal{MN}}
 \newcommand{\cS}{\mathcal{S}}
+\newcommand{\cG}{\mathcal{G}}
+\newcommand{\cM}{\mathcal{M}}
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\N}{\mathbb{N}}
 \newcommand{\bX}{\mathbf{X}}
@@ -118,8 +121,8 @@ While in many situations multiple data points from patients' histories are avail
 To illustrate potential benefits in these scenarios, in Figure \ref{fig:motivation}, we present measurements of BMI of patients with gait pathologies. The thick solid line represents the estimated mean and indicates a clear trend of growth during puberty. However, by looking at individual processes and by modeling between-subject similarities, we may expect to model the progression better, make personalized predictions, cluster patients based on their progression patterns or use the latent representation of progression patterns as a predictor in other models. 
 
 \begin{figure}[h]
-  \includegraphics[width=0.49\linewidth]{images/points}
-  \includegraphics[width=0.49\linewidth]{images/grouped}
+  \includegraphics[width=0.49\linewidth]{../plots/points}
+  \includegraphics[width=0.49\linewidth]{../plots/grouped}
   \caption{We observe BMI of patients at every visit (left plot), and we can easily derive the population progression (thick solid curve). However, analysis of individual patients (connected dots in the right plot, also differing by color) can reveal similarities between them.}
   \label{fig:motivation}
 \end{figure}
@@ -847,30 +850,68 @@ For a known $A$ we can find $Z$ by applying methodology developped in Section \r
 
 \section{Simulations}\label{s:simulation}
 
-We illustrate properties of the multivariate longitudinal fitting in a simulation study. Let $G$ be a grid of $T = 51$ equidistributed points and let $B$ be a basis of $K = 9$ spline functions evaluated on the grid $G$. We generate observations from the model $\eqref{eq:model}$ with $p \in \{3,5,7\}$ true components. %We set $V\Lambda V'$ to a matrix with eigenvalues $\diag[1-\frac{1}{7},...,1 - \frac{p}{8},0,...,0]$.
+We illustrate properties of the multivariate longitudinal fitting in a simulation study. 
 
-We draw two matrices $X_1,X_2$ of size $N \times K$ from $\eqref{eq:model}$ and we define $Y~=~R_1 X_1 + R_2 X_2$, where $R_1,R_2$ are some fixed rotations in $\R^K$. We observe $X_{f,1} = X_1B' + E_{X_1}, X_{f,2} = X_2 B' + E_{X_2}$ and $Y_f = YB' + 2E_Y$, where $E_{X_1},E_{X_2},E_{Y}$ are matrices with uncorrelated Gaussian coordinates with standard deviation $\sigma = 0.2$. We observe $10\%$ of indices. Our objective is to estimate $Y$ using the observed data.
+\paragraph{Data generation} Let $G$ be a grid of $T = 31$ equidistributed points and let $B$ be a basis of $K = 7$ spline functions evaluated on the grid $G$. %We generate observations from the model $\eqref{eq:model}$ with $p = 3$ true components. %We set $V\Lambda V'$ to a matrix with eigenvalues $\diag[1-\frac{1}{7},...,1 - \frac{p}{8},0,...,0]$.
+We will simulate three $N \times K$ matrices using the same procedure $\cG(r_1, r_2, K, N)$, where $r_1, r_2 \in \R_+^K$:
+\begin{enumerate}
+\item Define the procedure $\cM(r)$ generating symmetric matrices $K \times K$ for a given vector $r \in \R_+^K$:
+  \begin{enumerate}
+    \item[(i)] Simulate $K \times K$ matrix $R$
+    \item[(ii)] Use SVD to decompose $S$ to $UDV'$
+    \item[(iii)] Return $Q = V \diag[r] V' $, where $\diag[r]$ is a diagonal matrix with $r$ on the diagonal
+  \end{enumerate}
+\item Let $\Sigma_1 = \cM(r_1)$, $\Sigma_2 = \cM(r_2)$ and $\mu = \cMN(0, I_K)$, where $\cMN$ denotes the multivariate Gaussian distribution
+\item Draw $N$ vectors $v_i$ according to the distribution
+\begin{align*}
+v_i \sim 
+\begin{cases}
+\cMN(2\mu, \Sigma_1) & \text{ if } 1 \leq i \leq N/3\\
+\cMN(-\mu, \Sigma_2) & \text{ if } N/3 < i \leq N
+\end{cases}
+\end{align*}
+\item Return a matrix with rows $[v_i]_{1 \leq i \leq N}$.
+\end{enumerate}
+Define \[ r_1 = [1, 0.4, 0.005, 0.1 \exp(-3), ..., 0.1 \exp(-K+1)] \]  and \[ r_2 = [1.3, 0.2, 0.005, 0.1 \exp(-3), ..., 0.1 \exp(-K+1)],\]
+and let $X_1,X_2,Z$ be generated following the procedure $\cG(r_1,r_2,K,N)$ and let $Y = Z + X_1 + X_2$. We consider $X_1,X_2$ and $Y$ as coefficients in a spline space $B$. We derive corresponding functios by multiplying these matrices by $B'$, i.e. $X_{f,1} = X_1B'$, $X_{f,2} = X_2B'$ and $Y_f = YB'$.
 
-We compare \textsc{Sparse-Longitudinal-Impute} (SLI) with the results from the fPCA \citep{james2000principal}, implemented in \citet{peng2009geometric}. Both, SLI and fPCA require are parametrized with a set of basis functions. In both cases we use the first $k$ elements of the Fourier basis. In our method we also need the tuning parameter $\lambda$, whilst in fPCA we need to chose the rank $R$. We use cross-validation to find $(k_{ours},\lambda)$ and $(k_{FPCA},R)$.
+We uniformly sample $10\%$ indices $\Omega \subset \{1,...,N\} \times \{1,...,T\}$, i.e. around $3$ points per curve on average. Each ebserved element of each matrix $X_{f,1}, X_{f,2}$ and $Y$ is drawn with Gaussian noise with mean $0$ and standard deviation $0.25$. The task is to recover $Y$ from sparse observations of indices $\Omega$.
 
-For illustration, we also present results of \textsc{Sparse-Longitudinal-Regression} (SLR), regressing $Y$ on $X_1$ and $X_2$. Note, however, that the SLR, unlike two other methods, uses additional information about $Y$. The comparison is only meant to validate the approach of adding more covariates.
+\paragraph{Methods}
 
-We compare the three methods fPCA, SLI and SLR, in reference to the baseline -- the {\it estimated subject's mean}. For each subject $p$ we compute the {\it estimated subject's mean} (\textsc{mean}) by taking the mean $\hat{m}_p$ of observed elements in $P_\Omega(X)$ in the row $p$ as a predictor of unknown values in that row. Formally, we assign $P_\Omega(\hat{X})_p = P_\Omega(X)_p$ and $P^\perp_\Omega (\hat{X}_p) \equiv \hat{m}_p$, where $P(\cdot)_p$ denotes the $p$-th row of the projection.
+We compare \textsc{Soft-Longitudinal-Impute} (SLI) defined in Algorithm \ref{alg:soft-impute} with the fPCA procedure \citep{james2000principal}, implemented in \citet{peng2009geometric}. Both, SLI and fPCA require a set of basis functions. In both cases we use the same basis $B$ as in data generation process. In our method we also need the tuning parameter $\lambda$, whilst in fPCA we need to chose the rank $R$. We use cross-validation to choose $\lambda$ and $R$ by optimizing for the prediction error on held-out (validation) observations.
 
-We divide the observed coefficients into training ($81\%$), validation ($9\%$) and test ($10\%$) sets. We choose the best parameters of the three models on the validation set and then retrain on the entire training + validation set. Finally, since in the simulated setting we have access to the ground truth, we compare algorithms on the entire curves. We compute the error of entire curves by taking mean squared Frobenius distance between $Y$ and estimated $\hat{Y}$, i.e.
+We divide the observed coefficients into training ($81\%$), validation ($9\%$) and test ($10\%$) sets. We choose the best parameters of the three models on the validation set and then retrain on the entire training and validation sets combined. % Finally, since in the simulated setting we have access to the ground truth, we compare algorithms on the entire curves.
+We compute the error of entire curves by taking mean squared Frobenius distance between $Y$ and estimated $\hat{Y}$, i.e.
 \[
  \verb|err|(\hat{Y}) = \frac{1}{T|S|} \sum_{i\in S} \|Y_i - \hat{Y}_i \|_F^2
  \]
  on the test set $S$.
  
+ For illustration, we also present results of \textsc{Sparse-Longitudinal-Regression} (SLR), regressing $Y$ on $X_1$ and $X_2$. Note, however, that the SLR, unlike two other methods, uses additional information about $Y$ contained in $X_1$ and $X_2$. The comparison is only meant to validate our approach.
+
+We compare the three methods fPCA, SLI and SLR, in reference to the baseline -- the {\it estimated subject's mean}. For each subject $p$ we compute the {\it estimated subject's mean} (\textsc{mean}) by taking the mean $\hat{m}_p$ of observed elements in $P_\Omega(X)$ in the row $p$ as a predictor of unknown values in that row. Formally, we assign $P_\Omega(\hat{X})_p = P_\Omega(X)_p$ and $P^\perp_\Omega (\hat{X}_p) \equiv \hat{m}_p$, where $P(\cdot)_p$ denotes the $p$-th row of the projection. Note that $\hat{m}_p$ can be interpreted as a shift from the population mean curve, which we set to constant $0$ in our simulations.
+
+ \begin{figure}[h!]
+  \includegraphics[width=0.49\linewidth]{../plots/components-fpca}
+  \includegraphics[width=0.49\linewidth]{../plots/components-fimp}
+  \caption{The first three principal components derived using sparse functional PCA (left) and Soft-Longitudinal-Impute (right). The components are ordered as follows: 1st red solid curve, 2nd green dashed curve, 3rd blue dotted line. The shape of components is similar while they differ by scale, since SLI does not normalize the components.}
+  \label{fig:principal-components}
+\end{figure}
+
 \paragraph{Results}
 
-The SLI achieves performance similar to \citep{james2000principal}, as presented in Table \ref{tbl:simulations}. The SLR, having access to additional information about $Y$, clearly outperforms other methods validating its correctness.
+\begin{figure}[h!]
+  \includegraphics[width=0.49\linewidth]{../plots/pred-mean}
+  \includegraphics[width=0.49\linewidth]{../plots/pred-fpca}
+  \includegraphics[width=0.49\linewidth]{../plots/pred-fimp}
+  \includegraphics[width=0.49\linewidth]{../plots/pred-freg}
+  \caption{Two example curves (black and red) for each of the four methods. Solid lines are the true curves and dashed lines are the predictions. }
+  \label{fig:example-predictions}
+\end{figure}
 
-In Figure \ref{fig:principal-components} we present the first components derived from both sparse functional PCA and Soft-Longitudinal-Impute. In Figure \ref{fig:example-predictions} we present example predictions from all four methods. In Figure \ref{fig:estimated-rank}, we present the estimated rank and cross-validation error of one of the simulation runs.
+The SLI achieves performance similar to \citep{james2000principal}, as presented in Table \ref{tbl:simulations}. The SLR, having access to additional information about $Y$, outperforms other methods validating its correctness.
 
-% latex table generated in R 3.4.1 by xtable 1.8-2 package
-% Tue Aug 29 21:46:47 2017
 \begin{table}[ht]
 \centering
 \begin{tabular}{rrr}
@@ -886,20 +927,11 @@ In Figure \ref{fig:principal-components} we present the first components derived
 \caption{Average (across 10 trials) variance explained by (1) subject's mean of observed points (mean), (2) functional principal components (fPCA), (3) Sparse-Longitudinal-Impute (SLI) and (4) Sparse-Longitudinal-Regression (SLR) with extra data available for this procedure.}
 \end{table}
 
-\begin{figure}[h!]
-  \includegraphics[width=0.85\linewidth]{images/components}
-  \caption{The first three principal components derived using sparse functional PCA (left) and Soft-Longitudinal-Impute (right). The components are ordered as follow: 1st black solid curve, 2nd red dashed curve, 3rd green dotted line. The shape of components is similar while they differ by scale, since SLI does not normalize the components.}
-  \label{fig:principal-components}
-\end{figure}
+In Figure \ref{fig:principal-components} we present the first components derived from both sparse functional PCA and SLI. In Figure \ref{fig:example-predictions} we present example predictions from all four methods. In Figure \ref{fig:estimated-rank}, we present the estimated rank and cross-validation error of one of the simulation runs.
 
 \begin{figure}[h!]
-  \includegraphics[width=0.85\linewidth]{images/predictions}
-  \caption{Two example curves (black and red) for each of the four methods. Solid lines are the true curves and dashed lines are the predictions. }
-  \label{fig:example-predictions}
-\end{figure}
-
-\begin{figure}[h!]
-  \includegraphics[width=0.85\linewidth]{images/cross-val}
+  \includegraphics[width=0.49\linewidth]{../plots/error-of-lambda}
+  \includegraphics[width=0.49\linewidth]{../plots/K-of-lambda}
   \caption{Estimated error of the solution (left) and the estimated rank of the solution (right) depending on the parameter $\lambda$.}
   \label{fig:estimated-rank}
 \end{figure}
@@ -920,15 +952,17 @@ The target class of problems motivating this study is the prediction of a trajec
 
 One common quantitative characteristic of gait patterns is a so-called Gait Deviation Index (GDI) introduced by \citet{schwartz2008gait}. During each visit of a child in a clinic, their body kinematics are recorded using motion capture technology. GDI, which is a function of these measurements, was collected along with patient's age and other parameters.
 
-To illustrate our method, we are interested in predicting patient's GDI development trajectory in two scenarios: (1) solely based on their GDI history and histories of other patients, (2) using different sparsely observed covariates such as BMI or O2 expenditure. A good model of progression trajectories can constitute an essential baseline for analyzing effects of treatments -- accurate prediction of a trajectory can help us understand if an improvement after therapy is meaningful or if it is only a result of natural progression.
+An accurate model of progression trajectories can constitute an essential baseline for analyzing effects of treatments -- accurate prediction of a trajectory can help us understand if an improvement after therapy is meaningful or if it is only a result of natural progression. We are interested in predicting patient's GDI development trajectory in two scenarios: (1) solely based on their GDI history and histories of other patients, (2) using sparsely observed covariates, namely BMI or O2 expenditure. 
 
-We randomly selected $10\%$ of observations from patients who visited the clinic at least $4$ times as our test set. Then, we split the remaining $90\%$ of observations into a training and validation sets. We train the algorithms with all combinations of parameters $K \in \{6,8,10\}$, $\lambda \in \{0.5, 0.75, 1, 1.5, 2\}$ and $R \in \{2,3,4\}$.
+We test four methods for prediction: functional principal components (fPCA), \textsc{Soft-Longitudinal-Impute} (SLI), \textsc{Sparse-Longitudinal-Regression} (SLR), and the baseline subject's mean (\verb|mean|) as described in Section \ref{s:simulation}. In the regression setting, we approximate GDI by using latent variables of sparsely observed covariates BMI or O2 expenditure.
 
-Let us denote the validation set as $S \subset \{1,2,...,N\} \times \{1,2,...,T\}$. We validate each model $M$, by computing the mean squared error, i.e.
+We randomly select $10\%$ of observations from patients who visited the clinic at least $4$ times as our test set. Then, we split the remaining $90\%$ of observations into a training and validation sets. We train the algorithms with all combinations of parameters: the number of splines $K \in \{6,8,10\}$, regularization parameter for SLI and SLR procedures $\lambda \in \{0.5, 0.75, 1, 1.5, 2\}$ and the rank for fPCA procedure $R \in \{2,3,4\}$.
+
+Let us denote the test set as $\Omega \subset \{1,2,...,N\} \times \{1,2,...,T\}$. We validate each model $M$, by computing the mean squared error on observed but held-out indices, i.e.
 \[
-\verb|MSE|(M) = \|P_S(M(X) - X)\|_2^2.
+\verb|MSE|(M) = \|P_\Omega(M(X) - X)\|_2^2.
 \]
-We select the parameters using cross-validation. We estimate errors by cross-validation, sampling $95\%$ of points to train the models and leaving $5\%$ for estimating the \verb|MSE|. We test $4$ methods for prediction: functional principal components (\verb|fPCA|), \textsc{Soft-Longitudinal-Impute} (\verb|SLI|) and \textsc{Soft-Longitudinal-Regression} (\verb|SLR|) and subject's mean (\verb|mean|). In the regression setting, we approximate GDI by using its own latent as well as latent variables of the patient's O2 expenditure and their BMI.
+We select the parameters using cross-validation. We estimate errors by cross-validation, sampling $95\%$ of points to train the models and leaving $5\%$ for estimating the \verb|MSE|. 
 
 % latex table generated in R 3.4.1 by xtable 1.8-2 package
 % Tue Sep  5 22:27:27 2017
@@ -948,7 +982,7 @@ We select the parameters using cross-validation. We estimate errors by cross-val
 \end{table}
 
 \begin{figure}[h!]
-  \includegraphics[width=0.7\linewidth]{images/cv-data-err}
+  \includegraphics[width=0.7\linewidth]{../plots/simulation-boxplot}
   \caption{Distribution of cross-validated MSE of the four procedures: functional principal components (fPCA), Soft-Longitudinal-Impute (SLI), Soft-Longitudinal-Regression (SLR), subjects mean (mean).}
   \label{fig:Boxplots}
 \end{figure}
@@ -1101,5 +1135,4 @@ All three methods reduce the \verb|MSE| by $\sim 10\%$. We present detailed resu
 %% \item \verb@gdi:1 ~ time + weight + dmc | subjectID@ for dimensionality reduction,
 %% \item \verb@gdi:time ~ weight + dmc | subjectID@ for regression. 
 %% \end{enumerate}
-
 \end{document}

@@ -191,10 +191,10 @@ fregression = function(formula, data,
   lastFitR = 0
   lastFitI = 0
   for (i in 1:20){
-    resR = functionalRegression(Y.tmp, combinedU, basis, K = 1, thresh = 1e-10, mask = maskedY, verbose = 0)
-    Y.tmp = Y.wide - resR$fit
     resI = functionalMultiImpute(Y.tmp, basis = basis, K = 1, thresh = thresh, verbose = 0) #, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter)
     Y.tmp = Y.wide - resI$fit
+    resR = functionalRegression(Y.tmp, combinedU, basis, K = 1, thresh = 1e-10, mask = maskedY, verbose = 0)
+    Y.tmp = Y.wide - resR$fit
 
     dR = norm(resR$fit - lastFitR, type = "F") / norm(resR$fit, type="F")
     dI = norm(resI$fit - lastFitI, type = "F") / norm(resI$fit, type="F")

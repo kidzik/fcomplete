@@ -3,111 +3,64 @@ library("roxygen2") ; roxygenize()
 library("devtools") ; devtools::install(".")
 library("fcomplete")
 library("ggplot2")
+library("latex2exp")
 
-#rm(list = ls())
 res = list()
 nexp = 100
 dgrid = 31
+d = 7
 
-for(exp.id in 1:nexp){
+for(exp.id in 1:nexp)
+{
+  # SIMULATE DATA
+  set.seed(exp.id)
+  simulation = fsimulate(dgrid = dgrid,clear = 0.9, n = 100, noise.mag = 0.1, d = d, K = 3)
+  data = simulation$data
+  ftrue = simulation$ftrue
+  K = simulation$params$K
 
-# SIMULATE DATA
-set.seed(323 + exp.id)
-simulation = fsimulate(dgrid = dgrid,clear = 0.9, n = 100, noise.mag = 0.05, d = 7, K = 3)
-data = simulation$data
-ftrue = simulation$ftrue
-K = simulation$params$K
+  # TUNING PARAMS
+  lambdas.pca = seq(0,10,length.out = 20)
+  lambdas.reg = seq(0,2,length.out = 10)
 
-# REGRESSION
-model.mean = fregression(Y:time ~ 1 | id, data, method = "mean", bins = dgrid)
-model.fpca = fregression(Y:time ~ 1 | id, data, lambda = 0, K = 2:K, thresh = 1e-7, method = "fpcs", bins = dgrid)
+  # REGRESSION
+  model.mean = fregression(Y:time ~ 1 | id, data, method = "mean", bins = dgrid)
+  model.fpca = fregression(Y:time ~ 1 | id, data, lambda = 0, K = 2:d, thresh = 1e-7, method = "fpcs", bins = dgrid)
+  model.fimp = fregression(Y:time ~ 1 | id, data, lambda = lambdas.pca, thresh = 0, final = "soft", maxIter = 100, fold = 5, cv.ratio = 0.05, K = K, bins = dgrid)
+  model.fcmp = fregression(0:time ~ Y + X1 + X2 | id, data, lambda = lambdas.pca, final = "soft", bins = dgrid)
+  model.freg = fregression(Y:time ~ X1 + X2 | id, data, lambda = lambdas.reg, thresh = 1e-4, lambda.reg = 0.1 * 5:20, method = "fimpute", K = K, bins = dgrid)
+  model.fslr = fregression(Y:time ~ Y + X1 + X2 | id, data, lambda = lambdas.reg, thresh = 1e-4, lambda.reg = 0.1 * 5:20, method = "fimpute", K = K, bins = dgrid)
 
-lambdas = seq(0,10,length.out = 20)
-model.fimp = fregression(Y:time ~ 1 | id, data, lambda = lambdas, thresh = 0, final = "soft", maxIter = 100, fold = 5, cv.ratio = 0.05, K = K, bins = dgrid)
-model.fcmp = fregression(0:time ~ Y + X1 + X2 | id, data, lambda = lambdas, K = K, final = "soft", bins = dgrid)
-lambdas = seq(0,2,length.out = 10)
-model.freg = fregression(Y:time ~ X1 + X2 | id, data, lambda = lambdas, thresh = 1e-4, lambda.reg = 0.1 * 5:20, method = "fimpute", K = K, bins = dgrid)
-model.freg.withY = fregression(Y:time ~ Y + X1 + X2 | id, data, lambda = lambdas, thresh = 1e-4, lambda.reg = 0.1 * 5:20, method = "fimpute", K = K, bins = dgrid)
+  # REPORT RESULTS
+  idx = unique(data$id)
+  errors = c(
+    mean((ftrue[idx,] - model.mean$fit)**2),
+    mean((ftrue[idx,] - model.fpca$fit)**2),
+    mean((ftrue[idx,] - model.fimp$fit)**2),
+    mean((ftrue[idx,] - model.fcmp$fit)**2),
+    mean((ftrue[idx,] - model.freg$fit)**2),
+    mean((ftrue[idx,] - model.fslr$fit)**2)
+  )
+  tbl.true = cbind(
+    errors,
+    100*(1-errors/errors[1])
+  )
+  colnames(tbl.true) = c("MSE","% expl")
+  rownames(tbl.true) = c("mean","fpca","fimpute","fcompress","regression","regression with Y")
+  print(tbl.true)
 
-# REPORT RESULTS
-idx = unique(data$id)
-errors = c(
-  mean((ftrue[idx,] - model.mean$fit)**2),
-  mean((ftrue[idx,] - model.fpca$fit)**2),
-  mean((ftrue[idx,] - model.fimp$fit)**2),
-  mean((ftrue[idx,] - model.fcmp$fit)**2),
-  mean((ftrue[idx,] - model.freg$fit)**2),
-  mean((ftrue[idx,] - model.freg.withY$fit)**2)
-)
-errors
-model.fimp$meta
-
-tbl.true = cbind(
-  errors,
-  100*(1-errors/errors[1])
-)
-colnames(tbl.true) = c("MSE","% expl")
-rownames(tbl.true) = c("mean","fpca","fimpute","fcompress","regression","regression with Y")
-print(tbl.true)
-
-curveid = 4
-plot(ftrue[curveid,])
-lines(model.freg.withY$fitI[curveid,],col=2)
-lines(model.freg.withY$fitR[curveid,],col=3)
-lines(model.freg.withY$fit[curveid,],col=4,lwd=2)
-lines(model.freg$fit[curveid,],col=5,lwd=2)
-
-res[[exp.id]] = list()
-res[[exp.id]]$tbl = tbl.true
-res[[exp.id]]$fimpute = model.fimp
-res[[exp.id]]$fpca = model.fpca
-res[[exp.id]]$freg = model.fimp
-
-# PLOT EXAMPLES
-par(mfrow=c(2,2), cex=1.3)
-ind = 1:2 + 10
-idx = as.numeric(model.freg$id)
-
-lims = c(min(ftrue[idx,][ind,],simulation$fobs[ind,],na.rm = TRUE) - 2,
-         max(ftrue[idx,][ind,],simulation$fobs[ind,],na.rm = TRUE) + 2)
-matplot(t(ftrue[idx,][ind,]),t='l',lty=1,lwd=4,ylim = lims,xlab = "time")
-matplot(t(simulation$fobs[ind,]),t='p',lty=2,add=T,lwd=2,pch="x")
-matplot(t(model.mean$fit[ind,]),t='l',lty=2,add=T,lwd=2)
-title("Mean prediction")
-
-matplot(t(ftrue[idx,][ind,]),t='l',lty=1,lwd=4,ylim = lims,xlab = "time")
-matplot(t(simulation$fobs[ind,]),t='p',lty=2,add=T,lwd=2,pch="x")
-matplot(t(model.fimp$fit[ind,]),t='l',lty=2,add=T,lwd=2)
-title("Functional impute")
-
-matplot(t(ftrue[idx,][ind,]),t='l',lty=1,lwd=4,ylim = lims,xlab = "time")
-matplot(t(simulation$fobs[ind,]),t='p',lty=2,add=T,lwd=2,pch="x")
-matplot(t(model.fpca$fit[ind,]),t='l',lty=2, add=T,lwd=2)
-title("Functional PCA")
-
-matplot(t(ftrue[idx,][ind,]),t='l',lty=1,lwd=4,ylim = lims,xlab = "time")
-matplot(t(simulation$fobs[ind,]),t='p',lty=2,add=T,lwd=2,pch="x")
-matplot(t(model.freg$fit[ind,]),t='l',lty=2, add=T,lwd=2)
-title("Functional regression")
-
-par(mfrow=c(1,2), cex=1.3)
-matplot(t(-model.fimp$v)[,1:3],t='l',lwd = 4)
-title("First 3 PCs from fPCA method")
-matplot(t(model.fpca$v)[,1:min(3,nrow(model.fpca$v))],t='l', lwd = 4)
-title("First 3 singular vectors from SFI method")
-
-par(mfrow=c(1,2), cex=1.3)
-plot(cv.err ~ lambda, model.fimp$meta, type='o', ylab="CV error")
-title("Sample error by cross-validation")
-model.fimp$meta$cv.K = round(model.fimp$meta$cv.K)
-plot(cv.K ~ lambda, model.fimp$meta, ylab="CV rank")
-title("Rank by cross-validation")
-
-n = nrow(model.fcmp$u)
-#plot(model.fcmp$u[,1:2], col = 1 + (1:n > n/3), xlab = "Component 1", ylab="component 2")
-#title("Decomposition of (Y(t),X_1(t),X_2(t))")
+  # SAVE EXPERIMENT RESULTS
+  res[[exp.id]] = list()
+  res[[exp.id]]$tbl = tbl.true
+  res[[exp.id]]$mean = model.mean
+  res[[exp.id]]$fimp = model.fimp
+  res[[exp.id]]$fpca = model.fpca
+  res[[exp.id]]$freg = model.fimp
+  res[[exp.id]]$fslr = model.fslr
+  res[[exp.id]]$simulation = simulation
 }
 
+## Post-process results
 joint.tbl = res[[1]]$tbl
 boxplot.data = res[[1]]$tbl[,2]
 for (i in 2:length(res)){
@@ -115,96 +68,128 @@ for (i in 2:length(res)){
   boxplot.data = cbind(boxplot.data, res[[i]]$tbl[,2])
 }
 joint.tbl = joint.tbl/length(res)
-res[[1]]$fimpute$meta
 
+# Sanity check for the regression result
+p = 0.65
+ps = 0:50 / 50
+er = sapply(ps, function(p){
+fit = (model.fslr$fitI * (1-p) + model.fslr$fitR * p)
+1 - mean((ftrue[idx,] - fit)**2) / errors[1]
+})
+plot(ps,er)
 
-# PLOT model.fimp
-par(mfrow=c(1,1))
-plot(model.fimp$meta[1:100,c(1,2)],ylim=c(0,10))
-lines(model.fimp$meta[1:100,c(1,3)] )
+################
+# PLOT RESULTS #
+################
+source("tests/plot.helpers.R")
 
-joint.tbl
-#cbPalette <- c("#8c1515", "#007c92")
-cbPalette = list()
-cbPalette[[1]] <- c("#8c1515", "#f4f4f4")
-cbPalette[[2]] <- c("#f4f4f4", "#007c92")
+# Figure 3:
+exp.show = 6
+res[[exp.show]]$tbl
+#matplot(t(-res[[exp.show]]$fpca$v)[,1:min(3,nrow(res[[exp.show]]$fpca$v))],t='l',lwd = 4)
 
-stdPalette =  c("#8c1515", "#0098db","#eaab00", "#009b76", "#e98300", "#53284f", "#d2c295")
+scalar = sqrt(rowSums(res[[exp.show]]$fpca$v**2)[1])
+vlist = list(res[[exp.show]]$fpca$v / scalar,
+             res[[exp.show]]$fimp$v)
+vlist[[2]][3,] = vlist[[2]][3,]*(-1)
+ttl = c("Components of fPCA","Components of SFI")
+names = c("fpca","fimp")
 
-pid = 2
+for (j in 1:length(vlist)){
+  cols = gg_color_hue(3)
+  v = vlist[[j]]
+  pp = ggplot(data.frame(x=c(0, 1)), aes(x)) + paper.theme +
+    xlim(0,1) + ylim(-0.4,0.5) + labs(x = "time", y = "value", title=ttl[j])
+  for (i in 1:min(3,nrow(v))){
+    df = data.frame(x=0:30/30,y=v[i,])
+    pp = pp + geom_segment(data=df, aes(x=x,y=y,xend=dplyr::lead(x),yend=dplyr::lead(y)),
+                           color=cols[i], size=1.5, linetype=i)
+  }
+  print(pp)
+  myggsave(filename=paste0("docs/plots/components-",names[[j]],".pdf"), plot=pp)
+}
 
-ids = c(1,3)
-dd = data
-dd$id = as.factor(dd$id)
-dd$time = 5 + data$time*10
-gg = as.numeric(colnames(model.fimp$Y))*10 + 5
+# Figure 4:
+ind = 1:2 + 10
+idx = as.numeric(model.freg$id)
 
-pp = ggplot(aes(x = time, y = Y, color = id), data = dd[data$id %in% ids,]) +
-  scale_fill_manual(values = cbPalette[[pid]]) + scale_colour_manual(values = cbPalette[[pid]]) +
-  ylab("1st component") + xlab("age") +
-  theme_set(theme_grey(base_size = 26)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
-  scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0)) +
-  stat_function(fun = approxfun(gg, simulation$basis[,1]) , color = stdPalette[1], size=1) +
-  stat_function(fun = approxfun(gg, simulation$basis[,2]) , color = stdPalette[2], size=1) +
-  stat_function(fun = approxfun(gg, simulation$basis[,3]) , color = stdPalette[3], size=1) +
-  stat_function(fun = approxfun(gg, simulation$basis[,4]) , color = stdPalette[4], size=1) +
-  stat_function(fun = approxfun(gg, simulation$basis[,5]) , color = stdPalette[5], size=1) +
-  stat_function(fun = approxfun(gg, simulation$basis[,6]) , color = stdPalette[6], size=1) +
-  stat_function(fun = approxfun(gg, simulation$basis[,7]) , color = stdPalette[7], size=1)
-pp
-ggsave(paste0("docs/plots/splines.pdf"))
+plot_preds = function(obs, true = NULL, fit = NULL, title = NULL, filename = NULL){
+  cols = gg_color_hue(3)
+  pp = ggplot(data.frame(x=c(0, 1)), aes(x)) + paper.theme + ylim(-6,6) +
+    xlim(0,1) + labs(x = "time", y = "value")
+  for (i in 1:nrow(true)){
+    df = data.frame(x=0:30/30,y=true[i,],yobs=obs[i,], yfit = fit[i,])
+    if (!is.null(true))
+      pp = pp + geom_segment(data=df, aes(x=x,y=y,xend=dplyr::lead(x),yend=dplyr::lead(y)),
+                             color=cols[i], size=1.25, linetype="dashed")
+    if (!is.null(fit))
+      pp = pp + geom_segment(data=df, aes(x=x,y=yfit,xend=dplyr::lead(x),yend=dplyr::lead(yfit)),
+                             color=cols[i], size=3)
+    df = na.omit(df)
+    if (!is.null(true))
+      pp = pp + geom_segment(data=df, aes(x=x,y=y,xend=x,yend=yobs),
+                             color=cols[i], size=1.75, linetype="dotted")
+    pp = pp + geom_point(data=df, aes(x=x,y=yobs),
+                         color=cols[i], size=5)
+  }
+  if (!is.null(title))
+    pp = pp + labs(title = title)
+  print(pp)
+  myggsave(filename=paste0("docs/plots/",filename,".pdf"), plot=pp)
+}
 
-pp = ggplot(aes(x = time, y = Y, color = id), data = dd[data$id %in% ids,]) +
-  scale_fill_manual(values = cbPalette[[pid]]) + scale_colour_manual(values = cbPalette[[pid]]) +
-  ylab("1st component") + xlab("age") +
-  theme_set(theme_grey(base_size = 26)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
-  scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0)) +
-  stat_function(fun = approxfun(gg, model.fimp$v[1,]) , color = stdPalette[3], size=1) +
-  stat_function(fun = approxfun(gg, model.fimp$v[2,]) , color = stdPalette[4], size=1) #+
-  # stat_function(fun = approxfun(gg, simulation$basis[,3]) , color = stdPalette[3], size=1) +
-  # stat_function(fun = approxfun(gg, simulation$basis[,4]) , color = stdPalette[4], size=1) +
-  # stat_function(fun = approxfun(gg, simulation$basis[,5]) , color = stdPalette[5], size=1) +
-  # stat_function(fun = approxfun(gg, simulation$basis[,6]) , color = stdPalette[6], size=1) +
-  # stat_function(fun = approxfun(gg, simulation$basis[,7]) , color = stdPalette[7], size=1)
-pp
-ggsave(paste0("docs/plots/fpca-basis.pdf"))
+plot_preds(simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[idx,][ind,], res[[exp.show]]$mean$fit[ind,],
+           filename="pred-mean", title = "Mean")
+plot_preds(simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[idx,][ind,], res[[exp.show]]$fpca$fit[ind,],
+           filename="pred-fpca", title = "Functional PCA")
+plot_preds(simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[idx,][ind,], res[[exp.show]]$fimp$fit[ind,],
+           filename="pred-fimp", title = "Sparse Functional Impute")
+plot_preds(simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[idx,][ind,], res[[exp.show]]$fslr$fit[ind,],
+           filename="pred-freg", title = "Sparse Functional Regression")
 
+# Figure 5: Sample error by cross-val
+model.fimp$meta$cv.K = round(model.fimp$meta$cv.K)
+pp = ggplot(data = model.fimp$meta, aes(x=lambda, y=cv.err)) + paper.theme +
+  geom_line(size=1) +
+  geom_point(size=4) +
+  ggtitle("Error by cross-validation") +
+  labs(x = TeX("$\\lambda$"), y = "error")
+myggsave(filename=paste0("docs/plots/error-of-lambda.pdf"), plot=pp)
 
-pp = ggplot(aes(x = time, y = Y, color = id), data = dd[data$id %in% ids,]) +
-  scale_fill_manual(values = cbPalette[[pid]]) + scale_colour_manual(values = cbPalette[[pid]]) +
-  ylab("1st component") + xlab("age") +
-  geom_point(size = 3) + theme_set(theme_grey(base_size = 26)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
-  scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0)) +
-  stat_function(fun = approxfun(lowess(dd$time,dd$Y)), size = 1, colour = "#555555") + xlim(5,15) + ylim(-4,4)
+pp = ggplot(data = model.fimp$meta, aes(x=lambda, y=cv.K)) + paper.theme +
+  geom_point(size=4) +
+  ggtitle(TeX("Dimension K corresponding to $\\lambda$")) +
+  labs(x = TeX("$\\lambda$"), y = "K")
+myggsave(filename=paste0("docs/plots/K-of-lambda.pdf"), plot=pp)
 
-pp = pp +
-  stat_function(fun = approxfun(gg, simulation$ftrue[ids[1],]) , color = cbPalette[[pid]][1], size=1, linetype='dashed') +
-  stat_function(fun = approxfun(gg, simulation$ftrue[ids[2],]) , color = cbPalette[[pid]][2], size=1, linetype='dashed')
-  # stat_function(fun = approxfun(gg, simulation$ftrue[ids[3],]) , color = cbPalette[3], size=1, linetype='dashed')
-  # stat_function(fun = approxfun(gg, simulation$ftrue[4,]) , color = cbPalette[4], size=1, linetype='dashed')
-pp
-ggsave(paste0("docs/plots/observed-",pid,".pdf"))
+# Figure 6: Example curves from the simulation
+cols = gg_color_hue(3)
 
+for (showLines in 0:1){
+  pp = ggplot(data.frame(x=c(0, 1)), aes(x)) + paper.theme + ylim(-6,6) +
+    xlim(0,1) + labs(x = "time", y = "value")
+  for (i in 1:3){
+    df = data.frame(x=0:30/30,y=simulation$ftrue[i,],yobs=simulation$fobs[i,])
+    if (showLines)
+      pp = pp + geom_segment(data=df, aes(x=x,y=y,xend=dplyr::lead(x),yend=dplyr::lead(y)),
+                            color=cols[i], size=0.5)
+    df = na.omit(df)
+    if (showLines)
+      pp = pp + geom_segment(data=df, aes(x=x,y=y,xend=x,yend=yobs),
+                            color=cols[i], size=0.75, linetype="dotted")
+    pp = pp + geom_point(data=df, aes(x=x,y=yobs),
+                           color=cols[i], size=3)
+  }
+  print(pp)
+}
 
-pp + ggtitle("Individual mean") +
-  stat_function(fun = approxfun(gg, model.mean$fit[ids[1],]) , color = cbPalette[[pid]][1], size=1.5, alpha = min(1,1.005 - (pid==2) )) +
-  stat_function(fun = approxfun(gg, model.mean$fit[ids[2],]) , color = cbPalette[[pid]][2], size=1.5, alpha = min(1,1.005 - (pid==1) ))
-  # stat_function(fun = approxfun(gg, model.mean$fit[ids[3],]) , color = cbPalette[3], size=1.5)
-  # stat_function(fun = approxfun(gg, model.mean$fit[4,]) , color = cbPalette[4], size=1.5)
-ggsave(paste0("docs/plots/2-curves-mean-",pid,".pdf"))
+# Figure 7: Boxplots for all methods
+library(tidyr)
+tmp = t(boxplot.data)[,-1]
+colnames(tmp)[5] = "regY"
+rownames(tmp) = 1:nrow(tmp)
+methodStats = gather(data.frame(tmp), method, varexp, fpca:regY, factor_key = FALSE)
 
-pp + ggtitle("Sparse PCA") +
-  stat_function(fun = approxfun(gg, model.fpca$fit[ids[1],]) , color = cbPalette[[pid]][1], size=1.5, alpha = min(1,1.005 - (pid==2) )) +
-  stat_function(fun = approxfun(gg, model.fpca$fit[ids[2],]) , color = cbPalette[[pid]][2], size=1.5, alpha = min(1,1.005 - (pid==1) ))
-  # stat_function(fun = approxfun(gg, model.fimp$fit[ids[3],]) , color = cbPalette[3], size=1.5)
-  # stat_function(fun = approxfun(gg, model.fimp$fit[4,]) , color = cbPalette[4], size=1.5)
-ggsave(paste0("docs/plots/2-curves-fpca-",pid,".pdf"))
-
-pp + ggtitle("Sparse Impute") +
-  stat_function(fun = approxfun(gg, model.fimp$fit[ids[1],]) , color = cbPalette[[pid]][1], size=1.5, alpha = min(1,1.005 - (pid==2) )) +
-  stat_function(fun = approxfun(gg, model.fimp$fit[ids[2],]) , color = cbPalette[[pid]][2], size=1.5, alpha = min(1,1.005 - (pid==1) ) )
-  # stat_function(fun = approxfun(gg, model.fpca$fit[ids[3],]) , color = cbPalette[3], size=1.5)
-  # stat_function(fun = approxfun(gg, model.fpca$fit[4,]) , color = cbPalette[4], size=1.5)
-ggsave(paste0("docs/plots/2-curves-fimp-",pid,".pdf"))
-
-
+pp = ggplot(methodStats, aes(x = method, y = varexp)) + paper.theme + labs(x="Method",y="Variance explained (%)") +
+  geom_boxplot()
+myggsave(filename=paste0("docs/plots/simulation-boxplot.pdf"), plot=pp, width = 12, height = 8)

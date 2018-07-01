@@ -84,19 +84,16 @@ library("ggplot2")
 library("ggthemes")
 library(RColorBrewer)
 
-#dd = all.data.filtered[,c("Patient_ID","age","PC1")]
-
-dd = data$train[,c("Patient_ID","age","PC1")] #fcomplete:::fc.wide2long(model.impute$data[[1]]$train)
-#colnames(dd) = c("Patient_ID","age","PC1")
+dd = all.data.filtered[,c("Patient_ID","age","bmi")]
 dd$Patient_ID = as.factor(dd$Patient_ID)
 
-pp = ggplot(aes(x = age, y = PC1, color = Patient_ID), data = dd[1:200,]) + ylab("1st component") +
+pp = ggplot(aes(x = age, y = bmi, color = Patient_ID), data = dd[1:200,]) + ylab("1st component") +
   geom_point(size = 3) + theme_set(theme_grey(base_size = 26)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
-  stat_function(fun = approxfun(lowess(dd$age,dd$PC1)), size = 2.5, colour = "#000000")+ scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0))
+  stat_function(fun = approxfun(lowess(dd$age,dd$bmi)), size = 1.5, colour = "#000000")+ scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0))
 pp
-ggsave("~/Dropbox/Presentations/Mobilize17/images/fcomplete/points.pdf")
+ggsave("docs/plots/points.pdf")
 pp + geom_line(size=0.7)
-ggsave("~/Dropbox/Presentations/Mobilize17/images/fcomplete/grouped.pdf")
+ggsave("docs/plots/grouped.pdf")
 
 # The palette with grey:
 # The palette with black:
