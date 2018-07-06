@@ -112,12 +112,12 @@ for (j in 1:length(vlist)){
 # Figure 4:
 ind = 1:2
 
-plot_preds = function(obs, true = NULL, fit = NULL, title = NULL, filename = NULL){
+plot_preds = function(obs, true = NULL, fit = NULL, title = NULL, filename = NULL, d = 30){
   cols = gg_color_hue(nrow(true))
   pp = ggplot(data.frame(x=c(0, 1)), aes(x)) + paper.theme + #ylim(-6,6) +
     xlim(0,1) + labs(x = "time", y = "value")
   for (i in 1:nrow(true)){
-    df = data.frame(x=0:30/30,y=true[i,],yobs=obs[i,], yfit = fit[i,])
+    df = data.frame(x=0:(d-1)/(d-1),y=true[i,],yobs=obs[i,], yfit = fit[i,])
     if (!is.null(true))
       pp = pp + geom_segment(data=df, aes(x=x,y=y,xend=dplyr::lead(x),yend=dplyr::lead(y)),
                              color=cols[i], size=1.25, linetype="dashed")

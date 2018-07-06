@@ -218,5 +218,6 @@ fregression = function(formula, data,
   res$fit = t(t(sm) + cmeans)
   res$fitI = resI$fit
   res$fitR = resR$fit
+  res$U = combinedU
   res
 }
