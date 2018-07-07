@@ -890,7 +890,7 @@ We compute the error of entire curves by taking mean squared Frobenius distance 
  
  For illustration, we also present results of \textsc{Sparse-Longitudinal-Regression} (SLR), regressing $Y$ on $X_1$ and $X_2$. Note, however, that the SLR, unlike two other methods, uses additional information about $Y$ contained in $X_1$ and $X_2$. The comparison is only meant to validate our approach.
 
- We train the algorithms with all combinations of parameters: the number of splines $K \in \{2,3,...,d\}$, regularization parameter for SLI and SLR procedures $\lambda \in \{10, 15, 20, ..., 50\}$ and the rank for fPCA procedure $d \in \{2,3,4\}$. We define the grid of $T = 51$ points. We compare the three methods fPCA, SLI and SLR, in reference to the baseline {\it null model} a lowess estimate of the population mean curve.
+ We train the algorithms with all combinations of parameters: the number of splines $K \in \{2,3,...,d\}$, regularization parameter for SLI and SLR procedures $\lambda \in \{10, 15, 20, ..., 50\}$ and the rank for fPCA procedure $d \in \{2,3,4\}$. We define the grid of $T = 51$ points. We compare the three methods fPCA, SLI and SLR, in reference to the baseline {\it null model} a LOWESS estimate of the population mean curve.
 
  \begin{figure}[h!]
   \includegraphics[width=0.49\linewidth]{../plots/components-fpca}
@@ -916,12 +916,11 @@ The SLI achieves performance similar to \citep{james2000principal}, as presented
 \centering
 \begin{tabular}{rrr}
   \hline
- & MSE & \% expl \\ 
+ & MSE & \% std \\ 
   \hline
-  mean & 3.43 & 0.00 \\ 
-  fPCA & 2.00 & 39.18 \\ 
-  SLI & 1.99 & 40.20 \\ 
-  SLR & 1.26 & 61.34 \\ 
+  fPCA & 0.12 & 0.04 \\ 
+  SLI & 0.10 & 0.02 \\ 
+  SLR & 0.11 & 0.03 \\ 
    \hline
 \end{tabular}\label{tbl:simulations}
 \caption{Average (across 10 trials) variance explained by (1) subject's mean of observed points (mean), (2) functional principal components (fPCA), (3) Sparse-Longitudinal-Impute (SLI) and (4) Sparse-Longitudinal-Regression (SLR) with extra data available for this procedure.}
@@ -970,9 +969,9 @@ Let us denote the test set as $\Omega \subset \{1,2,...,N\} \times \{1,2,...,T\}
   \hline
  & mean & sd \\ 
   \hline
-  SLR & 86.8 & \textbf{12.6} \\
+  fPCA & 86.8 & \textbf{12.6} \\
   SLI & \textbf{85.0} & 13.2\\
-  fPCA & 81.6 & 13.7\\
+  SLR & 81.6 & 13.7\\
    \hline
 \end{tabular}\label{tbl:data-res}
 \caption{Distribution of cross-validated MSE of the four procedures: functional principal components (fPCA), Soft-Longitudinal-Impute (SLI), Soft-Longitudinal-Regression (SLR), subjects mean (mean). Top characteristic in bold.}
@@ -985,7 +984,6 @@ Let us denote the test set as $\Omega \subset \{1,2,...,N\} \times \{1,2,...,T\}
 \end{figure}
 
 Compared to the null model all three methods reduce the \verb|MSE| by $\sim 10\%$. We present detailed results in Table \ref{tbl:data-res} and in Figure \ref{fig:Boxplots}. 
-
 
 % \section{Simulations}
 
