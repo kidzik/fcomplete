@@ -55,6 +55,7 @@ for(exp.id in 1:nexp)
   res[[exp.id]]$fslr = model.fslr
   res[[exp.id]]$simulation = simulation
 }
+save(res,file = "sim-study.Rda")
 
 ## Post-process results
 joint.tbl = res[[1]]$tbl

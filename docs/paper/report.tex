@@ -879,18 +879,18 @@ We uniformly sample $10\%$ indices $\Omega \subset \{1,...,N\} \times \{1,...,T\
 
 \paragraph{Methods}
 
-We compare \textsc{Soft-Longitudinal-Impute} (SLI) defined in Algorithm \ref{alg:soft-impute} with the fPCA procedure \citep{james2000principal}, implemented in \citet{peng2009geometric}. Both, SLI and fPCA require a set of basis functions. In both cases we use the same basis $B$ as in data generation process. In our method we also need the tuning parameter $\lambda$, whilst in fPCA we need to chose the rank $R$. We use cross-validation to choose $\lambda$ and $R$ by optimizing for the prediction error on held-out (validation) observations.
+We compare \textsc{Soft-Longitudinal-Impute} (SLI) defined in Algorithm \ref{alg:soft-impute} with the fPCA procedure \citep{james2000principal}, implemented in \citet{peng2009geometric}. Both, SLI and fPCA require a set of basis functions. In both cases we use the same basis $B$ as in data generation process. In our method we also need the tuning parameter $\lambda$, whilst in fPCA we need to choose the rank $R$. We use cross-validation to choose $\lambda$ and $R$ by optimizing for the prediction error on held-out (validation) observations.
 
 We divide the observed coefficients into training ($81\%$), validation ($9\%$) and test ($10\%$) sets. We choose the best parameters of the three models on the validation set and then retrain on the entire training and validation sets combined. % Finally, since in the simulated setting we have access to the ground truth, we compare algorithms on the entire curves.
 We compute the error of entire curves by taking mean squared Frobenius distance between $Y$ and estimated $\hat{Y}$, i.e.
-\[
- \verb|err|(\hat{Y}) = \frac{1}{T|S|} \sum_{i\in S} \|Y_i - \hat{Y}_i \|_F^2
- \]
+\begin{align}\label{eq:err}
+ MSE(\hat{Y}) = \frac{1}{T|S|} \sum_{i\in S} \|Y_i - \hat{Y}_i \|_F^2
+\end{align}
  on the test set $S$.
  
  For illustration, we also present results of \textsc{Sparse-Longitudinal-Regression} (SLR), regressing $Y$ on $X_1$ and $X_2$. Note, however, that the SLR, unlike two other methods, uses additional information about $Y$ contained in $X_1$ and $X_2$. The comparison is only meant to validate our approach.
 
-We compare the three methods fPCA, SLI and SLR, in reference to the baseline -- the {\it estimated subject's mean}. For each subject $p$ we compute the {\it estimated subject's mean} (\textsc{mean}) by taking the mean $\hat{m}_p$ of observed elements in $P_\Omega(X)$ in the row $p$ as a predictor of unknown values in that row. Formally, we assign $P_\Omega(\hat{X})_p = P_\Omega(X)_p$ and $P^\perp_\Omega (\hat{X}_p) \equiv \hat{m}_p$, where $P(\cdot)_p$ denotes the $p$-th row of the projection. Note that $\hat{m}_p$ can be interpreted as a shift from the population mean curve, which we set to constant $0$ in our simulations.
+ We train the algorithms with all combinations of parameters: the number of splines $K \in \{2,3,...,d\}$, regularization parameter for SLI and SLR procedures $\lambda \in \{10, 15, 20, ..., 50\}$ and the rank for fPCA procedure $d \in \{2,3,4\}$. We define the grid of $T = 51$ points. We compare the three methods fPCA, SLI and SLR, in reference to the baseline {\it null model} a lowess estimate of the population mean curve.
 
  \begin{figure}[h!]
   \includegraphics[width=0.49\linewidth]{../plots/components-fpca}
@@ -956,15 +956,11 @@ One of the most widely adopted quantitative measurements of gait impairments in 
 
 An accurate model of progression trajectories of GDI can constitute an essential baseline for analyzing effects of treatments -- accurate prediction of a trajectory can help us understand if an improvement after therapy is meaningful or if it is only a result of natural progression. We are interested in predicting patient's GDI development trajectory in two scenarios: (1) solely based on their GDI history and histories of other patients, (2) using sparsely observed covariates, namely BMI or O2 expenditure. 
 
-We test four methods for prediction: functional principal components (fPCA), \textsc{Soft-Longitudinal-Impute} (SLI), \textsc{Sparse-Longitudinal-Regression} (SLR), and the baseline population mean (\verb|mean|) estimated using LOWESS. In the regression setting, we approximate GDI by using latent variables of sparsely observed covariates BMI and O2 expenditure.
+We test four methods for prediction: functional principal components (fPCA), \textsc{Soft-Longitudinal-Impute} (SLI), \textsc{Sparse-Longitudinal-Regression} (SLR), and the \emph{null model} -- the LOWESS estimation of the population mean (\verb|mean|). In SLR, we approximate GDI by using latent variables of sparsely observed covariates BMI and O2 expenditure.
 
-We randomly select $10\%$ of observations from patients who visited the clinic at least $4$ times as our test set. Then, we split the remaining $90\%$ of observations into a training and validation sets. We train the algorithms with all combinations of parameters: the number of splines $K \in \{6,8,10\}$, regularization parameter for SLI and SLR procedures $\lambda \in \{0.5, 0.75, 1, 1.5, 2\}$ and the rank for fPCA procedure $R \in \{2,3,4\}$.
+We randomly select $10\%$ of observations from patients who visited the clinic at least $4$ times as our test set. Then, we split the remaining $90\%$ of observations into a training and validation sets. We train the algorithms with all combinations of parameters: the regularization parameter for SLI and SLR procedures $\lambda \in \{0, 0.1, 0.2, ..., 2.0\}$ and the rank for fPCA procedure $d \in \{2,3,4,...,K\}$. We define the grid of $T = 31$ points.
 
-Let us denote the test set as $\Omega \subset \{1,2,...,N\} \times \{1,2,...,T\}$. We validate each model $M$, by computing the mean squared error on observed but held-out indices, i.e.
-\[
-\verb|MSE|(M) = \|P_\Omega(M(X) - X)\|_2^2.
-\]
-We select the parameters using cross-validation. We estimate errors by cross-validation, sampling $95\%$ of points to train the models and leaving $5\%$ for estimating the \verb|MSE|. 
+Let us denote the test set as $\Omega \subset \{1,2,...,N\} \times \{1,2,...,T\}$. We validate each model $M$, by computing the mean squared error on observed but held-out indices using the formula \eqref{eq:err}. We select the parameters using cross-validation. We estimate errors by cross-validation, sampling $95\%$ of points to train the models and leaving $5\%$ for estimating the \verb|MSE|. 
 
 % latex table generated in R 3.4.1 by xtable 1.8-2 package
 % Tue Sep  5 22:27:27 2017
@@ -974,21 +970,21 @@ We select the parameters using cross-validation. We estimate errors by cross-val
   \hline
  & mean & sd \\ 
   \hline
-  SLR & 9.3 & \textbf{0.67} \\ 
-  SLI & \textbf{9.2} & 0.72 \\ 
-  fPCA & 9.5 & 0.76 \\ 
+  SLR & 86.8 & \textbf{12.6} \\
+  SLI & \textbf{85.0} & 13.2\\
+  fPCA & 81.6 & 13.7\\
    \hline
 \end{tabular}\label{tbl:data-res}
 \caption{Distribution of cross-validated MSE of the four procedures: functional principal components (fPCA), Soft-Longitudinal-Impute (SLI), Soft-Longitudinal-Regression (SLR), subjects mean (mean). Top characteristic in bold.}
 \end{table}
 
 \begin{figure}[h!]
-  \includegraphics[width=0.7\linewidth]{../plots/simulation-boxplot}
-  \caption{Distribution of cross-validated MSE of the four procedures: functional principal components (fPCA), Soft-Longitudinal-Impute (SLI), Soft-Longitudinal-Regression (SLR), subjects mean (mean).}
+  \includegraphics[width=0.7\linewidth]{../plots/data-boxplot}
+  \caption{Distribution of cross-validated MSE of the four procedures: functional principal components (fPCA), Soft-Longitudinal-Impute (SLI), Soft-Longitudinal-Regression (SLR).}
   \label{fig:Boxplots}
 \end{figure}
 
-All three methods reduce the \verb|MSE| by $\sim 10\%$. We present detailed results in Table \ref{tbl:data-res} and in Figure \ref{fig:Boxplots}. 
+Compared to the null model all three methods reduce the \verb|MSE| by $\sim 10\%$. We present detailed results in Table \ref{tbl:data-res} and in Figure \ref{fig:Boxplots}. 
 
 
 % \section{Simulations}

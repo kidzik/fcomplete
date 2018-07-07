@@ -78,12 +78,13 @@ models[[i]]$model.fpca = model.impute.fpcs
 models[[i]]$model.fslr = model.regression
 models[[i]]$model.mean = model.mean
 }
+save(models, filename="data-study.Rda")
 
 #plot(model.impute$meta$lambda)
 ind = 1:2 + 50
 obs = model.impute$Y[ind,]
 plot_preds(obs, model.impute.fpcs$fit[ind,], model.regression$fit[ind,],
-           filename="pred-mean", title = "Mean", d=51)
+           filename="pred-data", title = "Mean", d=51)
 
 p = 0.7
 sm = model.regression$fitI*p + (1-p)*model.regression$fitR
@@ -97,17 +98,22 @@ names(errors) = c("regression","impute","fPCA","mean")
 (1 - errors / errors[4])*100
 
 rownames(res) = c("regression","impute","fPCA","mean")
-cbind(rowMeans(res),
-apply(res,FUN=sd,1))
+cbind(rowMeans(res**2),
+apply(res**2,FUN=sd,1))
 colnames(res) = paste("run",1:10)
 par(mfrow=c(1,1))
-boxplot(t(res[c(3,2,1),]))
 write.csv(res,"res.csv")
 ind = row.names(data$test.matrix) %in% data$X$Patient_ID[data$test.ob[1:3]]
 
-apply(res,1,mean)
-apply(res,1,sd)
+library(tidyr)
+tmp = t(res)
+rownames(tmp) = 1:nrow(tmp)
+methodStats = gather(data.frame(tmp**2), method, varexp, regression:fPCA, factor_key = FALSE)
 
+pp = ggplot(methodStats, aes(x = method, y = varexp)) + paper.theme + labs(x="Method",y="MSE") +
+  geom_boxplot()
+pp
+myggsave(filename=paste0("docs/plots/data-boxplot.pdf"), plot=pp, width = 12, height = 8)
 
 matplot(t(data$test.matrix[ind,]),t='p',lty=2,lwd=2,pch="x", ylim = c(-100,100))
 matplot(t(model.regression$fit[ind,]),t='l',lty=4,add=T,lwd=2)
