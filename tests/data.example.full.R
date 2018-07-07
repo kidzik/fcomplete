@@ -34,7 +34,7 @@ all.data.filtered = all.data.filtered[!is.nan(all.data.filtered$GDI),]
 #################
 # RUN CROSS-VAL #
 #################
-nreps = 2
+nreps = 10
 models = list()
 
 for (i in 1:nreps){
@@ -47,7 +47,7 @@ for (i in 1:nreps){
   K = 6
 
   # IMPUTE
-  model.impute = fregression(GDI:age ~ 1 | Patient_ID, data$train, lambda= lambdas, thresh = 0, maxIter = 1000, method = "fimpute", K=K, d=K, fold = 3)
+  model.impute = fregression(GDI:age ~ 1 | Patient_ID, data$train, lambda= lambdas, thresh = 0, maxIter = 5000, method = "fimpute", K=K, d=K, fold = 3)
   model.impute.fpcs = fregression(GDI:age ~ 1 | Patient_ID, data$train, lambda= c(7.5), thresh = 1e-4, method = "fpcs", K=2:K, d=K)
   model.mean = fregression(GDI:age ~ 1 | Patient_ID, data$train,  method = "mean")
 
@@ -71,39 +71,48 @@ for (i in 1:nreps){
   models[[i]]$model.fpca = model.impute.fpcs
   models[[i]]$model.fslr = model.regression
   models[[i]]$model.mean = model.mean
+  models[[i]]$data = data
 }
-save(models, filename="data-study.Rda")
-#load("data-study.Rda")
+#save(models, file="data-study.Rda")
+load("data-study.Rda")
+
+exp.id = 1
 
 # Basic diagnostics
 ind = 1:2 + 50
-obs = model.impute$Y[ind,]
-plot_preds(obs, model.impute.fpcs$fit[ind,], model.regression$fit[ind,],
+obs = models[[exp.id]]$model.fimp$Y[ind,]
+plot_preds(obs, models[[exp.id]]$model.fimp$fit[ind,], models[[exp.id]]$model.fslr$fit[ind,],
            filename="pred-data", title = "Mean", d=51)
 p = 0.7
-sm = model.regression$fitI*p + (1-p)*model.regression$fitR
-sm = t(t(sm) + model.regression$cmeans)
+sm = models[[exp.id]]$model.fslr$fitI*p + (1-p)*models[[exp.id]]$model.fslr$fitR
+sm = t(t(sm) + models[[exp.id]]$model.fslr$cmeans)
+
+res = c()
+for (i in 1:length(models)){
+  res = cbind(res, models[[i]]$errors)
+}
 
 # Summarize results
 rownames(res) = c("regression","impute","fPCA","mean")
-cbind(rowMeans(res**2),
-apply(res**2,FUN=sd,1))
-colnames(res) = paste("run",1:10)
-par(mfrow=c(1,1))
-write.csv(res,"res.csv")
-ind = row.names(data$test.matrix) %in% data$X$Patient_ID[data$test.ob[1:3]]
+cbind(rowMeans(res),
+apply(res,FUN=sd,1))
+colnames(res) = paste("run",1:length(models))
+ind = row.names(models[[i]]$data$test.matrix) %in% models[[i]]$data$X$Patient_ID[models[[i]]$data$test.ob[1:3]]
 
 # Boxplot of results
 library(tidyr)
 tmp = t(res)
 rownames(tmp) = 1:nrow(tmp)
-methodStats = gather(data.frame(tmp**2), method, varexp, regression:fPCA, factor_key = FALSE)
+methodStats = gather(data.frame(tmp), method, varexp, regression:fPCA, factor_key = FALSE)
 
 pp = ggplot(methodStats, aes(x = method, y = varexp)) + paper.theme + labs(x="Method",y="MSE") +
   geom_boxplot()
 pp
 myggsave(filename=paste0("docs/plots/data-boxplot.pdf"), plot=pp, width = 12, height = 8)
 
+# Lambdas
+models[[exp.id]]$model.fimp$meta
+models[[exp.id]]$model.fpca$selected_model
 
 #############################
 # OTHER PLOTS FOR THE PAPER #
@@ -124,19 +133,19 @@ ggsave("docs/plots/points.pdf")
 pp + geom_line(size=0.7)
 ggsave("docs/plots/grouped.pdf")
 
-# The palette with grey:
-# The palette with black:
-cbPalette <- c("#000000", "#A69F00", "#56B4E9", "#009E73", "#008442") #, "#0072B2", "#D55E00", "#CC79A7")
-
-# Figure 3: Compare PCs with singular vectors (GDI over time)
-gg = as.numeric(colnames(model.impute.fpcs$Y))
-pp = ggplot(aes(x = age, y = GDI, color = Patient_ID), data = dd[2:14,]) +
-  scale_fill_manual(values = cbPalette) + scale_colour_manual(values = cbPalette) +
-  ylab("1st component") +
-  geom_point(size = 3) + theme_set(theme_grey(base_size = 26)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
-  stat_function(fun = approxfun(lowess(dd$age,dd$GDI)), size = 2.5, colour = "#000000")+ scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0)) + xlim(5,13)
-pp + geom_line(size = 0.7) +
-  stat_function(fun = approxfun(gg, model.impute.fpcs$fit[5,]) , color = cbPalette[5]) +
-  stat_function(fun = approxfun(gg, model.impute.fpcs$fit[2,]) , color = cbPalette[2]) +
-  stat_function(fun = approxfun(gg, model.impute.fpcs$fit[3,]) , color = cbPalette[3])  +
-  stat_function(fun = approxfun(gg, model.impute.fpcs$fit[4,]) , color = cbPalette[4])
+# # The palette with grey:
+# # The palette with black:
+# cbPalette <- c("#000000", "#A69F00", "#56B4E9", "#009E73", "#008442") #, "#0072B2", "#D55E00", "#CC79A7")
+#
+# # Figure 3: Compare PCs with singular vectors (GDI over time)
+# gg = as.numeric(colnames(model.impute.fpcs$Y))
+# pp = ggplot(aes(x = age, y = GDI, color = Patient_ID), data = dd[2:14,]) +
+#   scale_fill_manual(values = cbPalette) + scale_colour_manual(values = cbPalette) +
+#   ylab("1st component") +
+#   geom_point(size = 3) + theme_set(theme_grey(base_size = 26)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
+#   stat_function(fun = approxfun(lowess(dd$age,dd$GDI)), size = 2.5, colour = "#000000")+ scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0)) + xlim(5,13)
+# pp + geom_line(size = 0.7) +
+#   stat_function(fun = approxfun(gg, model.impute.fpcs$fit[5,]) , color = cbPalette[5]) +
+#   stat_function(fun = approxfun(gg, model.impute.fpcs$fit[2,]) , color = cbPalette[2]) +
+#   stat_function(fun = approxfun(gg, model.impute.fpcs$fit[3,]) , color = cbPalette[3])  +
+#   stat_function(fun = approxfun(gg, model.impute.fpcs$fit[4,]) , color = cbPalette[4])
