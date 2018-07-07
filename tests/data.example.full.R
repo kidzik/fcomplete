@@ -1,6 +1,7 @@
 library("devtools") ; library("roxygen2") ; library("fpca")
 roxygenise() ; install(".") ; library("fcomplete")
 library("ggplot2")
+source("tests/plot.helpers.R")
 
 #############################
 # PREPARE DATA
@@ -32,15 +33,14 @@ all.data.filtered = all.data.filtered[!is.nan(all.data.filtered$GDI),]
 #############################
 
 res = c()
-res = read.csv("res.csv",row.names = 1)
 par(cex=1.3)
 boxplot(t(res))
 
-nreps = 1
+nreps = 10
 
 models = list()
 
-for (i in 1:nreps){
+for (i in 5:nreps){
 # Sample data for testing
 data = sample.long(all.data.filtered, "Patient_ID", "age", "GDI", ratio = 0.05)
 
@@ -99,11 +99,15 @@ names(errors) = c("regression","impute","fPCA","mean")
 rownames(res) = c("regression","impute","fPCA","mean")
 cbind(rowMeans(res),
 apply(res,FUN=sd,1))
-colnames(res) = paste("run",1:11)
+colnames(res) = paste("run",1:10)
 par(mfrow=c(1,1))
-boxplot(t(res[c(3,2,1,4),]))
-
+boxplot(t(res[c(3,2,1),]))
+write.csv(res,"res.csv")
 ind = row.names(data$test.matrix) %in% data$X$Patient_ID[data$test.ob[1:3]]
+
+apply(res,1,mean)
+apply(res,1,sd)
+
 
 matplot(t(data$test.matrix[ind,]),t='p',lty=2,lwd=2,pch="x", ylim = c(-100,100))
 matplot(t(model.regression$fit[ind,]),t='l',lty=4,add=T,lwd=2)
@@ -120,7 +124,7 @@ library("ggplot2")
 library("ggthemes")
 library(RColorBrewer)
 
-dd = all.data.filtered[,c("Patient_ID","age","bmi")]
+dd = all.data.filtered[,c("Patient_ID","age","bmi","GDI")]
 dd$Patient_ID = as.factor(dd$Patient_ID)
 
 pp = ggplot(aes(x = age, y = bmi, color = Patient_ID), data = dd[1:200,]) + ylab("1st component") +
