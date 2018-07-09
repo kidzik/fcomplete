@@ -6,12 +6,11 @@ library("ggplot2")
 library("latex2exp")
 
 res = list()
-nexp = 10
+nexp = 1
 dgrid = 31
 d = 7
 
-for(exp.id in 1:nexp)
-{
+experiment.sim = function(exp.id){
   # SIMULATE DATA
   set.seed(exp.id)
   simulation = fsimulate(dgrid = dgrid,clear = 0.9, n = 100, noise.mag = 0.05, d = d, K = 1)
@@ -47,15 +46,19 @@ for(exp.id in 1:nexp)
   print(tbl.true)
 
   # SAVE EXPERIMENT RESULTS
-  res[[exp.id]] = list()
-  res[[exp.id]]$tbl = tbl.true
-  res[[exp.id]]$errors = errors
-  res[[exp.id]]$mean = model.mean
-  res[[exp.id]]$fimp = model.fimp
-  res[[exp.id]]$fpca = model.fpca
-  res[[exp.id]]$fslr = model.fslr
-  res[[exp.id]]$simulation = simulation
+  res = list()
+  res$tbl = tbl.true
+  res$errors = errors
+  res$mean = model.mean
+  res$fimp = model.fimp
+  res$fpca = model.fpca
+  res$fslr = model.fslr
+  res$simulation = simulation
+  res
 }
+
+res = lapply(1:1, experiment.sim)
+
 #save(res,file = "sim-study.Rda")
 #load("sim-study.Rda")
 

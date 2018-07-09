@@ -7,9 +7,9 @@ source("tests/plot.helpers.R")
 # PREPARE DATA #
 ################
 if (!("all.data" %in% ls())){
-  all.data = read.csv("/home/lukasz/Dropbox/DATA/CP/alldata.csv")
-  gait.cycles = t(read.csv("/home/lukasz/Dropbox/DATA/CP/G_avg_CP.csv"))
-  gdi = read.csv("/home/lukasz/Dropbox/DATA/CP/gdi.csv")
+  all.data = read.csv("/home/kidzik/Dropbox/DATA/CP/alldata.csv")
+  gait.cycles = t(read.csv("/home/kidzik/Dropbox/DATA/CP/G_avg_CP.csv"))
+  gdi = read.csv("/home/kidzik/Dropbox/DATA/CP/gdi.csv")
   pcas = prcomp(gait.cycles)
   all.data = cbind(all.data, pcas$x[,1:10])
   all.data = merge(all.data, gdi,by = c("Patient_ID","examid","side"))
@@ -34,10 +34,7 @@ all.data.filtered = all.data.filtered[!is.nan(all.data.filtered$GDI),]
 #################
 # RUN CROSS-VAL #
 #################
-nreps = 10
-models = list()
-
-for (i in 1:nreps){
+data.experiment = function(i){
   set.seed(i)
   # Sample data for testing
   data = sample.long(all.data.filtered, "Patient_ID", "age", "GDI", ratio = 0.05)
@@ -65,16 +62,21 @@ for (i in 1:nreps){
     mean((model.mean$fit - data$test.matrix)**2, na.rm = TRUE))
   names(errors) = c("regression","impute","fPCA","mean")
 
-  models[[i]] = list()
-  models[[i]]$errors = errors
-  models[[i]]$model.fimp = model.impute
-  models[[i]]$model.fpca = model.impute.fpcs
-  models[[i]]$model.fslr = model.regression
-  models[[i]]$model.mean = model.mean
-  models[[i]]$data = data
+  list(errors = errors,
+       model.fimp = model.impute,
+       model.fpca = model.impute.fpcs,
+       model.fslr = model.regression,
+       model.mean = model.mean,
+       data = data)
 }
-#save(models, file="data-study.Rda")
-load("data-study.Rda")
+
+library(parallel)
+models = lapply(1:1, data.experiment, mc.cores = 6)
+
+if (length(models))
+  save(models, file="data-study.Rda")
+if (!length(models))
+  load("data-study.Rda")
 
 exp.id = 1
 
@@ -99,7 +101,7 @@ apply(res,FUN=sd,1))
 colnames(res) = paste("run",1:length(models))
 ind = row.names(models[[i]]$data$test.matrix) %in% models[[i]]$data$X$Patient_ID[models[[i]]$data$test.ob[1:3]]
 
-# Boxplot of results
+# Figure 7: Boxplot of results
 library(tidyr)
 tmp = t(res)
 rownames(tmp) = 1:nrow(tmp)
@@ -108,7 +110,7 @@ methodStats = gather(data.frame(tmp), method, varexp, regression:fPCA, factor_ke
 pp = ggplot(methodStats, aes(x = method, y = varexp)) + paper.theme + labs(x="Method",y="MSE") +
   geom_boxplot()
 pp
-myggsave(filename=paste0("docs/plots/data-boxplot.pdf"), plot=pp, width = 12, height = 8)
+myggsave(filename=paste0("docs/plots/data-boxplot.pdf"), plot=pp, width = 5, height = 4)
 
 # Lambdas
 models[[exp.id]]$model.fimp$meta
@@ -129,9 +131,9 @@ pp = ggplot(aes(x = age, y = bmi, color = Patient_ID), data = dd[1:200,]) + ylab
   geom_point(size = 3) + theme_set(theme_grey(base_size = 26)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
   stat_function(fun = approxfun(lowess(dd$age,dd$bmi)), size = 1.5, colour = "#000000")+ scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0))
 pp
-ggsave("docs/plots/points.pdf")
+ggsave("docs/plots/points.pdf",width=10,height=7)
 pp + geom_line(size=0.7)
-ggsave("docs/plots/grouped.pdf")
+ggsave("docs/plots/grouped.pdf",width=10,height=7)
 
 # # The palette with grey:
 # # The palette with black:
