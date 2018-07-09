@@ -111,14 +111,14 @@
 
 \section{Motivation}
 
-One of the fundamental questions in medical practice is how diseases progress in individual patients. Accurate continuous monitoring of patient's condition could considerably improve prevention and treatment. Many medical tests, such as x-ray, MRI, motion capture gait analysis, biopsy or even blood tests, are costly, harmful or inconvenient to perform frequently. Since in most situations increase in sampling is not feasible due to inconvenience and costs, practitioners need to reach out for statistical tools to analyze dynamics of these biomarkers.
+One of the fundamental questions in medical practice is how diseases progress in individual patients. Accurate continuous monitoring of patient's condition could considerably improve prevention and treatment. Many medical tests, such as x-ray, MRI, motion capture gait analysis, biopsy or blood tests, are costly, harmful or inconvenient to perform frequently. Since in most situations increase in sampling is not feasible due to inconvenience and costs, practitioners need to reach out for statistical tools to analyze dynamics of these biomarkers.
 % In practice, due to inherent inconvenience and costs of these exams, measurements are taken sparsely in time, tolerating potential complications between the visits.
 
-While in many situations multiple data points from patients' histories are available, these data are often underutilized. For the sake of simplicity and convenience, many prognostic models applied in practice only use the last few observations or summary statistics such as the mean over time. However, this simplification ignores important information about the progression, including its dynamics or individual patient's variability. Moreover, the noise inherent to measurements further hinders the inference of changes in patient's health. For making use of these data, practitioners need statistical models and software. To enable appropriate usage and broad adoption, ideally, these tools should be simple to implement and understand.
+While in many situations multiple data points from patients' histories are available, these data are often underutilized. For the sake of simplicity and convenience, many prognostic models applied in practice only use the last few observations or summary statistics such as the mean over time. However, this simplification ignores important information about the progression, including its dynamics or individual patient's variability. Moreover, the noise inherent to measurements further hinders the inference of changes in patient's health. For making use of these data, practitioners need statistical models and software. To enable appropriate usage and broad adoption, ideally, these tools should be simple to use and understand.
 
 %This motivates research on the longitudinal statistical analysis of progression, recovering trajectories from sparse observations. 
 
-To illustrate potential benefits in these scenarios, in Figure \ref{fig:motivation}, we present measurements of BMI of patients with gait pathologies. The thick solid line represents the estimated mean and indicates a clear trend of growth during puberty. However, by looking at individual processes and by modeling between-subject similarities, we may expect to model the progression better, make personalized predictions, cluster patients based on their progression patterns or use the latent representation of progression patterns as a predictor in other models. 
+To illustrate potential benefits of temporal models in these scenarios, in Figure \ref{fig:motivation}, we present measurements of BMI of patients with gait pathologies. The thick solid line represents the estimated mean and indicates a clear trend of growth during puberty. However, by looking at individual processes and by modeling between-subject similarities, we may expect to model the progression more accurately, make personalized predictions, cluster patients based on their progression patterns or use the latent representation of progression patterns as a predictor in other models. 
 
 \begin{figure}[h]
   \includegraphics[width=0.49\linewidth]{../plots/points}
@@ -135,28 +135,31 @@ In this work, we propose an alternative elementary and flexible statistical fram
 
 In many clinical settings, researchers and practitioners model patient's history as a multivariate process of clinical measurements (such as the size of a tumor, blood markers, height and weight of a patient, etc.). The multivariate measurements are noisy, and they are observed on different time-points. This framework includes cases when, for example, clinicians perform a blood test at every visit but a biopsy sporadically. 
 
-Even though multiple variables are measured, the ones directly related to the disease, such as the size of a tumor, are often of the special interest. Therefore, to focus our attention and aid further discussion, we start by introducing notation and methodology for the univariate case. Let $M$ denote the number of subjects. For each individual $i \in \{ 1,2,...,N \}$, we measure the process at $n_i$ irregularly sampled time-points $\mathbf{t}_i = [t_{i,1},t_{i,2},...,t_{i,n_i}]'$. Since the time interval can be easily transformed linearly, without loss of generality we assume that $t_{i,j} \in (t_{\min},t_{\max})$ for $ j \in \{1,...,n_i\}$ and some $t_{\min} < t_{\max}$.
+Even though multiple variables are measured, the ones directly related to the disease, such as the size of a tumor, are usually of the special interest. Therefore, to focus our attention and aid further discussion, we start by introducing notation and methodology for the univariate case. Let $N$ denote the number of subjects. For each individual $i \in \{ 1,2,...,N \}$, we measure the process at $n_i$ irregularly sampled time-points $\mathbf{t}_i = [t_{i,1},t_{i,2},...,t_{i,n_i}]'$. We assume that there are some $t_{min},t_{max}$ and that for each $i$ we have $t_{min} < t_{i,1} < t_{i,2} < ... < t_{i,n_i} < t_{max}$.
+%Since the time interval can be easily transformed linearly, without loss of generality we assume that $t_{i,j} \in (t_{\min},t_{\max})$ for $ j \in \{1,...,n_i\}$ and some $t_{\min} < t_{\max}$.
 
-To model the individual trajectories, given the {\it unbalanced longitudinal observations} $(\mathbf{t}_i,\mathbf{y}_i)$, practitioners map observations into a low-dimensional space which represents progression patterns. Ideally, a small distance between individuals in the latent space corresponds to a similar progression pattern.
+Let $\by_i = [y_{i,1,},...,y_{i,n_i}]'$ denote observations corresponding to $\bt_i$ for each individual $i$. To model individual trajectories given pairs $(\mathbf{t}_i,\mathbf{y}_i)$ practitioners map observations into a low-dimensional space which represents progression patterns. Ideally, a small distance between individuals in the latent space reflects similar progression patterns.
 
 In this section, we discuss state-of-the-art approaches to estimating this low-dimensional latent embedding. We classify them into three categories: the direct approach, mixed-effect models, and low-rank approximations. 
 
 \subsection{Direct approach}\label{ss:direct}
 
-If the set of observed values is dense, simple interpolation using a continuous basis can be sufficient for approximating the entire trajectory. Formally, let $\{b_i: i \in \N \}$ be a basis of $L_2([t_{\min},t_{\max}])$. In practice, we use a finite number of basis elements. Let $\bb(t) = [b_1(t),b_2(t),...,b_K(t)]'$ be a vector of $K$ basis elements evaluated at point $t \in (t_{\min},t_{\max})$. For each subject $i \in \{ 1,...,n_i \}$, we might use least squares method to find a set of coefficients $\bw_i = [w_{i,1},...,w_{i_K}]' \in \R^K$, minimizing euclidean distance to the observed point
+If the set of observed values for each individual is dense, elementary interpolation using a continuous basis can be sufficient for approximating the entire trajectory. Let $\{b_i: i \in \N \}$ be a basis of $L_2([t_{\min},t_{\max}])$. In practice, we truncate the basis ta a set of the first $K \in \N$ basis elements. Let $\bb(t) = [b_1(t),b_2(t),...,b_K(t)]'$ be a vector of $K$ basis elements evaluated at a timepoint $t \in (t_{\min},t_{\max})$. Throught our work we will use the word \emph{basis} to refer to some truncated basis of $K$ elements.
+
+To find an individual trajectory, for each subject $i \in \{ 1,...,N \}$, we might use least squares method to find a set of coefficients $\bw_i \in \R^K$, minimizing squared euclidean distance to the observed point
 \begin{align}\label{eq:direct-individual}
  \argmin_{\bw_i}\sum_{j=1}^{n_i}\left|y_{i,j} - \bw_i'\bb(t_{i,j})\right|^2.
 \end{align}
 
-It is often convenient to compute principal functional components and represent curves in the space spanned by the first few of them. This representation, referred to as a {\it Karhunen-Lo\`eve} expansion \citep{watanabe1965karhunen,kosambi2016statistics}, has became a foundation of many functional data analysis workflows \citep{ramsay1991some,yao2005linear,cnaan1997tutorial,laird1988missing,horvath2012inference,besse1997simultaneous}. %If measurements are dense, confidence in estimates of $\bw_i$ is high and therefore the sample covariance of $\bw_i$ might also be an accurate estimator. hormann2015dynamic,
+Finally, to reduce the potential overfitting, it is often convenient to compute principal functional components and represent curves in the space spanned by the first few of them. Such representation, referred to as a {\it Karhunen-Lo\`eve} expansion \citep{watanabe1965karhunen,kosambi2016statistics}, has became a foundation of many functional data analysis workflows \citep{ramsay1991some,yao2005linear,cnaan1997tutorial,laird1988missing,horvath2012inference,besse1997simultaneous}. %If measurements are dense, confidence in estimates of $\bw_i$ is high and therefore the sample covariance of $\bw_i$ might also be an accurate estimator. hormann2015dynamic,
 
-This approach to modeling the covariance structure has two main drawbacks. First, if the number of observations $n_i$ for an individual $i$ is smaller or equal to the size of the basis $K$, we can fit a curve with no error leading to overfitting and unreliable estimator of the variance. Second, this approach ignores similarities between the curves, which could potentially improve the fit.
+This approach to modeling covariance has two main drawbacks. First, if the number of observations $n_i$ for an individual $i$ is smaller or equal to the size of the basis $K$, we can fit a curve with no error leading to overfitting and unreliable estimator of the variance. Second, this approach ignores similarities between the curves, which could potentially improve the fit.
 
 A basic idea to remedy these issues is to estimate both the basis coefficients and the variance structure simultaneously within the framework of linear mixed-effect models.
 
 \subsection{Linear mixed-effect models}\label{ss:lmm}
 
-A common approach to modeling longitudinal observation $(\mathbf{t}_i, \mathbf{y}_i)$ is to assume that the data comes from a linear mixed-effect model (LMM) \citep{verbeke1997linear, zeger1988models}. We operate in a functional basis $\bb(t)$ of $K$ elements and we assume there exists a fixed effect $\mu(t) = m' \bb(t)$, where $m = [m_1,...,m_K]'$ for $m_i \in \R$. We model the individual random effect as a vector of basis coefficients. In the simplest form, we assume
+A common approach to modeling longitudinal observation $(\mathbf{t}_i, \mathbf{y}_i)$ is to assume that data come from a linear mixed-effect model (LMM) \citep{verbeke1997linear, zeger1988models}. We operate in a functional basis $\bb(t)$ of $K$ elements and we assume there exists a fixed effect $\mu(t) = m' \bb(t)$, where $m = [m_1,...,m_K]'$ for $m_i \in \R$. We model the individual random effect as a vector of basis coefficients. In the simplest form, we assume
 \begin{align}\label{eq:latent-probabilistic}
  \mathbf{w}_i \sim \cN(0, \Sigma),
 \end{align}
@@ -164,36 +167,37 @@ where $\Sigma$ is a $K \times K$ covariance matrix. We model individual observat
 \begin{align}\label{eq:probabilistic}
  \mathbf{y}_i|\mathbf{w}_i \sim \cN(\mu_i + B_i\mathbf{w}_i, \sigma^2I_{n_i}),
 \end{align}
-where $\mu_i = [\mu(t_{i,1}),\mu(t_{i,2}),...,\mu(t_{i,n_i})]'$, $\sigma$ is the standard deviation of observation error and $B_i = [\bb(t_{i,1}),...,\bb(t_{i,n_i})]'$. Estimation of the model parameters is typically accomplished by the expectation-maximization (EM) algorithm \citep{laird1982random}. For estimating coefficients $\bw_i$ one can use the best unbiased linear predictor (BLUP) \citep{henderson1950estimation,robinson1991blup}. % or other techniques typical for mixed-effect models \citep{mardia1980multivariate}.
+where $\mu_i = [\mu(t_{i,1}),\mu(t_{i,2}),...,\mu(t_{i,n_i})]'$, $\sigma$ is the standard deviation of observation error and $B_i = [\bb(t_{i,1}),...,\bb(t_{i,n_i})]'$ is the basis evaluated at timepoints defined in $\bt_i$. Estimation of the model parameters is typically accomplished by the expectation-maximization (EM) algorithm \citep{laird1982random}. For estimating coefficients $\bw_i$ one can use the best unbiased linear predictor (BLUP) \citep{henderson1950estimation,robinson1991blup}. % or other techniques typical for mixed-effect models \citep{mardia1980multivariate}.
 
 Since the LMM estimates the covariance structure and individual fit simultaneously, it reduces the problem of uncertain estimates of $\bw_i$, present in the direct approach. However, this model is only applicable if a relatively large number of observations per subject is observed since we attempt to estimate $K$ basis coefficients for every subject.
 
-To model trajectories from a small number of observations, practitioners further constrain the covariance structure. If we knew the functions which contribute the most to the random effect, we could fit a LMM in a smaller space spanned by these functions. A solution is to learn the basis from the data, by constraining the rank of the covariance matrix or by imposing a prior on the basis parameters.
+To model trajectories from a small number of observations, practitioners further constrain the covariance structure. If we knew the functions which contribute the most to the random effect, we could fit a LMM in a smaller space spanned by these functions. In the next section we explore possibilities to learn the basis from the data. %A solution is to learn the basis from the data, by constraining the rank of the covariance matrix or by imposing a prior on the basis parameters.
 
 \subsection{Low-rank approximations}\label{ss:reduced-rank}
 
 There are multiple ways to constrain the covariance structure. We can use cross-validation or information criteria to choose the best basis, the number of elements or positions of spline knots \citep{rice2001nonparametric,bigelow2009bayesian}. Alternatively we can place a prior on the covariance matrix \citep{maclehose2009nonparametric}.
 
-Another solution is to restrict the latent space to $q < K$ dimensions and learn from the data the mapping $A \in \R^{K \times q}$ between the latent space and the basis. In the simplest scenario, observations are then modeled as
+Another solution is to restrict the latent space to $q < K$ dimensions and learn from the data the mapping $A \in \R^{K \times q}$ between the latent space and the basis. In the simplest scenario with Gaussian observation noise, observations are modeled as
 \begin{align}\label{eq:james-model}
  \mathbf{y}_i \sim \cN(\mu_i + B_i A \mathbf{w}_i, \sigma^2I_{n_i}).
 \end{align}
 %In this setting $\bb(t)A$
 %Note that with the freedom in the choice of $A$, one can assume that $\mathbf{w}_i\ \sim\ \cN(0,I_q)$.
-\citet{james2000principal} propose an EM algorithm for finding model parameters and latent variables $\bw_i$. In the expectation stage, they marginalize $\bw_i$. % given the model, i.e. $\mathbf{w}_i~=~A' B_i' (\mathbf{y}_i - \mu_i)$.
+
+\citet{james2000principal} propose an EM algorithm for finding model parameters and latent variables $\bw_i \in \R^q$. In the expectation stage, they marginalize $\bw_i$. % given the model, i.e. $\mathbf{w}_i~=~A' B_i' (\mathbf{y}_i - \mu_i)$.
 In the maximization stage, with $\bw_i$ assumed observed, they maximize the likelihood with respect to $\{\mu,A,\sigma\}$. The maximum likelihood, given $\bw_i$, takes form
 \begin{align}
-\prod_{i=1}^N \frac{1}{(2\pi)^{n_i/2} \sigma^{n_i} |\Sigma|^{1/2}} \exp\{ &-(\by_i' - \bw_i'\mu_i - B_i A \bw_i)'(\by_i' - \bw_i'\mu_i - B_i A \bw_i) / 2\sigma^2 \nonumber\\
+\prod_{i=1}^N \frac{1}{(2\pi)^{n_i/2} \sigma^{n_i} |\Sigma|^{1/2}} \exp\{ &-(\by_i - \mu_i - B_i A \bw_i)'(\by_i - \mu_i - B_i A \bw_i) / 2\sigma^2 \nonumber\\
 &- \frac{1}{2}\bw_i' \Sigma^{-1} \bw \}.\label{eq:likelihood}
 \end{align}
 
-Another approach to estimate parameters of \eqref{eq:james-model} is to optimize over $\bw_i$ and marginalize $A$ \citep{lawrence2004gaussian}. This approach allows modifying the distance measure in the latent space, using the ``kernel trick'' \citep{schulam2016disease}.
+Another approach to estimating parameters of \eqref{eq:james-model} is to optimize over $\bw_i$ and marginalize $A$ \citep{lawrence2004gaussian}. This approach allows modifying the distance measure in the latent space, using the ``kernel trick'' \citep{schulam2016disease}.
 
-Estimation of the covariance structure of processes is central of estimation of individual trajectories. \citet{descary2016functional} propose a method where the point estimate of covariance matrix is obtained through matrix completion. 
+Estimation of the covariance structure of processes is central to estimation of individual trajectories. \citet{descary2016functional} propose a method where the point estimate of covariance matrix is obtained through matrix completion. 
 
-Methods based on low-rank approximations appear to be widely adopted and applied in practice \citep{berkey1983longitudinal, yan2017dynamic, hall2006properties, besse1986principal, yao2006penalized, greven2011longitudinal}. However, due to their probabilistic formulation and reliance on the distribution assumptions, these models usually need to be fine-tuned for specific situations.
+Methods based on low-rank approximations are widely adopted and applied in practice \citep{berkey1983longitudinal, yan2017dynamic, hall2006properties, besse1986principal, yao2006penalized, greven2011longitudinal}. However, due to their probabilistic formulation and reliance on the distribution assumptions, these models usually need to be carefully fine-tuned for specific situations.
 
-To illustrate this problem in an elementary setting, let us assume that the data is drawn from two distributions with equal probability taking form \eqref{eq:james-model}, but with two different means: $\mu$ and $-\mu$. Then, the estimated fixed effect will be close to $0$ and the zero-mean prior distribution on the latent variables will draw these variables towards $0$.
+%To illustrate this problem in an elementary setting, let us assume that the data is drawn from two distributions with equal probability taking form \eqref{eq:james-model}, but with two different means: $\mu$ and $-\mu$. Then, the estimated fixed effect will be close to $0$ and the zero-mean prior distribution on the latent variables will draw these variables towards $0$.
 
 %Linear Mixed Models \citep{zeger1988models, verbeke1997linear}
 %If we assume that the processes come from the same distribution, we can use mixed effect models, treating time as a non-linear random effect \citep{}. Both methods require fairly large number of observation per individual. At the very least, we need to observe more points per subject than the size of the basis.
@@ -242,19 +246,19 @@ To illustrate this problem in an elementary setting, let us assume that the data
 %While low-rank mixed models, as presented in \citep{james2000principal,tipping1999probabilistic}, can be potentially extended to the regression setting, in this paper 
 %[TODO: Describe the problem with existing approaches]
 
-The mixed-effect model, as any other probabilistic model, can be heavily biased when the data comes from a distribution considerably different than assumed. Since biomarkers can differ in every clinical setting, fine-tuning the models may require time and expertise. We develop a more flexible approach to the estimation of latent variables. Our method is based solely on the $\ell_2$ approximation rather than the underlying distributions.
+The mixed-effect model, as any other probabilistic model, can be heavily biased when the data comes from a distribution considerably different than assumed. In the medical context, since biomarkers can differ in every clinical setting, fine-tuning the models may require extensive amount time and expertise. In this work, we develop a more flexible approach based solely on the $\ell_2$ approximation rather than the underlying probabilistic distributions.
 
 We pose the problem of trajectory prediction as a matrix completion problem and we solve it using sparse matrix factorization techniques \citep{rennie2005fast, candes2009exact}. In the classical matrix completion problem the objective is to predict elements of a sparsely observed matrix using its known elements, while minimizing a certain criterion, often chosen to be the Mean Squared Error (MSE). The motivating example is the ``Netflix Prize'' competition \citep{bennett2007netflix}, where participants were tasked to predict unknown movie ratings using other observed ratings. We can represent these data as a matrix of $N$ users and $M$ movies, with a subset of known elements, measured on a fixed scale, e.g. $1-5$.
 
-We assume that the true matrix can be approximated by a low-rank matrix \citep{srebro2005generalization}. Given the low-rank representation $WA'$, columns $A$ spanning the space of movies can be interpreted as ``genre'' components and each user is represented as a weighted sum of their genre preferences, i.e. a row in the matrix of latent variables $W$ (see Figure \ref{fig:idea}).
+To solve the matrix completion problem, we normally assume that the true matrix can be approximated by a low-rank matrix \citep{srebro2005generalization}. Given the low-rank representation $WA'$, columns $A$ spanning the space of movies can be interpreted as ``genre'' components and each user is represented as a weighted sum of their preferred generes, i.e. a row in the matrix of latent variables $W$ (see Figure \ref{fig:idea}).
 
-We can use the same idea to predict sparsely sampled curves, as long as we introduce an additional smoothing step. The low-dimensional latent structure now corresponds to progression patterns and a trajectory of each individual can be represented as a weighted sum of these ``principal'' patterns.
+We can use the same idea to predict sparsely sampled curves, as long as we introduce an additional smoothing step. The low-dimensional latent structure now corresponds to progression patterns and a trajectory of each individual can be represented as a weighted sum of these ``principal'' patterns (see the matrix $B$ in Figure \ref{fig:idea}).
 
 %%%% The smoothness comes from the fact that in the longitudinal analysis columns of the matrix are very strongly correlated, due to continuity of the sampled processes. Conversely, as the density of the evaluation grid increases, classical matrix completion problems become more difficult, as it does not use information embedded in neighboring columns. The methodology introduced in this paper deals with this problem by projecting the observed data to a low-dimensional space of coefficients in a basis of continuous functions. In this smaller space, one can directly apply matrix completion methodology. In this scenario, dependence of the size of the grid becomes small.
 
 \begin{figure}[h]
   \includegraphics[width=1\linewidth]{images/intro}
-  \caption{The key observation motivating this paper is the fact that sparse longitudinal trajectory prediction problem can be mapped to the matrix completion problem. Matrix completion can be approached with matrix factorization where we look for $W$ and $A$ of low rank, approximating observed values in $Y$ (circled rectangles in the matrix $Y$). In the sparse longitudinal setting, we impose continuity by fixing the basis $B$ (e.g. splines) and again finding low-rank $W$ and $A$ approximating observed values in $Y$. $B$ corresponds to some discretized smooth basis, here with $3$ basis elements.}
+  \caption{The key observation motivating this paper is the fact that sparse longitudinal trajectory prediction problem can be mapped to the matrix completion problem. Matrix completion can be approached with matrix factorization where we look for $W$ and $A$ of low rank, approximating observed values in $Y$ (circled green rectangles in the matrix $Y$). In the sparse longitudinal setting, we impose continuity by fixing the basis $B$ (e.g. splines) and again we find low-rank $W$ and $A$ approximating observed values in $Y$. $B$ corresponds to some discretized smooth basis, here with $3$ basis elements.}
   \label{fig:idea}
 \end{figure}
 
@@ -265,15 +269,17 @@ We first introduce methodology for univariate sparsely-sampled processes. The di
 %To use matrix factorization techniques, in this section we represent the data as a matrix of $N$ individuals and $T$ time-points, unlike the previous work on longitudinal modeling, presented in Section \ref{s:background}. 
 %As presented in Section \ref{s:background},
 %The theory of functional data analysis can be developed directly on $L_2([t_{\min},t_{\max}])$ curves or, more broadly, any separable Hilbert space \citep{ferraty2006nonparametric}. In this article
-For each individual $i \in \{1,2,...,N\}$ we observe $n_i$ measurements $\{\tilde y_{i,1},...,\tilde y_{i,n_i}\}$ at time-points $\{t_{i,1},t_{i,2},...,t_{i,n_i}\}$. However, unlike the prior work introduced in Section \ref{s:background}, we discretize the time grid to $T$ equidistributed time-points $G = \left[\tau_1, \tau_2, ..., \tau_T\right],$ where $t_{\min} = \tau_1$, $t_{\max} = \tau_T$ and $T$ is arbitrarly large. Each individual $i$ is expressed as a partially observed vector $r_i \in \R^T$. For each time-point $t_{i,j}$ for $1 \leq j \leq n_i$ we find a corresponding grid-point $g_i(j) = \argmin_{1 \leq k \leq T}  |\tau_k - t_{i,j}|$. We define $y_{i,g_i(j)} = \tilde y_{i,j}$. Let $O_i = \{g_i(j): 1 \leq j \leq n_i \}$ be a set of grid indices corresponding to observed grid-points for an individual $i$. All elements outside $O_i$, i.e. $\{y_{i,j} : j \notin O_i\}$ are considered missing.
 
-We will show that in our method the grid can be arbitrarily dense with marginal compromise on performance, and therefore, without loss of generality, we assume that at most one measurement per subject is mapped to every grid-point in $G$.
+%As we will move from true observations to their closes neighbours on the grid, in this chapter we denote the true ones with the tilda.
+For each individual $i \in \{1,2,...,N\}$ we observe $n_i$ measurements $\{\tilde y_{i,1},...,\tilde y_{i,n_i}\}$ at time-points $\{t_{i,1},t_{i,2},...,t_{i,n_i}\}$. Unlike the prior work introduced in Section \ref{s:background}, we discretize the time grid to $T$ equidistributed time-points $G = \left[\tau_1, \tau_2, ..., \tau_T\right],$ where $t_{\min} = \tau_1$, $t_{\max} = \tau_T$ and $T$ is arbitrarly large. Each individual $i$ is expressed as a partially observed vector $r_i \in \R^T$. For each time-point $t_{i,j}$ for $1 \leq j \leq n_i$ we find a corresponding grid-point $g_i(j) = \argmin_{1 \leq k \leq T}  |\tau_k - t_{i,j}|$. We assign $y_{i,g_i(j)} = \tilde y_{i,j}$. Let $O_i = \{g_i(j): 1 \leq j \leq n_i \}$ be a set of grid indices corresponding to observed grid-points for an individual $i$. All elements outside $O_i$, i.e. $\{y_{i,j} : j \notin O_i\}$ are considered missing.
 
-In such settings, our observations can be uniquely represented as a $N \times T$ matrix $Y$ with missing values. Let $O_i = \{g_i(j): 1 \leq j \leq n_i \}$ be a set of grid indices corresponding to observed grid-points for an individual $i$. We denote the set of all observed elements by pairs of indices $\Omega = \{ (i,j) : i\in \{1,2,...,N\}, j \in O_i \}$. Let $P_\Omega(Y)$ be the projection onto observed indices, i.e. $P_\Omega(Y) = W$, such that $W_{i,j} = Y_{i,j}$ for $(i,j) \in \Omega$ and $W_{i,j} = 0$ otherwise. We define $P^\perp_\Omega(Y)$ as the projection on the complement of $\Omega$, i.e. $P^\perp_\Omega(Y) = Y - P_\Omega(Y)$. We will use $\|\cdot\|_F$ to denote the Frobenius norm, i.e. the square root of the sum of matrix elements, and $\|\cdot\|_*$ to denote the nuclear norm, i.e. the sum of singular values.
+%In Section \ref{ss:direct-matrix} we show that the grid can be arbitrarily dense with a marginal compromise on performance, and therefore, without loss of generality, we assume that at most one measurement per subject is mapped to every grid-point in $G$.
 
-As in Section \ref{s:background} we impose smoothness by using a continuous basis $\bb(t) = [b_1(t),b_2(t),...,b_K(t)]'$. However, now, the basis is evaluated on the grid $G$ and we define $\tilde{B} = [\bb(\tau_1),\bb(\tau_2),...,\bb(\tau_T)]'$. Throughout the paper we will use 
+For $T$ sufficiently large, our observations can be uniquely represented as a $N \times T$ matrix $Y$ with missing values. We denote the set of all observed elements by pairs of indices as $\Omega = \{ (i,j) : i\in \{1,2,...,N\}, j \in O_i \}$. Let $P_\Omega(Y)$ be the projection onto observed indices, i.e. $P_\Omega(Y) = W$, such that $W_{i,j} = Y_{i,j}$ for $(i,j) \in \Omega$ and $W_{i,j} = 0$ otherwise. We define $P^\perp_\Omega(Y)$ as the projection on the complement of $\Omega$, i.e. $P^\perp_\Omega(Y) = Y - P_\Omega(Y)$. We will use $\|\cdot\|_F$ to denote the Frobenius norm, i.e. the square root of the sum of matrix elements, and $\|\cdot\|_*$ to denote the nuclear norm, i.e. the sum of singular values.
 
-In our algorithms we will use a diagonal-thresholding operators defined as follows. Let $D = \diag(d_1,...,d_p)$ be a diagonal matrix. We define {\em soft-thresholding} as
+As in Section \ref{s:background} we impose smoothness by using a continuous basis $\bb(t) = [b_1(t),b_2(t),...,b_K(t)]'$. However, now, the basis is evaluated on the grid $G$ and we define $B = [\bb(\tau_1),\bb(\tau_2),...,\bb(\tau_T)]'$. %Throughout the paper we will use 
+
+In some of our algorithms we will use a diagonal-thresholding operators defined as follows. Let $D = \diag(d_1,...,d_p)$ be a diagonal matrix. We define {\em soft-thresholding} as
 \begin{equation*}
 D_\lambda = \diag((d_1 - \lambda)_+,(d_2 - \lambda)_+,...,(d_p - \lambda)_+),\label{eq:thresholding}
 \end{equation*}
@@ -285,15 +291,15 @@ where $q = \argmin_k(d_k < \lambda)$.
 
 \subsection{Direct approach}\label{ss:direct-matrix}
 
-The optimization problem \eqref{eq:direct-individual} of the direct approach described in Section \ref{ss:direct} can be approximated in the matrix setting. First, note that the bias introduced by the grid is negligible if the grid is sufficiently large. We have
+The optimization problem \eqref{eq:direct-individual} of the direct approach described in Section \ref{ss:direct} can be approximated in the matrix completion setting. First, note that the bias introduced by the grid is negligible if the grid is sufficiently large. We have
 \begin{align}
   \left|\tilde y_{i,j} - \bw_i'\bb(t_{i,j})\right| &= \left|y_{i,g(j)} - \bw_i'\bb(t_{i,j})\right|\nonumber\\
   &= \left| y_{i,g(j)} - \bw_i' (\bb (\tau_{g_i(j)}) + \bb (t_{i,j}) - \bb (\tau_{g_i(j)}))\right|\nonumber\\
   &\leq \left| y_{i,g(j)} - \bw_i' \bb(\tau_{g_i(j)})\right| + \left|\bw_i' (\bb(t_{i,j}) - \bb(\tau_{g_i(j)}))\right|\label{eq:grid-snap}
 \end{align}
-and by the continuity of the basis on a closed interval $[t_{\min},t_{\max}]$ the second element in \eqref{eq:grid-snap} can be arbitrarily small if $T \rightarrow \infty$. For the simplicity of notation in the reminder of this work we will assume that all the points are observed on the grid $G$.  %Therefore, the error of the solution of the original problem is bounded by the error of the solution the grid.
+and by the continuity of the basis on a closed interval $[t_{\min},t_{\max}]$ the second element in \eqref{eq:grid-snap} can be arbitrarily small if $T \rightarrow \infty$. For the simplicity of notation in the reminder of this work we will assume that all the points are observed on the grid $G$ of $T$ equidistributed points. 
 
-We define the optimization problem \eqref{eq:direct-individual} as a matrix completion problem
+Now, we rewrite the optimization problem \eqref{eq:direct-individual} as a matrix completion problem
 \begin{align}
  \argmin_{\{\bw_i\}}\sum_{i=1}^N \sum_{j=1}^{n_i}\left|y_{i,g_i(j)} - \bw_i' \bb(\tau_{g_i(j)}))\right|^2 &= \argmin_{\{\bw_i\}}\sum_{(i,k) \in \Omega}\left|y_{i,k} - \bw_i' \bb(\tau_{k}))\right|^2\nonumber\\
 %% \end{align*}
@@ -301,18 +307,19 @@ We define the optimization problem \eqref{eq:direct-individual} as a matrix comp
 %% \begin{align*}
 &= \argmin_W \| P_\Omega(Y - WB') \|_F^2,\label{eq:direct-matrix}
 \end{align}
-where the optimization over $\{\bw_i\}$ is an optimization over all $\{\bw_i : i \in \{ 1,2,...,N \}\}$ and $W$ is an arbitrary $N \times K$ matrix.
+where by optimization over $\{\bw_i\}$ we mean optimization over all $\{\bw_i : i \in \{ 1,2,...,N \}\}$ and $W$ is an $N \times K$ matrix composed of vectors $\{\bw_i'\}$ stacked vertically.
 
 The matrix formulation in equation \eqref{eq:direct-matrix} and the classic approach in Section \ref{ss:direct} share multiple characteristics. In both cases if data is dense, we may find an accurate representations of the underlying process simply by fitting least-squares estimates of $W$ or $\{\bw_i\}$. Conversely, if the data is too sparse, the problem becomes ill-posed and the least-squares estimates will overfit. %Moreover, with $T \rightarrow \infty$ two frameworks become equivalent.
 
 However, representations \eqref{eq:direct-individual} and \eqref{eq:direct-matrix} differ algebraically and this difference constitutes the foundation for the method introduced in the sequel of this paper. The matrix representation enables us to use the matrix completion framework and, in particular, in Section \ref{ss:matrix-factorization} we introduce convex optimization algorithms for solving \eqref{eq:direct-matrix}. % with additional constraints.
 
-Note that some low-rank constraints on the random effect from the mixed-effect model introduced in Section \ref{ss:lmm} can be expressed in terms of constraints on $W$ and they can be potentially solved without imposing probability distributions. In particular, as we show next, the linear mixed-effect model can be expressed by constraining $\rank(W)$. % for some $q \in \N$.
+Note that some low-rank constraints on the random effect from the mixed-effect model introduced in Section \ref{ss:lmm} can be expressed in terms of constraints on $W$ and they can be potentially solved without imposing probability distributions. In particular in Section \ref{ss:low-rank-matrix}, as we show next, the linear mixed-effect model can be expressed by constraining $\rank(W)$. 
+% for some $q \in \N$. 
 
 \subsection{Low-rank matrix approximation}\label{ss:low-rank-matrix}
 In the low-rank approach described in Section \ref{ss:reduced-rank} we assume that individual trajectories can be represented in a low-dimensional space, by constraining the rank of $W$.
 
-We might attempt taking the same route, however, the problem \eqref{eq:direct-matrix} with a constraint on the rank of $W$ is a non-convex problem. For this reason, we relax the constraint in \eqref{eq:direct-matrix} to an inequality
+We might attempt taking the same route for solving \eqref{eq:direct-matrix}. However, the problem with a constraint on the rank of $W$ is a non-convex problem. Motivated by results from matrix completion, we relax the rank constraint in \eqref{eq:direct-matrix} to a nuclear norm constraint and we attempt to solve
 
 %% In many situations, this rank constrain can be efficiently relaxed by a nuclear norm to make the problem convex \citep{candes2009exact, fazel2002matrix}. \citet{candes2009near} consider the nuclear norm relaxation in the setting where the solution matches exactly a linear combination of the observed elements. In particular, they assume existence of exact solutions of \eqref{eq:direct-matrix} and they solve
 %% \begin{align} 
@@ -332,7 +339,7 @@ We might attempt taking the same route, however, the problem \eqref{eq:direct-ma
 \end{align}
 for some parameter $\lambda > 0$.
 
-\citet{cai2010singular} propose a first-order singular value thresholding algorithm (SVT), solving the problem \eqref{eq:rank-restricted}. Their algorithm can handle large datasets and has strong guarantees on convergence but it requires tuning the step size parameter, which can greatly influence the performance. This limitation was addressed by \citet{ma2011fixed,mazumder2010spectral,hastie2015matrix} who introduced iterative procedures which do not depend on such tuning. Moreover, \citet{hardt2014fast,chen2015fast} propose methods for the non-convex problem and \citet{ge2016matrix} argue that the non-convex problem has no spurious local minima.
+\citet{cai2010singular} propose a first-order singular value thresholding algorithm (SVT), for solving a general class of problems involving a nuclear norm penalty and a linear form of $Y$, which includes \eqref{eq:rank-restricted}. Their algorithm can handle large datasets and has strong guarantees on convergence but it requires tuning the step size parameter, which can greatly influence the performance. This limitation was addressed by \citet{ma2011fixed,mazumder2010spectral,hastie2015matrix} who introduced iterative procedures which do not depend on such tuning. Moreover, \citet{hardt2014fast,chen2015fast} propose methods for the non-convex problem and \citet{ge2016matrix} argue that the non-convex problem has no spurious local minima.
 
 In the last decade, the machine learning and statistical learning communities have introduced multiple algorithms for matrix completion. Many of them are suitable for solving \eqref{eq:rank-restricted}. However, in this article we focus on analyzing benefits of framing the trajectory prediction problem \eqref{eq:direct-individual} in the matrix completion framework, rather than on benchmarking existing solutions.
 
@@ -388,7 +395,7 @@ Here, we exploit the same characteristic using a matrix-factorization techniques
 %% \end{align}
 %% for some $\lambda > 0$ and where $W$ is an $N \times K$ matrix.
 
-For the sake of clarity and simplicity, we choose to solve the problem \eqref{eq:rank-restricted} with an extended version of the \textsc{Soft-Impute} algorithm designed by \citet{mazumder2010spectral}. As discussed in Section \ref{ss:low-rank-matrix}, many other convex optimization algorithms can be applied.
+For the sake of clarity and simplicity, we choose to solve the problem \eqref{eq:rank-restricted} with an extended version of the \textsc{Soft-Impute} algorithm designed by \citet{hastie2015matrix,mazumder2010spectral}. As discussed in Section \ref{ss:low-rank-matrix}, many other convex optimization algorithms can be applied.
 
 The key component to the solution is the following property linking problem \eqref{eq:rank-restricted} with the singular value decomposition (SVD). Consider the fully observed case of \eqref{eq:rank-restricted}. Using Theorem 2.1 in \citet{cai2010singular}, one can show that the optimization problem
 \begin{align}\label{eq:optsvd}
@@ -397,10 +404,11 @@ The key component to the solution is the following property linking problem \eqr
 has a unique solution $W = \cS_\lambda (YB)$, where $\cS_\lambda(X) = UD_\lambda V'$ and $X = UDV'$ is the SVD of $X$. We refer to $\cS_\lambda(X)$ as the singular value thresholding (SVT) of $X$.
 
 % \section{Longitudinal impute algorithms}
-In order to solve \eqref{eq:optsvd} with a sparsely observed  $Y$, we modify the \textsc{Soft-Impute} algorithm from \citep{hastie2015matrix, mazumder2010spectral} to account for the basis $B$. Our Algorithm \ref{alg:soft-impute} iteratively constructs better approximations of the global solution for each $\lambda$ in some predefined set $\{\lambda_1, \lambda_2, ..., \lambda_k\}$. Suppose we have some approximation of the solution $W^{old}$. We use $W^{old}B$ to impute unknown elements of $Y$ obtaining $\tilde{Y}$. We construct the next approximation $W^{new}$ by computing SVT of $\tilde{Y}$.
+In order to solve \eqref{eq:optsvd} with a sparsely observed  $Y$, we modify the \textsc{Soft-Impute} algorithm  to account for the basis $B$. Our Algorithm \ref{alg:soft-impute} iteratively constructs better approximations of the global solution for each $\lambda$ in some predefined set $\{\lambda_1, \lambda_2, ..., \lambda_k\}$. For a given approximation of the solution $W^{old}$, we use $W^{old}B$ to impute unknown elements of $Y$ obtaining $\tilde{Y}$. Then, we construct the next approximation $W^{new}$ by computing SVT of $\tilde{Y}$.
 
 %In Appendix \ref{s:convergence} we show that $W^{new,k}$ converges to the global solution $W_\lambda$ of \eqref{eq:matrixproblem-final}.
-As our stopping criterion we compute the change between subsequent solution, relative to the magnitude of the solution, following the methodology in \cite{cai2010singular}. We set some fixed threshold for this value, e.g. $\varepsilon = 10^{-4}$.
+
+As a stopping criterion we compute the change between subsequent solution, relative to the magnitude of the solution, following the methodology in \cite{cai2010singular}. We set some fixed threshold $\varepsilon > 0$ for this criterion.
 
 \begin{algorithm}
 \caption{\textsc{Soft-Longitudinal-Impute}\label{alg:soft-impute}}
@@ -424,7 +432,7 @@ The common bottleneck of algorithms introduced by \citet{cai2010singular,mazumde
 \begin{align}\label{eq:small-rank}
   \rank(WB') \leq \rank(B) = K \ll N,
 \end{align}
-with $K \sim 10$ in our motivating data example. While algorithms for large matrices are also applicable here, the property \eqref{eq:small-rank} makes the computation of SVD feasible in practice with generic packages such as PROPACK \citep{larsen2004propack}.
+with $K \sim 10$ in our motivating data example. While algorithms for large matrices are applicable here, the property \eqref{eq:small-rank} makes the computation of SVD feasible in practice with generic packages such as PROPACK \citep{larsen2004propack}.
 
 \paragraph{Modeling new data.}
 
@@ -477,16 +485,16 @@ The problem \eqref{eq:matrixproblem-final-l0} is non-convex, however, by startin
 
 %Let $L < K$ be a number of true factors and let $\Tau_{L\times K}$ be a matrix of $L$ factor loadings in the basis $M_{K\times T}$.
 
-Intuitively we might expect similarity between the principal directions derived using the probabilistic approach \eqref{eq:probabilistic} and their counterparts derived from the SVT-based approach. We investigate this relation by analyzing solutions given by SVT for matrices sampled from the probabilistic model.
+Intuitively we might expect similarity between the principal directions derived using the probabilistic approach \eqref{eq:probabilistic} and their counterparts derived from the SVT-based approach. We investigate this relation by analyzing behaviour of SVT for matrices sampled from the probabilistic model given by \eqref{eq:probabilistic}.
 
-For simplicity, we start with the case where the mean $\mu = 0$ and the data is fully observed on a grid $G$ of $T$ time-points. Assume that observations $i \in \{1,2,...,N\}$ come from the mixed-effect model
+For simplicity, let us assume that $\mu = 0$ and the data is fully observed on a grid $G$ of $T$ time-points. Assume that observations $i \in \{1,2,...,N\}$ come from the mixed-effect model
 \begin{align}
   \by_i | \bw_i &\sim \cN( B \bw_i, \sigma^2 I_T), \label{eq:model-y}\\
   \bw_i &\sim \cN(0 , \Sigma), \nonumber%\label{eq:model-w}
 \end{align}
 % V \Lambda V'
 %
-where $\Sigma$ is a covariance matrix of rank $q < K$ and variables $\{\bw_i, \by_i\}$ are independent. By the spectral decomposition theorem we write $\Sigma = V\Lambda V'$, where $V$ is a $K\times K$ orthogonal and $\Lambda$ is a diagonal $K\times K$ matrix with $q$ positive coefficients in decreasing order.
+where $\Sigma$ is an unknown covariance matrix of rank $q < K$ and variables $\{\bw_i, \by_i\}$ are independent. By the spectral decomposition theorem we decompose $\Sigma = V\Lambda V'$, where $V$ is a $K\times K$ orthogonal and $\Lambda$ is a diagonal $K\times K$ matrix with $q$ positive coefficients in decreasing order.
 Since $\by_i$ and $\bw_i$ are independent, the distribution \eqref{eq:model-y} can be rewritten as
 \begin{align}
   \by_i &\sim \cN(0, B V \Lambda V'  B' + \sigma^2 I_T). \label{eq:model}
@@ -500,7 +508,7 @@ The following theorem constitutes a link between the mixed-effect model and SVT.
 \end{theorem}
 
  %One approach to estimate parameters in \eqref{eq:model-y} is to first decompose $YB = U D W'$ using SVD. ,
-Factor analysis provides us not only with estimates of $\Lambda$ and $V$ but also with estimates of the individual latent variables $W = [\bw_1,...,\bw_N]'$.
+Factor analysis methods give not only estimates of $\Lambda$ and $V$ but also estimates of the individual latent variables $W = [\bw_1,...,\bw_N]'$.
 %% For a fixed $\sigma$, the likelihood wrt. $(\lambda,V)$ is maximized by
 %% \[
 %%  \Lambda = D_{\sigma^2} \text{ and } V = Q,
@@ -514,7 +522,7 @@ Note that in Theorem \ref{thm:maxlike} we assume that $\sigma^2$ is known, which
 %In the sparsely observed case, we want to approximate the same 
 %\tr{TODO} }
 
-This intuition is also confirmed in our simulation study in Section \ref{s:simulation} (see Figure \ref{fig:principal-components}). Note that a similar analogy is drawn between the classical principal component analysis and probabilistic principal component analysis by \citet{tipping1999probabilistic} and \citet{james2000principal}. 
+This intuition is confirmed in our simulation study in Section \ref{s:simulation} (see Figure \ref{fig:principal-components}). Note that a similar analogy is drawn between the classical principal component analysis and probabilistic principal component analysis by \citet{tipping1999probabilistic} and \citet{james2000principal}. 
 
 % Bartlett's estimate of the scores is
 % \[
@@ -571,7 +579,7 @@ This intuition is also confirmed in our simulation study in Section \ref{s:simul
 
 \section{Multivariate longitudinal data}\label{s:multivariate}
 
-In practice, we are often interested in prediction of a univariate process in the context of other longitudinal measurements and covariates constant over time. Examples include prediction of disease progression given patient's demographics, data from clinical visits at which multiple blood tests or physical exams are taken, or measurements which are intrinsically multivariate such as gene expression or x-rays, collected over time. The growing interest in this setting stimulated research in latent models \citep{sammel1996latent} and multivariate longitudinal regression \citep{gray1998estimating,gray2000multidimensional}. \citet{diggle2002analysis} present an example case study in which longitudinal multivariate modeling enables estimation of joint confidence region, shrinking the individual confidence intervals.
+In practice, we are often interested in prediction of a univariate process in the context of other longitudinal measurements and covariates constant over time. Examples include prediction of disease progression given patient's demographics, data from clinical visits at which multiple blood tests or physical exams are taken, or measurements which are intrinsically multivariate such as gene expression or x-rays, collected over time. The growing interest in this setting stimulated research in latent models \citep{sammel1996latent} and multivariate longitudinal regression \citep{gray1998estimating,gray2000multidimensional}. \citet{diggle2002analysis} present an example case study in which longitudinal multivariate modeling enables estimation of joint confidence region of multiple parameters changing over time, shrinking the individual confidence intervals.
 
 In this section, we present an extension of our univariate framework to multivariate measurements sparse in time. We explore two cases: (1) dimensionality reduction, where we project sparsely sampled multivariate processes to a small latent space, and (2) linear regression, where we use a multivariate process and covariates constant over time for prediction of a univariate process of interest. To motivate our approach, we start with a regression with two variables observed over time.
 
@@ -613,11 +621,11 @@ X = WB' + E_X \text{ \ and \ } Y = WA B' + E_{Y},
 \end{align}
 where $E_X,E_Y$ are matrices of observation noise. Without loss of generality we assume that $B$ is orthonormal. We have freedom to choose the basis $B$ and any basis can be orthogonalized using, for example, singular value decomposition. 
 
-Note that by multiplying both expressions in \eqref{eq:almost-errors-in-variables} by $B$ we can map the problem to the classical multivariate {\em errors-in-variables models}. Let
+Note that by multiplying both expressions in \eqref{eq:almost-errors-in-variables} by $B$ and by orthogonality of $B$ we can map the problem to the classical multivariate {\em errors-in-variables models}. Let
 \begin{align}\label{eq:errors-in-variables}
   \tilde{X} = XB = W + \tilde{E}_X \text{ and } \tilde{Y} = YB = WA + \tilde{E}_Y,
 \end{align}  
-where $\tilde{E}_X = E_XB$ and $\tilde{E}_Y = E_YB$. In errors-in-variables models it is assumed that the parameters $W$ and $A$ are unknown, and are to be estimated. Both regressors and responses are measured with noise (here $\tilde{E}_X$ and $\tilde{E}_Y$). The parameter $W$ can be seen as a latent representation of both $\tilde{X}$ and $\tilde{Y}$.
+where $\tilde{E}_X = E_XB$ and $\tilde{E}_Y = E_YB$. In errors-in-variables models it is assumed that the parameters $W$ and $A$ are unknown, and are to be estimated. Both regressors and responses are measured with noise (here $\tilde{E}_X$ and $\tilde{E}_Y$). The parameter $W$ can be interpreted as a latent representation of both $\tilde{X}$ and $\tilde{Y}$.
 
 The problem of estimating parameters in \eqref{eq:errors-in-variables} has been extensively studied in literature dating back to \citet{adcock1878problem}. Two main methods for estimating parameters in \eqref{eq:errors-in-variables} are {\em maximum likelihood estimates (MLE)} and {\em generalized least squares estimators (GLSE)}. The estimators in MLE are derived under the assumption of certain ditributions of the errors. In GLSE, the only assumption on errors is that they are independent, zero-mean, and they have a common covariance matrix. Then, $\tilde{X} - W$ and $\tilde{Y} - WA$ are zero-mean and estimates for $W$ and $B$ can be found by optimizing some norm of these expressions. \citet{gleser1973estimation} show that in the no-interecept model for $\tilde{X}$ and $\tilde{Y}$ of the same size (as in our case) and under the assumption of gaussian errors, MLE and GLSE give the same estimates of $A$, if GLSE are derived for the Frobenius norm.
 
@@ -685,13 +693,13 @@ For partially observed data, if they are very sparse, it might be essential to c
   \minimize_{A,W} & \| P_{\tilde\Omega}((X:\gamma Y) - W(B':\gamma A B')) \|_F^2,\nonumber\\
   \subjectto & \rank(W(B':\gamma A B')) = k,
 \end{align*}
-where $k$ is the desired rank of the solution and $P_{\tilde\Omega}$ is a projection on \[\tilde\Omega = \{(q,r): (q,r) \in \Omega \text{ or } (q,r-T) \in \Omega\}. \] As previously for an unknown $k$ we can introduce a rank penalty using the nuclear norm
+where $k$ is the desired rank of the solution and $P_{\tilde\Omega}$ is a projection on \[\tilde\Omega = \{(q,r): (q,r) \in \Omega \text{ or } (q,r-T) \in \Omega\}. \] As previously, for an unknown $k$ we can introduce a rank penalty using the nuclear norm
 \begin{align}\label{eq:lag:bivariate2-partial}
   \minimize_{A,W} & \| P_{\tilde\Omega}((X:\gamma Y) - W(B':\gamma A B')) \|_F^2 + \lambda\|W(B':\gamma A B')\|_*.
 \end{align}
 The algorithm in the general case of multiple processes is derived in Section \ref{ss:dim-red}.
 
-Although we motivate the problem as a regression of $Y$ on $X$, note that $X$ and $Y$ are symmetric in \eqref{eq:lag:bivariate3}. The low-rank matrix $W$ is a joint low-rank representation of matrices $X$ and $Y$ and thus our method can be seen as a dimensionality reduction technique or as a latent space model. In Section \ref{ss:dim-red} we extended this idea to a larger number of variables. In Section \ref{ss:regression} we discuss how this approach can be used for regression.
+Although we motivate the problem as a regression of $Y$ on $X$, note that $X$ and $Y$ are symmetric in \eqref{eq:lag:bivariate3}. The low-rank matrix $W$ is therefore a joint low-rank representation of matrices $X$ and $Y$ and thus our method can be seen as a dimensionality reduction technique or as a latent space model. In Section \ref{ss:dim-red} we extended this idea to a larger number of variables. In Section \ref{ss:regression} we discuss how this approach can be used for regression.
 
 The linear structure of \eqref{eq:almost-errors-in-variables} allows us to draw analogy not only to the errors-in-variables models but also to vast literature on {\em canonical corroletaion analysis (CCA)}, {\em partial least squares (PLS)}, {\em factor analysis (FA)}, and {\em linear functional equation (LFE) models}. \cite{borga1997unified} show that solutions of CCA and PLS can also be derived from the SVD of stacked matrices, as we did with $(XB:\gamma YB)$ in \eqref{eq:lag:bivariate3}. \cite{gleser1981estimation} thoroughly discusses the relation between errors-in-variables, FA and LFE.
 
@@ -791,13 +799,13 @@ where $A$ is a $d \times K$ matrix and $P_\Omega$ is a projection on the observe
 
 % We suggest a two-step procedure. We first find a joint low-rank decomposition $W$ of covariates $X_1,...,X_p$. Now, if all variability is driven by covariates $W$ w
 
-Suppose we want to incorporate other variables varying in time for prediction of the response process. We can directly apply the method proposed in Section \ref{ss:dim-red} and model response and regressors together. However, it might be suboptimal for prediction, as it optimizes for least-squares distance in all variables rather than only the response. This difference is analogical to the difference between regression line of some univariate $y$ on independent variables $x_1,...,x_p$ and the first principal component analysis of $(y,x_1,...,x_p)$, used for prediction of $y$. While the first one minimizes the distance to $y$, the latter minimizes the distance to $(y,x_1,...,x_p)$, which is usually less efficient for predicting $y$.
+Suppose we want to incorporate other variables varying in time for prediction of the response process. We can directly apply the method proposed in Section \ref{ss:dim-red} and model the response and regressors together. However, it might be suboptimal for prediction, as it optimizes for least-squares distance in all variables rather than only the response. This difference is analogical to the difference between regression line of some univariate $y$ on independent variables $x_1,...,x_p$ and the first principal component analysis of $(y,x_1,...,x_p)$, used for prediction of $y$. While the first one minimizes the distance to $y$, the latter minimizes the distance to $(y,x_1,...,x_p)$, which is usually less efficient for predicting $y$.
 
 Alternatively, we can use methodology from Section \ref{ss:dim-red} only for covariates. The solution of \eqref{eq:multivar-partially} can be decomposed into $W = USV'$, and we regress $Y$ on $U$ as in \eqref{regression}. However, some part of the covariance of processes $Y$ observed in the data might not be explained by covariates $X$. 
 
 %Note that the latent representation $W$ can be constructed either by applying sparse functional PCA, by \textsc{Soft-Longitudinal-Impute}, jointly by \textsc{Soft-Longitudinal-PCA} or by other low-rank representation of $(X_1,...,X_p)$.
 
-To incorporate additional trends of variability in $Y$ we introduce an additional unknown covariate $Z$. Let $Z$ be an unknown $N \times K$ matrix of rank $d_1$ and $U$ be a $N \times d_2$ orthogonal matrix derived from $(X_1,...,X_p)$, where $d_2$ is the numbers of latent components. We are searching for $Z$ and a $d_2 \times K$ matrix $A$ solving
+To incorporate additional trends of variability in $Y$ we introduce an additional unknown covariate $Z$. Let $Z$ be an unknown $N \times K$ matrix of rank $d_1$ and $U$ be an $N \times d_2$ orthogonal matrix derived from $(X_1,...,X_p)$, where $d_2$ is the numbers of latent components. We search for $Z$ and a $d_2 \times K$ matrix $A$ solving
 \begin{align}\label{eq:pcr}
 \minimize_{A,Z} \|P_\Omega(Y - ZB' - UAB')\|_F^2 + \lambda\|Z\|_*,
 \end{align}
@@ -850,7 +858,7 @@ For a known $A$ we can find $Z$ by applying methodology developped in Section \r
 
 \section{Simulations}\label{s:simulation}
 
-We illustrate properties of the multivariate longitudinal fitting in a simulation study. 
+We illustrate properties of the multivariate longitudinal fitting in a simulation study. First, we generate curves with quickly decaying eigenvalues of covariance matrices. Then, we compare performance of the methods in terms of the variance explained by the predictions. %We use bimodal distribution to emphisize that
 
 \paragraph{Data generation} Let $G$ be a grid of $T = 31$ equidistributed points and let $B$ be a basis of $K = 7$ spline functions evaluated on the grid $G$. %We generate observations from the model $\eqref{eq:model}$ with $p = 3$ true components. %We set $V\Lambda V'$ to a matrix with eigenvalues $\diag[1-\frac{1}{7},...,1 - \frac{p}{8},0,...,0]$.
 We will simulate three $N \times K$ matrices using the same procedure $\cG(r_1, r_2, K, N)$, where $r_1, r_2 \in \R_+^K$:
@@ -873,13 +881,13 @@ v_i \sim
 \item Return a matrix with rows $[v_i]_{1 \leq i \leq N}$.
 \end{enumerate}
 Define \[ r_1 = [1, 0.4, 0.005, 0.1 \exp(-3), ..., 0.1 \exp(-K+1)] \]  and \[ r_2 = [1.3, 0.2, 0.005, 0.1 \exp(-3), ..., 0.1 \exp(-K+1)],\]
-and let $X_1,X_2,Z$ be generated following the procedure $\cG(r_1,r_2,K,N)$ and let $Y = Z + X_1 + X_2$. We consider $X_1,X_2$ and $Y$ as coefficients in a spline space $B$. We derive corresponding functios by multiplying these matrices by $B'$, i.e. $X_{f,1} = X_1B'$, $X_{f,2} = X_2B'$ and $Y_f = YB'$.
+and let $X_1,X_2,Z$ be generated following the procedure $\cG(r_1,r_2,K,N)$ and let $Y = Z + X_1 + X_2$. We consider $X_1,X_2$ and $Y$ as coefficients in a spline space $B$. We derive corresponding functios by multiplying these matrices by $B'$, i.e. $X_{f,1} = X_1B'$, $X_{f,2} = X_2B'$ and $Y_f = YB'$. We set $N=100$.
 
-We uniformly sample $10\%$ indices $\Omega \subset \{1,...,N\} \times \{1,...,T\}$, i.e. around $3$ points per curve on average. Each ebserved element of each matrix $X_{f,1}, X_{f,2}$ and $Y$ is drawn with Gaussian noise with mean $0$ and standard deviation $0.25$. The task is to recover $Y$ from sparse observations of indices $\Omega$.
+We uniformly sample $10\%$ indices $\Omega \subset \{1,...,N\} \times \{1,...,T\}$, i.e. around $3$ points per curve on average. Each ebserved element of each matrix $X_{f,1}, X_{f,2}$ and $Y$ is drawn with Gaussian noise with mean $0$ and standard deviation $0.25$. The task is to recover $Y$ from sparse observed elements $\{Y_{i,j} : (i,j) \in \Omega\}$. 
 
 \paragraph{Methods}
 
-We compare \textsc{Soft-Longitudinal-Impute} (SLI) defined in Algorithm \ref{alg:soft-impute} with the fPCA procedure \citep{james2000principal}, implemented in \citet{peng2009geometric}. Both, SLI and fPCA require a set of basis functions. In both cases we use the same basis $B$ as in data generation process. In our method we also need the tuning parameter $\lambda$, whilst in fPCA we need to choose the rank $R$. We use cross-validation to choose $\lambda$ and $R$ by optimizing for the prediction error on held-out (validation) observations.
+We compare \textsc{Soft-Longitudinal-Impute} (SLI) defined in Algorithm \ref{alg:soft-impute} with the fPCA procedure \citep{james2000principal}, implemented in \citet{peng2009geometric}. Both, SLI and fPCA require a set of basis functions. In both cases we use the same basis $B$ as in data generation process. In SLI we also need the tuning parameter $\lambda$, whilst in fPCA we need to choose the rank $R$. We use cross-validation to choose $\lambda$ and $R$ by optimizing for the prediction error on held-out (validation) observations.
 
 We divide the observed coefficients into training ($81\%$), validation ($9\%$) and test ($10\%$) sets. We choose the best parameters of the three models on the validation set and then retrain on the entire training and validation sets combined. % Finally, since in the simulated setting we have access to the ground truth, we compare algorithms on the entire curves.
 We compute the error of entire curves by taking mean squared Frobenius distance between $Y$ and estimated $\hat{Y}$, i.e.
@@ -888,9 +896,9 @@ We compute the error of entire curves by taking mean squared Frobenius distance 
 \end{align}
  on the test set $S$.
  
- For illustration, we also present results of \textsc{Sparse-Longitudinal-Regression} (SLR), regressing $Y$ on $X_1$ and $X_2$. Note, however, that the SLR, unlike two other methods, uses additional information about $Y$ contained in $X_1$ and $X_2$. The comparison is only meant to validate our approach.
+ For illustration, we also present results of \textsc{Sparse-Longitudinal-Regression} (SLR), regressing $Y$ on $X_1$ and $X_2$. Note, however, that the SLR, unlike two other methods, uses additional information about $Y$ contained in $X_1$ and $X_2$. This comparison is only meant to validate our approach.
 
- We train the algorithms with all combinations of parameters: the number of splines $K \in \{2,3,...,d\}$, regularization parameter for SLI and SLR procedures $\lambda \in \{10, 15, 20, ..., 50\}$ and the rank for fPCA procedure $d \in \{2,3,4\}$. We define the grid of $T = 51$ points. We compare the three methods fPCA, SLI and SLR, in reference to the baseline {\it null model} a LOWESS estimate of the population mean curve.
+ We train the algorithms with all combinations of parameters: the number of splines $K \in \{2,3,...,d\}$, regularization parameter for SLI and SLR procedures $\lambda \in \{10, 15, 20, ..., 50\}$ and the rank for fPCA procedure $d \in \{2,3,4\}$. We define the grid of $T = 51$ points. We compare the three methods fPCA, SLI and SLR, in reference to the baseline {\it null model} which we define as a LOWESS estimate of the population mean curve.
 
  \begin{figure}[h!]
   \includegraphics[width=0.49\linewidth]{../plots/components-fpca}
@@ -926,7 +934,7 @@ The SLI achieves performance similar to \citep{james2000principal}, as presented
 \caption{Average (across 10 trials) variance explained by (1) subject's mean of observed points (mean), (2) functional principal components (fPCA), (3) Sparse-Longitudinal-Impute (SLI) and (4) Sparse-Longitudinal-Regression (SLR) with extra data available for this procedure.}
 \end{table}
 
-In Figure \ref{fig:principal-components} we present the first components derived from both sparse functional PCA and SLI. In Figure \ref{fig:example-predictions} we present example predictions from all four methods. In Figure \ref{fig:estimated-rank}, we present the estimated rank and cross-validation error of one of the simulation runs.
+In Figure \ref{fig:principal-components} we present the first components derived from both sparse functional PCA and SLI. In Figure \ref{fig:example-predictions} we present example predictions from all four methods. In Figure \ref{fig:estimated-rank}, we present the estimated rank and cross-validation error of one of the simulation runs. \tr{[TODO: UPDATE WITH BETTER RESULTS]}
 
 \begin{figure}[h!]
   \includegraphics[width=0.49\linewidth]{../plots/error-of-lambda}
@@ -949,17 +957,19 @@ In Figure \ref{fig:principal-components} we present the first components derived
 
 The target class of problems motivating this study is the prediction of a trajectory of disease progression from sparse observations. As an example application, we analyze a dataset of Gillette Children's Hospital patients visiting the clinic between 1994 and 2014, mostly diagnosed with Cerebral Palsy (CP), age ranging between 4 and 19 years. The dataset contains $84$ visits of $36$ patients without gait disorders and $6066$ visits of $2898$ patients with gait pathologies. 
 
-During each visit movement of a child is recorded using optical motion capture. These signals are then converted to joint angles trajectories using biomechanical models. Finally, practitioners extract summary statistics of gait, which are then used for clinical decision.
+At each visit movement of a child is recorded using optical motion capture. These signals are then converted to trajectories of joint angles using biomechanical models. Finally, practitioners extract summary statistics of gait, which are then used for clinical decisions.
 
-One of the most widely adopted quantitative measurements of gait impairments in pediatrics is Gait Deviation Index (GDI) introduced by \citet{schwartz2008gait}. GDI is a derived from joint angle trajectories and measures deviation of the principal component scores from the population average in a normally developing population. GDI is normalized in such a way that $100$ corresponds to the mean value of normally developing children, with the standard deviation equal $10$. 
+One of the most widely adopted quantitative measurements of gait impairments in pediatrics is Gait Deviation Index (GDI) introduced by \citet{schwartz2008gait}. GDI is derived from joint angle trajectories and measures deviation of the principal component scores from the population average in a normally developing population. GDI is normalized in such a way that $100$ corresponds to the mean value of normally developing children, with the standard deviation equal $10$. 
 
-An accurate model of progression trajectories of GDI can constitute an essential baseline for analyzing effects of treatments -- accurate prediction of a trajectory can help us understand if an improvement after therapy is meaningful or if it is only a result of natural progression. We are interested in predicting patient's GDI development trajectory in two scenarios: (1) solely based on their GDI history and histories of other patients, (2) using sparsely observed covariates, namely BMI or O2 expenditure. 
+A model of progression trajectories of GDI can constitute an essential baseline for analyzing effects of treatments -- an accurate prediction of a trajectory can help practitioners understand if an improvement after therapy is due to the treatment or purely a result of natural progression.
 
-We test four methods for prediction: functional principal components (fPCA), \textsc{Soft-Longitudinal-Impute} (SLI), \textsc{Sparse-Longitudinal-Regression} (SLR), and the \emph{null model} -- the LOWESS estimation of the population mean (\verb|mean|). In SLR, we approximate GDI by using latent variables of sparsely observed covariates BMI and O2 expenditure.
+To illustrate applicability of our method in this context, we are predicting patient's GDI development trajectory in two settings: (1) solely based on their GDI history and histories of other patients, (2) using sparsely observed covariates, namely BMI or O2 expenditure. 
 
-We randomly select $10\%$ of observations from patients who visited the clinic at least $4$ times as our test set. Then, we split the remaining $90\%$ of observations into a training and validation sets. We train the algorithms with all combinations of parameters: the regularization parameter for SLI and SLR procedures $\lambda \in \{0, 0.1, 0.2, ..., 2.0\}$ and the rank for fPCA procedure $d \in \{2,3,4,...,K\}$. We define the grid of $T = 31$ points.
+We test three methods: functional principal components (fPCA), \textsc{Soft-Longitudinal-Impute} (SLI) and \textsc{Sparse-Longitudinal-Regression} (SLR). We compare the results to the \emph{null model} -- the LOWESS estimation of the population mean (\verb|mean|). In SLR, we approximate GDI using latent variables of sparsely observed covariates BMI and O2 expenditure, following the methodology from Section \ref{ss:regression}.
 
-Let us denote the test set as $\Omega \subset \{1,2,...,N\} \times \{1,2,...,T\}$. We validate each model $M$, by computing the mean squared error on observed but held-out indices using the formula \eqref{eq:err}. We select the parameters using cross-validation. We estimate errors by cross-validation, sampling $95\%$ of points to train the models and leaving $5\%$ for estimating the \verb|MSE|. 
+In our evaluation procedure, we randomly select $10\%$ of observations from patients who visited the clinic at least $4$ times as our test set. Then, we split the remaining $90\%$ of observations into a training and validation sets. We train the algorithms with all combinations of parameters: the regularization parameter for SLI and SLR procedures $\lambda \in \{0, 0.1, 0.2, ..., 2.0\}$ and the rank for fPCA procedure $d \in \{2,3,4,...,K\}$. We define the grid of $T = 31$ points. We repeat the entire evaluation procedure $10$ times.
+
+Let us denote the test set as $\Omega \subset \{1,2,...,N\} \times \{1,2,...,T\}$. We validate each model $M$ on held-out indices by computing the mean squared error as defined in \eqref{eq:err}. We select the parameters of each of the three models using cross-validation. %We estimate errors by cross-validation, sampling $95\%$ of points to train the models and leaving $5\%$ for estimating the \verb|MSE|. 
 
 % latex table generated in R 3.4.1 by xtable 1.8-2 package
 % Tue Sep  5 22:27:27 2017
@@ -969,9 +979,9 @@ Let us denote the test set as $\Omega \subset \{1,2,...,N\} \times \{1,2,...,T\}
   \hline
  & mean & sd \\ 
   \hline
-  fPCA & 86.8 & \textbf{12.6} \\
-  SLI & \textbf{85.0} & 13.2\\
-  SLR & 81.6 & 13.7\\
+  fPCA & \textbf{78.6} & 13.8\\
+  SLI & 82.0 & \textbf{13.1}\\
+  SLR & 84.3 & 13.2 \\
    \hline
 \end{tabular}\label{tbl:data-res}
 \caption{Distribution of cross-validated MSE of the four procedures: functional principal components (fPCA), Soft-Longitudinal-Impute (SLI), Soft-Longitudinal-Regression (SLR), subjects mean (mean). Top characteristic in bold.}
@@ -983,7 +993,7 @@ Let us denote the test set as $\Omega \subset \{1,2,...,N\} \times \{1,2,...,T\}
   \label{fig:Boxplots}
 \end{figure}
 
-Compared to the null model all three methods reduce the \verb|MSE| by $\sim 10\%$. We present detailed results in Table \ref{tbl:data-res} and in Figure \ref{fig:Boxplots}. 
+Compared to the null model all three methods reduce the \verb|MSE| by $\sim 15\%$. We present detailed results in Table \ref{tbl:data-res} and in Figure \ref{fig:Boxplots}. \tr{[TODO: UPDATE WITH BETTER RESULTS]}
 
 % \section{Simulations}
 
