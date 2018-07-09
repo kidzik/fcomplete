@@ -57,7 +57,7 @@ experiment.sim = function(exp.id){
   res
 }
 
-res = lapply(1:1, experiment.sim)
+res = lapply(2:4, experiment.sim)
 
 #save(res,file = "sim-study.Rda")
 #load("sim-study.Rda")
