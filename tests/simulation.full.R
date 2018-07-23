@@ -1,6 +1,7 @@
 # Regenerate and reinstall fimpute
 library("roxygen2") ; roxygenize()
-library("devtools") ; devtools::install(".")
+library("devtools")
+devtools::install(".")
 library("fcomplete")
 library("ggplot2")
 library("latex2exp")
@@ -23,18 +24,18 @@ experiment.sim = function(exp.id){
   lambdas.reg = seq(0,2,length.out = 10)
 
   model.mean = fregression(Y:time ~ 1 | id, data, method = "mean", bins = dgrid)
-  model.fpca = fregression(Y:time ~ 1 | id, data, lambda = 0, K = 2:d, thresh = 1e-7, method = "fpcs", bins = dgrid)
-  model.fimp = fregression(Y:time ~ 1 | id, data, lambda = lambdas.pca, K = d, thresh = 0, final = "soft", maxIter = 1000, fold = 5, cv.ratio = 0.05, bins = dgrid)
-  model.fcmp = fregression(0:time ~ Y + X1 + X2 | id, data, lambda = lambdas.pca, final = "soft", bins = dgrid)
+  # model.fpca = fregression(Y:time ~ 1 | id, data, lambda = 0, K = 2:d, thresh = 1e-7, method = "fpcs", bins = dgrid)
+  # model.fimp = fregression(Y:time ~ 1 | id, data, lambda = lambdas.pca, K = d, thresh = 0, final = "soft", maxIter = 1000, fold = 5, cv.ratio = 0.05, bins = dgrid)
+  # model.fcmp = fregression(0:time ~ Y + X1 + X2 | id, data, lambda = lambdas.pca, final = "soft", bins = dgrid)
   # model.freg = fregression(Y:time ~ X1 + X2 | id, data, lambda = lambdas.reg, thresh = 1e-4, lambda.reg = 0.1 * 1:20, method = "fimpute", bins = dgrid)
   model.fslr = fregression(Y:time ~ Y + X1 + X2 | id, data, lambda = lambdas.reg, thresh = 1e-4, lambda.reg = 0.1 * 1:20, method = "fimpute", bins = dgrid)
 
   # REPORT RESULTS
   errors = c(
     mean((ftrue - mean(data$Y))**2),
-    mean((ftrue - model.fpca$fit)**2),
-    mean((ftrue - model.fimp$fit)**2),
-    mean((ftrue - model.fcmp$fit)**2),
+    # mean((ftrue - model.fpca$fit)**2),
+    # mean((ftrue - model.fimp$fit)**2),
+    # mean((ftrue - model.fcmp$fit)**2),
     mean((ftrue - model.fslr$fit)**2)
   )
   tbl.true = cbind(
@@ -42,7 +43,9 @@ experiment.sim = function(exp.id){
     100*(1-errors/errors[1])
   )
   colnames(tbl.true) = c("MSE","% expl")
-  rownames(tbl.true) = c("mean","fpca","fimpute","fcompress","regression")
+  rownames(tbl.true) = c("mean",
+#                         "fpca","fimpute","fcompress",
+                         "regression")
   print(tbl.true)
 
   # SAVE EXPERIMENT RESULTS
@@ -50,17 +53,18 @@ experiment.sim = function(exp.id){
   res$tbl = tbl.true
   res$errors = errors
   res$mean = model.mean
-  res$fimp = model.fimp
-  res$fpca = model.fpca
+  # res$fimp = model.fimp
+  # res$fpca = model.fpca
   res$fslr = model.fslr
   res$simulation = simulation
   res
 }
 
-res = lapply(2:4, experiment.sim)
+res = lapply(1:5, experiment.sim)
 
 #save(res,file = "sim-study.Rda")
 #load("sim-study.Rda")
+rowMeans(boxplot.data[,-c(4,6)])
 
 exp.id = 1
 #1 - res[[exp.id]]$errors /res[[exp.id]]$errors[1]

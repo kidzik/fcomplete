@@ -197,7 +197,7 @@ fregression = function(formula, data,
   lastFitR = 0
   lastFitI = 0
   for (i in 1:20){
-    resI = functionalMultiImpute(Y.tmp, basis = basis, K = 1, thresh = thresh, verbose = 0, lamdba = lambda.reg[1]) #, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter)
+    resI = functionalMultiImpute(Y.tmp, basis = basis, K = 2, thresh = thresh, verbose = 0, lambda = lambda.reg[1]) #, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter)
     Y.tmp = Y.wide - resI$fit
     resR = functionalRegression(Y.tmp, combinedU, basis, K = 1, thresh = 1e-10, mask = maskedY, verbose = 0)
     Y.tmp = Y.wide - resR$fit
@@ -206,7 +206,7 @@ fregression = function(formula, data,
     dI = norm(resI$fit - lastFitI, type = "F") / norm(resI$fit, type="F")
     print(c(dR, dI))
 
-    if (dR + dI < 0.01)
+    if (dR + dI < 0.2)
       break
 
     lastFitR = resR$fit
