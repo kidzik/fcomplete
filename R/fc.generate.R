@@ -84,7 +84,7 @@ fsimulate = function(
 
   Ztrue = Zcoef %*% t(S)
   Xtrue = Xcoef %*% t(S)
-  Ytrue = Ycoef %*% t(S)
+  Ytrue = (Zcoef + Xcoef) %*% t(S)
 
   SigmaBig = genPositiveDefMat(dgrid)$Sigma
   noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise.mag
@@ -92,7 +92,7 @@ fsimulate = function(
   noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise.mag
   Znoise = Ztrue + noise
   noise = mvrnorm(n = n, SigmaBig, mu = rep(0,dgrid)) * noise.mag
-  Ynoise = 0.5*(Xtrue + Ztrue) + Ytrue + noise
+  Ynoise = Ytrue + noise
 
   # Remove (1-clear)*100% of points
   nel = prod(dim(Ytrue))

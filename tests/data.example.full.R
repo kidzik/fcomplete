@@ -49,7 +49,7 @@ data.experiment = function(i){
 
   # IMPUTE
 #  model.impute = fregression(GDI:age ~ 1 | Patient_ID, data$train, lambda= lambdas, thresh = 0, maxIter = 5000, method = "fimpute", K=K, d=K, fold = 3)
-#  model.impute.fpcs = fregression(GDI:age ~ 1 | Patient_ID, data$train, lambda= c(7.5), thresh = 1e-4, method = "fpcs", K=2:K, d=K)
+  model.impute.fpcs = fregression(GDI:age ~ 1 | Patient_ID, data$train, lambda= c(7.5), thresh = 1e-4, method = "fpcs", K=2:K, d=K)
 #  model.mean = fregression(GDI:age ~ 1 | Patient_ID, data$train,  method = "mean")
 
   # REGRESSION
@@ -60,16 +60,16 @@ data.experiment = function(i){
                                  lambda = lambdas.reg,
                                  lambda.reg = lambdas.reg/10, d=K)
 
-  errors = c(mean((model.regression$fit - data$test.matrix)**2, na.rm = TRUE)
+  errors = c(mean((model.regression$fit - data$test.matrix)**2, na.rm = TRUE),
     #mean((model.impute$fit - data$test.matrix)**2, na.rm = TRUE),
-    #mean((model.impute.fpcs$fit - data$test.matrix)**2, na.rm = TRUE),
+    mean((model.impute.fpcs$fit - data$test.matrix)**2, na.rm = TRUE)
     #mean((model.mean$fit - data$test.matrix)**2, na.rm = TRUE)
     )
   names(errors) = c("regression")#,"impute","fPCA","mean")
 
   list(errors = errors,
 #       model.fimp = model.impute,
-#       model.fpca = model.impute.fpcs,
+       model.fpca = model.impute.fpcs,
        model.fslr = model.regression,
 #       model.mean = model.mean,
        data = data)

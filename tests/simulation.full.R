@@ -13,8 +13,8 @@ d = 7
 
 experiment.sim = function(exp.id){
   # SIMULATE DATA
-  set.seed(exp.id)
-  simulation = fsimulate(dgrid = dgrid,clear = 0.9, n = 100, noise.mag = 0.05, d = d, K = 1)
+  set.seed(exp.id + 40)
+  simulation = fsimulate(dgrid = dgrid,clear = 0.95, n = 100, noise.mag = 0.1, d = d, K = 1)
   data = simulation$data
   ftrue = simulation$ftrue
   K = simulation$params$K
@@ -23,19 +23,16 @@ experiment.sim = function(exp.id){
   lambdas.pca = seq(0,2,length.out = 20)
   lambdas.reg = seq(0,2,length.out = 10)
 
+  model.fslr = fregression(Y:time ~ Y + X1 + X2 | id, data, lambda = lambdas.reg, thresh = 1e-4, lambda.reg = 0.2, method = "fimpute", bins = dgrid)
   model.mean = fregression(Y:time ~ 1 | id, data, method = "mean", bins = dgrid)
-  # model.fpca = fregression(Y:time ~ 1 | id, data, lambda = 0, K = 2:d, thresh = 1e-7, method = "fpcs", bins = dgrid)
-  # model.fimp = fregression(Y:time ~ 1 | id, data, lambda = lambdas.pca, K = d, thresh = 0, final = "soft", maxIter = 1000, fold = 5, cv.ratio = 0.05, bins = dgrid)
-  # model.fcmp = fregression(0:time ~ Y + X1 + X2 | id, data, lambda = lambdas.pca, final = "soft", bins = dgrid)
-  # model.freg = fregression(Y:time ~ X1 + X2 | id, data, lambda = lambdas.reg, thresh = 1e-4, lambda.reg = 0.1 * 1:20, method = "fimpute", bins = dgrid)
-  model.fslr = fregression(Y:time ~ Y + X1 + X2 | id, data, lambda = lambdas.reg, thresh = 1e-4, lambda.reg = 0.1 * 1:20, method = "fimpute", bins = dgrid)
+  model.fpca = fregression(Y:time ~ 1 | id, data, lambda = 0, K = 2:d, thresh = 1e-7, method = "fpcs", bins = dgrid)
+  model.fimp = fregression(Y:time ~ 1 | id, data, lambda = lambdas.pca, K = d, thresh = 0, final = "soft", maxIter = 1000, fold = 5, cv.ratio = 0.05, bins = dgrid)
 
   # REPORT RESULTS
   errors = c(
     mean((ftrue - mean(data$Y))**2),
-    # mean((ftrue - model.fpca$fit)**2),
-    # mean((ftrue - model.fimp$fit)**2),
-    # mean((ftrue - model.fcmp$fit)**2),
+    mean((ftrue - model.fpca$fit)**2),
+    mean((ftrue - model.fimp$fit)**2),
     mean((ftrue - model.fslr$fit)**2)
   )
   tbl.true = cbind(
@@ -44,7 +41,8 @@ experiment.sim = function(exp.id){
   )
   colnames(tbl.true) = c("MSE","% expl")
   rownames(tbl.true) = c("mean",
-#                         "fpca","fimpute","fcompress",
+                         "fpca",
+                         "fimpute",
                          "regression")
   print(tbl.true)
 
@@ -53,19 +51,17 @@ experiment.sim = function(exp.id){
   res$tbl = tbl.true
   res$errors = errors
   res$mean = model.mean
-  # res$fimp = model.fimp
-  # res$fpca = model.fpca
+  res$fimp = model.fimp
+  res$fpca = model.fpca
   res$fslr = model.fslr
   res$simulation = simulation
   res
 }
 
-res = lapply(1:5, experiment.sim)
+res = lapply(1:1, experiment.sim)
 
 #save(res,file = "sim-study.Rda")
 #load("sim-study.Rda")
-rowMeans(boxplot.data[,-c(4,6)])
-
 exp.id = 1
 #1 - res[[exp.id]]$errors /res[[exp.id]]$errors[1]
 
@@ -76,6 +72,9 @@ for (i in 1:length(res)){
 }
 rownames(boxplot.data) = rownames(res[[exp.id]]$tbl)
 joint.tbl = rowMeans(boxplot.data)
+
+rowMeans(boxplot.data[,])
+
 
 # Sanity check for the regression result
 # p = 0.2
@@ -96,7 +95,7 @@ joint.tbl = rowMeans(boxplot.data)
 source("tests/plot.helpers.R")
 
 # Figure 3:
-exp.show = 8
+exp.show = 1
 res[[exp.show]]$tbl
 #matplot(t(-res[[exp.show]]$fpca$v)[,1:min(3,nrow(res[[exp.show]]$fpca$v))],t='l',lwd = 4)
 
@@ -132,6 +131,10 @@ plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftr
            filename="pred-fpca", title = "Functional PCA",ylim=ylim)
 plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fimp$fit[ind,],
            filename="pred-fimp", title = "Sparse Functional Impute",ylim=ylim)
+plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fslr$fitR[ind,],
+           filename="pred-freg", title = "Sparse Functional Regression",ylim=ylim)
+plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fslr$fitI[ind,],
+           filename="pred-freg", title = "Sparse Functional Regression",ylim=ylim)
 plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fslr$fit[ind,],
            filename="pred-freg", title = "Sparse Functional Regression",ylim=ylim)
 
@@ -159,7 +162,7 @@ for (showLines in 0:1){
   pp = ggplot(data.frame(x=c(0, 1)), aes(x)) + paper.theme + ylim(-6,6) +
     xlim(0,1) + labs(x = "time", y = "value")
   for (i in 1:3){
-    df = data.frame(x=0:30/30,y=simulation$ftrue[i,],yobs=res[[exp.show]]$simulation$fobs[i,])
+    df = data.frame(x=0:30/30,y=res[[exp.show]]$simulation$ftrue[i,],yobs=res[[exp.show]]$simulation$fobs[i,])
     if (showLines)
       pp = pp + geom_segment(data=df, aes(x=x,y=y,xend=dplyr::lead(x),yend=dplyr::lead(y)),
                             color=cols[i], size=0.5)
