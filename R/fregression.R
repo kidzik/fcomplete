@@ -148,7 +148,6 @@ fregression = function(formula, data,
   }
 
   # Case 3: Y ~ Y + X -- do principal component regression with Y
-  # Case 4: Y ~ X -- do principal component regression without X
   models = list()
   combinedU = c()
 
@@ -156,92 +155,102 @@ fregression = function(formula, data,
 
   for (i in 1:nvars)
   {
-    # skip response, it will be used separately
-    if (length(vars$response) == 2 && vars$response[1] != vars$covariates[i])
-    {
-      X.long[[i]][,3] = scale(X.long[[i]][,3])
-      X.wide[[i]][!is.na(X.wide[[i]])] = scale(X.wide[[i]][!is.na(X.wide[[i]])])
-      if (method == "fpcs"){
-        models[[i]] = fc.fpca(X.long[[i]], d = d, K = K, grid.l = 0:(bins-1)/(bins-1))
-        combinedU = cbind(combinedU, models[[i]]$fpcs)
-      }
-      else {
-        models[[i]] = functionalMultiImpute(X.wide[[i]], basis = basis, lambda = lambda, thresh = thresh, K = K, final = final, mask = maskedY)
-        combinedU = cbind(combinedU, models[[i]]$u)
-      }
+    # # skip response, it will be used separately
+    # if (length(vars$response) == 2 && vars$response[1] != vars$covariates[i])
+    # {
+    X.long[[i]][,3] = scale(X.long[[i]][,3])
+    X.wide[[i]][!is.na(X.wide[[i]])] = scale(X.wide[[i]][!is.na(X.wide[[i]])])
+    if (method == "fpcs"){
+      models[[i]] = fc.fpca(X.long[[i]], d = d, K = K, grid.l = 0:(bins-1)/(bins-1))
+      combinedU = cbind(combinedU, models[[i]]$fpcs)
     }
-    else {
-      print(paste("Skipping",vars$response[1]))
-    }
+    # else {
+    #   models[[i]] = functionalMultiImpute(X.wide[[i]], basis = basis, lambda = lambda, thresh = thresh, K = K, final = final, mask = maskedY)
+    #   combinedU = cbind(combinedU, models[[i]]$u)
+    # }
+    # }
+    # else {
+    #   print(paste("Skipping",vars$response[1]))
+    # }
+  }
+  if (method == "fimpute"){
+    args.smpl = X.wide
+    args.smpl[["basis"]] = basis
+    args.smpl[["lambda"]] = lambda
+    args.smpl[["thresh"]] = thresh
+    args.smpl[["K"]] = K
+    args.smpl[["final"]] = final
+    res = do.call(functionalMultiImpute, args.smpl)
+    combinedU = res$u
   }
 
   if (is.null(K.reg))
     K.reg = ncol(Y.wide)
 
   # Case 3: Y ~ X -- do principal component regression without Y
-  if (length(vars$response) == 2 && !(vars$response[1] %in% vars$covariates)){
-    print("Case 3")
-    res = functionalRegression(Y.wide, combinedU, basis, lambda = lambda.reg, K = K.reg, thresh = 1e-10, mask = maskedY)
-    res$Y = t(t(Y.wide) + cmeans)
-    res$X = X.wide
-    res$U = combinedU
-    res$X.models = models
-    res$fit = t(t(res$fit) + cmeans)
-    return(res)
-  }
-
-  # Case 4 experimental: Y ~ Y + X -- do principal component regression with Y
-  print("Case 4")
-  Y.tmp = Y.wide
-
-  lastFitR = 0
-  lastFitI = 0
-
-  lastfit = 1
-  for (i in 1:200){
-    resR = functionalRegression(Y.tmp, combinedU, basis, K = 1, thresh = 1e-10, mask = maskedY, verbose = 0)
-    resR$fit = resR$fit*0.3
-    Y.tmp = Y.wide - resR$fit
-    resI = functionalMultiImpute(Y.tmp, basis = basis, thresh = thresh, verbose = 0, lambda = lambda.reg[1], K = 1) #, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter)
-#    resI = fc.fpca(Y.tmp, d=d, K = 2, grid.l = 0:(bins-1)/(bins-1))
-    Y.tmp = Y.wide - resI$fit
-
-    dR = norm(resR$fit - lastFitR, type = "F") / norm(resR$fit, type="F")
-    dI = norm(resI$fit - lastFitI, type = "F") / norm(resI$fit, type="F")
-
-    residuum = Y.wide - resI$fit
-    residuum[is.na(residuum)] = 0
-    print(norm(residuum, type='F'))
-
-    residuum = Y.wide - resR$fit
-    residuum[is.na(residuum)] = 0
-    print(norm(residuum, type='F'))
-
-    residuum = Y.wide - resR$fit - resI$fit
-    residuum[is.na(residuum)] = 0
-    res.norm = norm(residuum, type='F')
-    print(res.norm)
-
-    stopcond = abs(res.norm - lastfit) / lastfit
-    print(stopcond)
-
-    if (stopcond < 0.0001)
-      break
-    lastfit = res.norm
-
-    #    if (dR + dI < 0.2)
-#      break
-
-    lastFitR = resR$fit
-    lastFitI = resI$fit
-  }
-  res = list()
-  sm = resR$fit + resI$fit
-  res$cmeans = cmeans
-  res$fit = t(t(sm) + cmeans)
-  res$fitI = resI$fit
-  res$fitR = resR$fit
+  print("Case 3")
+  res = functionalRegression(Y.wide, combinedU, basis, lambda = lambda.reg, K = K.reg, thresh = 1e-10, mask = maskedY)
+  res$Y = t(t(Y.wide) + cmeans)
+  res$X = X.wide
   res$U = combinedU
-  res$reps = i
-  res
+  res$X.models = models
+  res$fit = t(t(res$fit) + cmeans)
+  return(res)
 }
+
+# case4 = function(){
+#   # Case 4 experimental: Y ~ Y + X -- do principal component regression with Y
+#   print("Case 4")
+#   Y.tmp = Y.wide
+#
+#   lastFitR = 0
+#   lastFitI = 0
+#
+#   lastfit = 1
+#   for (i in 1:200){
+#     resR = functionalRegression(Y.tmp, combinedU, basis, K = 1, thresh = 1e-10, mask = maskedY, verbose = 0)
+#     resR$fit = resR$fit*0.3
+#     Y.tmp = Y.wide - resR$fit
+#     resI = functionalMultiImpute(Y.tmp, basis = basis, thresh = thresh, verbose = 0, lambda = lambda.reg[1], K = 1) #, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter)
+#     #    resI = fc.fpca(Y.tmp, d=d, K = 2, grid.l = 0:(bins-1)/(bins-1))
+#     Y.tmp = Y.wide - resI$fit
+#
+#     dR = norm(resR$fit - lastFitR, type = "F") / norm(resR$fit, type="F")
+#     dI = norm(resI$fit - lastFitI, type = "F") / norm(resI$fit, type="F")
+#
+#     residuum = Y.wide - resI$fit
+#     residuum[is.na(residuum)] = 0
+#     print(norm(residuum, type='F'))
+#
+#     residuum = Y.wide - resR$fit
+#     residuum[is.na(residuum)] = 0
+#     print(norm(residuum, type='F'))
+#
+#     residuum = Y.wide - resR$fit - resI$fit
+#     residuum[is.na(residuum)] = 0
+#     res.norm = norm(residuum, type='F')
+#     print(res.norm)
+#
+#     stopcond = abs(res.norm - lastfit) / lastfit
+#     print(stopcond)
+#
+#     if (stopcond < 0.0001)
+#       break
+#     lastfit = res.norm
+#
+#     #    if (dR + dI < 0.2)
+#     #      break
+#
+#     lastFitR = resR$fit
+#     lastFitI = resI$fit
+#   }
+#   res = list()
+#   sm = resR$fit + resI$fit
+#   res$cmeans = cmeans
+#   res$fit = t(t(sm) + cmeans)
+#   res$fitI = resI$fit
+#   res$fitR = resR$fit
+#   res$U = combinedU
+#   res$reps = i
+#   res
+# }

@@ -13,20 +13,21 @@ d = 7
 
 experiment.sim = function(exp.id){
   # SIMULATE DATA
-  set.seed(exp.id + 40)
-  simulation = fsimulate(dgrid = dgrid,clear = 0.95, n = 100, noise.mag = 0.1, d = d, K = 1)
+  set.seed(exp.id + 30)
+  simulation = fsimulate(dgrid = dgrid,clear = 0.9, n = 100, noise.mag = 0.1, d = d, K = 1)
   data = simulation$data
   ftrue = simulation$ftrue
   K = simulation$params$K
 
   # TUNING PARAMS
-  lambdas.pca = seq(0,2,length.out = 20)
-  lambdas.reg = seq(0,2,length.out = 10)
+  lambdas.pca = seq(0,2,length.out = 30)
+  lambdas.reg = seq(0,1,length.out = 20)
 
-  model.fslr = fregression(Y:time ~ Y + X1 + X2 | id, data, lambda = lambdas.reg, thresh = 1e-4, lambda.reg = 0.2, method = "fimpute", bins = dgrid)
-  model.mean = fregression(Y:time ~ 1 | id, data, method = "mean", bins = dgrid)
+  model.fslr = fregression(Y:time ~ Y + X1 + X2 | id, data, lambda = lambdas.pca, thresh = 1e-4, lambda.reg = lambdas.reg, method = "fimpute", bins = dgrid)
+
+    model.mean = fregression(Y:time ~ 1 | id, data, method = "mean", bins = dgrid)
   model.fpca = fregression(Y:time ~ 1 | id, data, lambda = 0, K = 2:d, thresh = 1e-7, method = "fpcs", bins = dgrid)
-  model.fimp = fregression(Y:time ~ 1 | id, data, lambda = lambdas.pca, K = d, thresh = 0, final = "soft", maxIter = 1000, fold = 5, cv.ratio = 0.05, bins = dgrid)
+  model.fimp = fregression(Y:time ~ 1 | id, data, lambda = lambdas.pca, thresh = 0, final = "soft", maxIter = 2000, fold = 5, cv.ratio = 0.05, bins = dgrid)
 
   # REPORT RESULTS
   errors = c(
@@ -58,7 +59,9 @@ experiment.sim = function(exp.id){
   res
 }
 
-res = lapply(1:1, experiment.sim)
+res = lapply(1:10, experiment.sim)
+
+res[[1]]$fslr$meta
 
 #save(res,file = "sim-study.Rda")
 #load("sim-study.Rda")
