@@ -59,7 +59,7 @@ experiment.sim = function(exp.id){
   res
 }
 
-res = lapply(1:10, experiment.sim)
+res = lapply(1:1, experiment.sim)
 
 res[[1]]$fslr$meta
 

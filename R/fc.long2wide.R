@@ -59,5 +59,7 @@ sample.long = function(X, id.var, time.var, value.var, ratio = 0.1, min.per.sbj 
   res$train.matrix = fc.long2wide(groups = res$train[[id.var]], time = res$train[[time.var]],
                                  values = res$train[[value.var]], bins = 51,
                                  ids = unique(X[[id.var]]), time.lim = c(min(res$X[[time.var]]),max(res$X[[time.var]])))
+  res$train.matrix = res$train.matrix[rowSums(!is.na(res$train.matrix)) > 0.5,]
+  res$test.matrix = res$test.matrix[row.names(res$train.matrix),]
   res
 }

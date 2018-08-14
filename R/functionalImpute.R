@@ -38,6 +38,9 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda, sta
   Y = c()
   Yhat = c()
 
+  if (length(args) > 0 && verbose > 0){
+    cat(paste("Combining",length(args),"variables"))
+  }
   for (i in 1:length(args)){
     Y = cbind(Y, args[[i]]$train)
   }
@@ -188,15 +191,23 @@ functionalMultiImputeCV = function(..., basis = fc.basis(), K = ncol(basis), max
   args <- list(...)
   meta = 0
 
-  for (i in 1:fold){
-    res = functionalMultiImpute(..., basis = basis, K=K, maxIter = maxIter, thresh = thresh, lambda = lambda, final = final)
-    meta = meta + res$meta
+  if ( (length(lambda) == length(K)) && (length(K) == 1) ){
+    bestK = K
+    bestLambda = lambda
   }
-  meta = meta / fold
+  else {
+    for (i in 1:fold){
+      res = functionalMultiImpute(..., basis = basis, K=K, maxIter = maxIter, thresh = thresh, lambda = lambda, final = final) # TODO: cv.ratio goes here
+      meta = meta + res$meta
+    }
+    meta = meta / fold
+    bestLambda = meta[which.min(meta[,3]),1] # best lambda
+    bestK = floor(meta[which.min(meta[,3]),2]) # best K
+  }
 
   args.smpl = args
-  args.smpl[["lambda"]] = meta[which.min(meta[,3]),1]
-  args.smpl[[1]] = fc.sample(args.smpl[[1]], cv.ratio)
+  args.smpl[["lambda"]] = bestLambda
+#  args.smpl[[1]] = fc.sample(args.smpl[[1]], cv.ratio)
   nargs = length(args)
 
   args.smpl[["basis"]] = basis

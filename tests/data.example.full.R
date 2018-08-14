@@ -5,6 +5,7 @@ library("fpca")
 install(".")
 library("fcomplete")
 library("ggplot2")
+library(parallel)
 source("tests/plot.helpers.R")
 
 ################
@@ -22,8 +23,10 @@ if (!("all.data" %in% ls())){
 }
 
 all.data.subset = all.data[all.data$side == "L",]
-all.data.subset = all.data.subset[all.data.subset$age < 15,] # remove outliers
-all.data.subset = all.data.subset[all.data.subset$bmi > 5,] # remove outliers
+# all.data.subset = all.data.subset[all.data.subset$age < 18,] # remove outliers
+# all.data.subset = all.data.subset[all.data.subset$age > 5,] # remove outliers
+# all.data.subset = all.data.subset[all.data.subset$bmi > 5,] # remove outliers
+# all.data.subset = all.data.subset[all.data.subset$bmi < 25,] # remove outliers
 
 cmeans = colMeans(all.data.subset[,300:309])
 all.data.subset$score = sqrt(rowSums(t(t(all.data.subset[,300:309]) - cmeans)**2))
@@ -34,49 +37,69 @@ TBL = table(all.data.filtered$Patient_ID)
 all.data.filtered = all.data.filtered[all.data.filtered$Patient_ID %in% names(TBL[TBL > 2]),]
 all.data.filtered = na.omit(all.data.filtered)
 all.data.filtered = all.data.filtered[!is.nan(all.data.filtered$GDI),]
+pats = table(all.data.filtered$Patient_ID)
+pats = names(pats[pats>=3])
+all.data.filtered.sample = all.data.filtered[all.data.filtered$Patient_ID %in% pats,]
 
 #################
 # RUN CROSS-VAL #
 #################
-data.experiment = function(i){
-  set.seed(i)
+data.experiment = function(i)
+{
+  set.seed(i+20)
   # Sample data for testing
-  data = sample.long(all.data.filtered, "Patient_ID", "age", "GDI", ratio = 0.05)
+
+  var = "GDI"
+  data = sample.long(all.data.filtered.sample, "Patient_ID", "age", var, ratio = 0.05, min.per.sbj = 3)
 
   # Set up parameters
-  lambdas = seq(10,50,length.out = 5)
-  K = 6
+  lambdas = list()
+  lambdas[["GDI"]] = 5#seq(18,22,length.out = 5)
+  lambdas[["bmi"]] = seq(1,2,length.out = 5)
+  d = 6
+  K = d
 
   # IMPUTE
-#  model.impute = fregression(GDI:age ~ 1 | Patient_ID, data$train, lambda= lambdas, thresh = 0, maxIter = 5000, method = "fimpute", K=K, d=K, fold = 3)
-  model.impute.fpcs = fregression(GDI:age ~ 1 | Patient_ID, data$train, lambda= c(7.5), thresh = 1e-4, method = "fpcs", K=2:K, d=K)
+  model.impute = fregression(as.formula(paste0(var,":age ~ 1 | Patient_ID")), data$train,
+                             lambda= lambdas[[var]], thresh = 1e-10, maxIter = 10000,
+                             method = "fimpute", final = "soft",
+                             K=1, d=d, fold = 5)
+  model.impute.fpcs = fregression(as.formula(paste0(var,":age ~ 1 | Patient_ID")), data$train, lambda= c(7.5), thresh = 1e-4, method = "fpcs", K=2:2, d=d)
+
+  # lambdas[["bmi"]] = 0.25
+  # X = list(train = data$train.matrix)
+  # model.impute = fcomplete:::functionalMultiImpute.one(X, basis=model.impute.fpcs$basis, K=1, maxIter=10000, thresh=1e-10, lambda=lambdas[[var]])
+
+
 #  model.mean = fregression(GDI:age ~ 1 | Patient_ID, data$train,  method = "mean")
 
   # REGRESSION
-  lambdas.reg = seq(0.5,5,length.out = 10)
-  #model.regression = fregression(GDI:age ~ GDI + bmi + O2cost | Patient_ID, data$train, method = "fimpute", K = K, thresh=1e-5, K.reg = K, lambda = lambdas, lambda.reg = lambdas, d=K)
-  model.regression = fregression(GDI:age ~ GDI + bmi + O2cost | Patient_ID, data$train,
-                                 method = "fimpute", K = 2, thresh=1e-5, K.reg = 2,
-                                 lambda = lambdas.reg,
-                                 lambda.reg = lambdas.reg/10, d=K)
+  # lambdas.reg = seq(0,1,length.out = 5)
+  model.regression = fregression(GDI:age ~ GDI + O2cost + speed | Patient_ID, data$train,
+                                method = "fimpute", thresh=1e-10, maxIter = 5000,
+                                K.reg = 1,
+                                lambda = lambdas[[var]],
+                                lambda.reg = 1,
+                                d=d,
+                                K=1)
 
   errors = c(mean((model.regression$fit - data$test.matrix)**2, na.rm = TRUE),
-    #mean((model.impute$fit - data$test.matrix)**2, na.rm = TRUE),
-    mean((model.impute.fpcs$fit - data$test.matrix)**2, na.rm = TRUE)
-    #mean((model.mean$fit - data$test.matrix)**2, na.rm = TRUE)
+    mean((model.impute$fit - data$test.matrix)**2, na.rm = TRUE),
+    mean((model.impute.fpcs$fit - data$test.matrix)**2, na.rm = TRUE),
+    mean((mean(data$train.matrix,na.rm=TRUE) - data$test.matrix)**2, na.rm = TRUE)
     )
-  names(errors) = c("regression")#,"impute","fPCA","mean")
-
+  names(errors) = c("reg","impute","fPCA","mean")
+  print(errors)
   list(errors = errors,
-#       model.fimp = model.impute,
+       model.fimp = model.impute,
        model.fpca = model.impute.fpcs,
        model.fslr = model.regression,
 #       model.mean = model.mean,
        data = data)
 }
 
-library(parallel)
-models = lapply(1:1, data.experiment)
+models = mclapply(1:20, data.experiment, mc.cores = 4)
+#models = lapply(1:1, data.experiment)
 
 if (length(models))
   save(models, file="data-study.Rda")
@@ -96,8 +119,25 @@ sm = t(t(sm) + models[[exp.id]]$model.fslr$cmeans)
 
 res = c()
 for (i in 1:length(models)){
-  res = cbind(res, models[[i]]$errors)
+  if (is.null(attr(models[[i]],"class")))
+    res = cbind(res, models[[i]]$errors)
 }
+rowMeans(res)
+
+# Compare predictions (for debugging)
+exp.id = 2
+
+models[[exp.id]]$model.fimp$fit
+models[[exp.id]]$model.fpca$fit[1,]
+
+mse.fimp = rowSums((models[[exp.id]]$data$test.matrix - models[[exp.id]]$model.fimp$fit)**2,na.rm = TRUE)
+mse.fpca = rowSums((models[[exp.id]]$data$test.matrix - models[[exp.id]]$model.fpca$fit)**2,na.rm = TRUE)
+test.points = mse.fpca > 1e-15
+plot(mse.fimp[test.points])
+plot(mse.fpca[test.points])
+which(mse.fimp[test.points] > 30)
+
+models[[exp.id]]$data$X[models[[exp.id]]$data$X$Patient_ID == 4822,]
 
 # Summarize results
 rownames(res) = c("regression","impute","fPCA","mean")
