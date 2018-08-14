@@ -33,6 +33,7 @@
 #' @param K.reg upper bound of dimensionality for regression
 #' @param thresh thershold for convergence in functional imputee
 #' @param final should the final model use \code{"hard"} or \code{"soft"} impute after choosing the optimal \code{lambda}
+#' @param projection "joint" or "separate" (default). If multiple regressors are available project them jointly or separately
 #' @return Returns a list
 #' * \code{fit} fitted matrix \code{Y}
 #' * \code{meta} results of cross-validation
@@ -67,7 +68,8 @@
 #' @export
 fregression = function(formula, data,
                        bins = 51, method = c("fimpute", "fpcs", "mean"), lambda = c(0), maxIter = 1e5,
-                       lambda.reg = 0, K = NULL, K.reg = NULL, thresh = 1e-5, final="soft", d = 7, fold = 5, cv.ratio = 0.05)
+                       lambda.reg = 0, K = NULL, K.reg = NULL, thresh = 1e-5, final="soft", d = 7, fold = 5, cv.ratio = 0.05,
+                       projection = "separate")
 {
   if (length(method) > 1)
     method = "fimpute"
@@ -182,16 +184,16 @@ fregression = function(formula, data,
     #   print(paste("Skipping",vars$response[1]))
     # }
   }
-  # if (method == "fimpute"){
-  #   args.smpl = X.wide
-  #   args.smpl[["basis"]] = basis
-  #   args.smpl[["lambda"]] = lambda
-  #   args.smpl[["thresh"]] = thresh
-  #   args.smpl[["K"]] = K
-  #   args.smpl[["final"]] = final
-  #   res = do.call(functionalMultiImpute, args.smpl)
-  #   combinedU = res$u
-  # }
+  if (method == "fimpute" && projection == "joint"){
+    args.smpl = X.wide
+    args.smpl[["basis"]] = basis
+    args.smpl[["lambda"]] = lambda
+    args.smpl[["thresh"]] = thresh
+    args.smpl[["K"]] = K
+    args.smpl[["final"]] = final
+    res = do.call(functionalMultiImpute, args.smpl)
+    combinedU = res$u
+  }
 
   if (is.null(K.reg))
     K.reg = ncol(Y.wide)
@@ -199,7 +201,7 @@ fregression = function(formula, data,
   combinedU = cbind(1,scale(combinedU))
   # Case 3: Y ~ X -- do principal component regression without Y
   print("Case 3")
-  res = functionalRegression(Y.wide, combinedU, basis, lambda = lambda.reg, K = K.reg, thresh = 1e-10, mask = maskedY)
+  res = functionalRegression(Y.wide, combinedU, basis, lambda = lambda.reg, K = K.reg, thresh = 1e-10, mask = maskedY, maxIter = maxIter)
   res$Y = t(t(Y.wide) + cmeans)
   res$X = X.wide
   res$U = combinedU

@@ -7,7 +7,7 @@
 fregression(formula, data, bins = 51, method = c("fimpute", "fpcs", "mean"),
   lambda = c(0), maxIter = 1e+05, lambda.reg = 0, K = NULL,
   K.reg = NULL, thresh = 1e-05, final = "soft", d = 7, fold = 5,
-  cv.ratio = 0.05)
+  cv.ratio = 0.05, projection = "separate")
 }
 \arguments{
 \item{formula}{formula describing the linear relation between processes and indicating time and grouping variables. See details}
@@ -30,6 +30,8 @@ fregression(formula, data, bins = 51, method = c("fimpute", "fpcs", "mean"),
 \item{thresh}{thershold for convergence in functional imputee}
 
 \item{final}{should the final model use \code{"hard"} or \code{"soft"} impute after choosing the optimal \code{lambda}}
+
+\item{projection}{"joint" or "separate" (default). If multiple regressors are available project them jointly or separately}
 }
 \value{
 Returns a list

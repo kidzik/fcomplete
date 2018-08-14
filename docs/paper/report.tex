@@ -965,23 +965,24 @@ A model of progression trajectories of GDI can constitute an essential baseline 
 
 To illustrate applicability of our method in this context, we are predicting patient's GDI development trajectory in two settings: (1) solely based on their GDI history and histories of other patients, (2) using sparsely observed covariates, namely BMI or O2 expenditure. 
 
-We test three methods: functional principal components (fPCA), \textsc{Soft-Longitudinal-Impute} (SLI) and \textsc{Sparse-Longitudinal-Regression} (SLR). We compare the results to the \emph{null model} -- the LOWESS estimation of the population mean (\verb|mean|). In SLR, we approximate GDI using latent variables of sparsely observed covariates BMI and O2 expenditure, following the methodology from Section \ref{ss:regression}.
+We test three methods: functional principal components (fPCA), \textsc{Soft-Longitudinal-Impute} (SLI) and \textsc{Sparse-Longitudinal-Regression} (SLR). We compare the results to the \emph{null model} -- the population mean (\verb|mean|). In SLR, we approximate GDI using latent variables of sparsely observed covariates \textit{O2 expenditure} and \textit{walking speed}, following the methodology from Section \ref{ss:regression}.
 
-In our evaluation procedure, we randomly select $10\%$ of observations from patients who visited the clinic at least $4$ times as our test set. Then, we split the remaining $90\%$ of observations into a training and validation sets. We train the algorithms with all combinations of parameters: the regularization parameter for SLI and SLR procedures $\lambda \in \{0, 0.1, 0.2, ..., 2.0\}$ and the rank for fPCA procedure $d \in \{2,3,4,...,K\}$. We define the grid of $T = 31$ points. We repeat the entire evaluation procedure $10$ times.
+In our evaluation procedure, we randomly select $5\%$ of observations from patients who visited the clinic at least $4$ times as our test set. Then, we split the remaining $95\%$ of observations into a training and validation sets. We train the algorithms with all combinations of parameters: the regularization parameter for SLI and SLR procedures $\lambda \in \{0, 0.1, 0.2, ..., 2.0\}$ and the rank for fPCA procedure $d \in \{2,3,4,...,K\}$. We define the grid of $T = 51$ points. We repeat the entire evaluation procedure $20$ times.
 
 Let us denote the test set as $\Omega \subset \{1,2,...,N\} \times \{1,2,...,T\}$. We validate each model $M$ on held-out indices by computing the mean squared error as defined in \eqref{eq:err}. We select the parameters of each of the three models using cross-validation. %We estimate errors by cross-validation, sampling $95\%$ of points to train the models and leaving $5\%$ for estimating the \verb|MSE|. 
 
 % latex table generated in R 3.4.1 by xtable 1.8-2 package
 % Tue Sep  5 22:27:27 2017
 \begin{table}[ht]
-\centering
+  \centering
 \begin{tabular}{rrr}
   \hline
  & mean & sd \\ 
   \hline
-  fPCA & \textbf{78.6} & 13.8\\
-  SLI & 82.0 & \textbf{13.1}\\
-  SLR & 84.3 & 13.2 \\
+  mean & 120.5 & 13.6\\
+  fPCA & 91.3 & 18.4\\
+  SLI & 87.2 & 14\\
+  SLR & \textbf{85.8} & \textbf{13.4} \\
    \hline
 \end{tabular}\label{tbl:data-res}
 \caption{Distribution of cross-validated MSE of the four procedures: functional principal components (fPCA), Soft-Longitudinal-Impute (SLI), Soft-Longitudinal-Regression (SLR), subjects mean (mean). Top characteristic in bold.}
@@ -989,11 +990,11 @@ Let us denote the test set as $\Omega \subset \{1,2,...,N\} \times \{1,2,...,T\}
 
 \begin{figure}[h!]
   \includegraphics[width=0.7\linewidth]{../plots/data-boxplot}
-  \caption{Distribution of cross-validated MSE of the four procedures: functional principal components (fPCA), Soft-Longitudinal-Impute (SLI), Soft-Longitudinal-Regression (SLR).}
+  \caption{Distribution of variance explained by three procedures: functional principal components (fPCA), Soft-Longitudinal-Impute (SLI), Soft-Longitudinal-Regression (SLR).}
   \label{fig:Boxplots}
 \end{figure}
 
-Compared to the null model all three methods reduce the \verb|MSE| by $\sim 15\%$. We present detailed results in Table \ref{tbl:data-res} and in Figure \ref{fig:Boxplots}. \tr{[TODO: UPDATE WITH BETTER RESULTS]}
+Compared to the null model all three methods reduce the \verb|MSE| by $\sim 30\%$. We present detailed results in Table \ref{tbl:data-res} and in Figure \ref{fig:Boxplots}. %\tr{[TODO: UPDATE WITH BETTER RESULTS]}
 
 % \section{Simulations}
 

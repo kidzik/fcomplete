@@ -5,7 +5,7 @@ library("fpca")
 install(".")
 library("fcomplete")
 library("ggplot2")
-library(parallel)
+library("parallel")
 source("tests/plot.helpers.R")
 
 ################
@@ -123,6 +123,7 @@ for (i in 1:length(models)){
     res = cbind(res, models[[i]]$errors)
 }
 rowMeans(res)
+apply(res,1,sd)
 
 # Compare predictions (for debugging)
 exp.id = 2
@@ -140,7 +141,7 @@ which(mse.fimp[test.points] > 30)
 models[[exp.id]]$data$X[models[[exp.id]]$data$X$Patient_ID == 4822,]
 
 # Summarize results
-rownames(res) = c("regression","impute","fPCA","mean")
+rownames(res) = c("SLR","SLI","fPCA","mean")
 cbind(rowMeans(res),
 apply(res,FUN=sd,1))
 colnames(res) = paste("run",1:length(models))
@@ -150,12 +151,13 @@ ind = row.names(models[[i]]$data$test.matrix) %in% models[[i]]$data$X$Patient_ID
 library(tidyr)
 tmp = t(res)
 rownames(tmp) = 1:nrow(tmp)
-methodStats = gather(data.frame(tmp), method, varexp, regression:fPCA, factor_key = FALSE)
+tmp[,1:3] = 1 - t(t(tmp[,1:3]) / tmp[,4])
+methodStats = gather(data.frame(tmp), method, varexp, SLR:fPCA, factor_key = FALSE)
 
 pp = ggplot(methodStats, aes(x = method, y = varexp)) + paper.theme + labs(x="Method",y="MSE") +
   geom_boxplot()
 pp
-myggsave(filename=paste0("docs/plots/data-boxplot.pdf"), plot=pp, width = 5, height = 4)
+myggsave(filename=paste0("docs/plots/data-boxplot.pdf"), plot=pp, width = 10, height = 8)
 
 # Lambdas
 models[[exp.id]]$model.fimp$meta

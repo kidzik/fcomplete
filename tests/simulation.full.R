@@ -5,6 +5,7 @@ devtools::install(".")
 library("fcomplete")
 library("ggplot2")
 library("latex2exp")
+library("parallel")
 
 res = list()
 nexp = 1
@@ -23,9 +24,9 @@ experiment.sim = function(exp.id){
   lambdas.pca = seq(0,2,length.out = 30)
   lambdas.reg = seq(0,1,length.out = 20)
 
-  model.fslr = fregression(Y:time ~ Y + X1 + X2 | id, data, lambda = lambdas.pca, thresh = 1e-4, lambda.reg = lambdas.reg, method = "fimpute", bins = dgrid)
+  model.fslr = fregression(Y:time ~ Y + X1 + X2 | id, data, lambda = lambdas.pca, thresh = 1e-4, lambda.reg = lambdas.reg, method = "fimpute", bins = dgrid, projection="joint")
 
-    model.mean = fregression(Y:time ~ 1 | id, data, method = "mean", bins = dgrid)
+  model.mean = fregression(Y:time ~ 1 | id, data, method = "mean", bins = dgrid)
   model.fpca = fregression(Y:time ~ 1 | id, data, lambda = 0, K = 2:d, thresh = 1e-7, method = "fpcs", bins = dgrid)
   model.fimp = fregression(Y:time ~ 1 | id, data, lambda = lambdas.pca, thresh = 0, final = "soft", maxIter = 2000, fold = 5, cv.ratio = 0.05, bins = dgrid)
 
@@ -59,8 +60,7 @@ experiment.sim = function(exp.id){
   res
 }
 
-res = lapply(1:1, experiment.sim)
-
+res = mclapply(1:4, data.experiment, mc.cores = 4)
 res[[1]]$fslr$meta
 
 #save(res,file = "sim-study.Rda")
