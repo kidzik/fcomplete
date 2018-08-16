@@ -14,7 +14,7 @@ d = 7
 
 experiment.sim = function(exp.id){
   # SIMULATE DATA
-  set.seed(exp.id + 30)
+  set.seed(exp.id + 20)
   simulation = fsimulate(dgrid = dgrid,clear = 0.9, n = 100, noise.mag = 0.1, d = d, K = 1)
   data = simulation$data
   ftrue = simulation$ftrue
@@ -60,7 +60,7 @@ experiment.sim = function(exp.id){
   res
 }
 
-res = mclapply(1:4, data.experiment, mc.cores = 4)
+res = mclapply(1:4, experiment.sim, mc.cores = 4)
 res[[1]]$fslr$meta
 
 #save(res,file = "sim-study.Rda")
@@ -120,14 +120,15 @@ for (j in 1:length(vlist)){
                            color=cols[i], size=1.5, linetype=i)
   }
   print(pp)
-  myggsave(filename=paste0("docs/plots/components-",names[[j]],".pdf"), plot=pp)
+  myggsave(filename=paste0("docs/plots/components-",names[[j]],".pdf"), plot=pp,width = 7, height = 7)
 }
 
 # Figure 4:
 ind = 1:3 + 10
 # plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$mean$fit[ind,],
 #            filename="pred-mean", title = "Mean")
-ylim = c(-0.5,1.5)
+ylim = c(min(res[[exp.show]]$simulation$fobs[ind,]) - 0.1, max(res[[exp.show]]$simulation$fobs[ind,]) + 0.1)
+install(".")
 plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], NULL,
            filename="pred-mean", title = "True curves & observations",ylim=ylim)
 plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fpca$fit[ind,],

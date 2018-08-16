@@ -25,8 +25,8 @@ if (!("all.data" %in% ls())){
 all.data.subset = all.data[all.data$side == "L",]
 # all.data.subset = all.data.subset[all.data.subset$age < 18,] # remove outliers
 # all.data.subset = all.data.subset[all.data.subset$age > 5,] # remove outliers
-# all.data.subset = all.data.subset[all.data.subset$bmi > 5,] # remove outliers
-# all.data.subset = all.data.subset[all.data.subset$bmi < 25,] # remove outliers
+all.data.subset = all.data.subset[all.data.subset$bmi > 5,] # remove outliers
+all.data.subset = all.data.subset[all.data.subset$bmi < 25,] # remove outliers
 
 cmeans = colMeans(all.data.subset[,300:309])
 all.data.subset$score = sqrt(rowSums(t(t(all.data.subset[,300:309]) - cmeans)**2))
@@ -44,7 +44,7 @@ all.data.filtered.sample = all.data.filtered[all.data.filtered$Patient_ID %in% p
 #################
 # RUN CROSS-VAL #
 #################
-data.experiment = function(i)
+experiment.data = function(i)
 {
   set.seed(i+20)
   # Sample data for testing
@@ -98,7 +98,7 @@ data.experiment = function(i)
        data = data)
 }
 
-models = mclapply(1:20, data.experiment, mc.cores = 4)
+models = mclapply(1:20, experiment.data, mc.cores = 4)
 #models = lapply(1:1, data.experiment)
 
 if (length(models))
@@ -172,15 +172,16 @@ library(RColorBrewer)
 
 dd = all.data.filtered[,c("Patient_ID","age","bmi","GDI")]
 dd$Patient_ID = as.factor(dd$Patient_ID)
+dd = dd[dd$bmi > 10,]
 
 # Figure 1: BMI over time
-pp = ggplot(aes(x = age, y = bmi, color = Patient_ID), data = dd[1:200,]) + ylab("1st component") +
+pp = ggplot(aes(x = age, y = bmi, color = Patient_ID), data = dd[1:200,]) + ylab("BMI") +
   geom_point(size = 3) + theme_set(theme_grey(base_size = 26)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
   stat_function(fun = approxfun(lowess(dd$age,dd$bmi)), size = 1.5, colour = "#000000")+ scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0))
 pp
-ggsave("docs/plots/points.pdf",width=10,height=7)
+ggsave("docs/plots/points.pdf",width=7,height=5)
 pp + geom_line(size=0.7)
-ggsave("docs/plots/grouped.pdf",width=10,height=7)
+ggsave("docs/plots/grouped.pdf",width=7,height=5)
 
 # # The palette with grey:
 # # The palette with black:
