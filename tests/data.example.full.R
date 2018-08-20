@@ -78,7 +78,7 @@ experiment.data = function(i)
   model.regression = fregression(GDI:age ~ GDI + O2cost + speed | Patient_ID, data$train,
                                 method = "fimpute", thresh=1e-10, maxIter = 5000,
                                 K.reg = 1,
-                                lambda = lambdas[[var]],
+                                lambda = lambdas[[var]] / sqrt(120),
                                 lambda.reg = 1,
                                 d=d,
                                 K=1)
@@ -151,7 +151,8 @@ ind = row.names(models[[i]]$data$test.matrix) %in% models[[i]]$data$X$Patient_ID
 library(tidyr)
 tmp = t(res)
 rownames(tmp) = 1:nrow(tmp)
-tmp[,1:3] = 1 - t(t(tmp[,1:3]) / tmp[,4])
+tmp = 100*(1 - t(t(tmp[,1:3]) / tmp[,4]))
+tmp[tmp[,3] < 0,3]= 0
 methodStats = gather(data.frame(tmp), method, varexp, SLR:fPCA, factor_key = FALSE)
 
 pp = ggplot(methodStats, aes(x = method, y = varexp)) + paper.theme + labs(x="Method",y="MSE") +

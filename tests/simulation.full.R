@@ -11,6 +11,7 @@ res = list()
 nexp = 1
 dgrid = 31
 d = 7
+exp.id = 1
 
 experiment.sim = function(exp.id){
   # SIMULATE DATA
@@ -21,14 +22,14 @@ experiment.sim = function(exp.id){
   K = simulation$params$K
 
   # TUNING PARAMS
-  lambdas.pca = seq(0,2,length.out = 30)
-  lambdas.reg = seq(0,1,length.out = 20)
-
-  model.fslr = fregression(Y:time ~ Y + X1 + X2 | id, data, lambda = lambdas.pca, thresh = 1e-4, lambda.reg = lambdas.reg, method = "fimpute", bins = dgrid, projection="joint")
+  lambdas.pca = seq(0,1,length.out = 5)
+  lambdas.reg = seq(0,1,length.out = 5)
 
   model.mean = fregression(Y:time ~ 1 | id, data, method = "mean", bins = dgrid)
   model.fpca = fregression(Y:time ~ 1 | id, data, lambda = 0, K = 2:d, thresh = 1e-7, method = "fpcs", bins = dgrid)
-  model.fimp = fregression(Y:time ~ 1 | id, data, lambda = lambdas.pca, thresh = 0, final = "soft", maxIter = 2000, fold = 5, cv.ratio = 0.05, bins = dgrid)
+  model.fslr = fregression(Y:time ~ Y + X1 + X2 | id, data, K = 2, lambda = lambdas.pca, thresh = 1e-4, lambda.reg = lambdas.reg, method = "fimpute", bins = dgrid, projection="joint")
+  model.fimp = fregression(Y:time ~ 1 | id, data, K = d, lambda = lambdas.pca, thresh = 0, final = "soft", maxIter = 2000, fold = 5, cv.ratio = 0.05, bins = dgrid)
+
 
   # REPORT RESULTS
   errors = c(
@@ -60,7 +61,7 @@ experiment.sim = function(exp.id){
   res
 }
 
-res = mclapply(1:4, experiment.sim, mc.cores = 4)
+res = mclapply(1:16, experiment.sim, mc.cores = 4)
 res[[1]]$fslr$meta
 
 #save(res,file = "sim-study.Rda")
@@ -71,7 +72,8 @@ exp.id = 1
 ## Post-process results
 boxplot.data = c()
 for (i in 1:length(res)){
-  boxplot.data = cbind(boxplot.data, res[[i]]$errors)
+  if (is.null(attr(res[[i]],"class")))
+    boxplot.data = cbind(boxplot.data, res[[i]]$errors)
 }
 rownames(boxplot.data) = rownames(res[[exp.id]]$tbl)
 joint.tbl = rowMeans(boxplot.data)
@@ -97,51 +99,7 @@ rowMeans(boxplot.data[,])
 ################
 source("tests/plot.helpers.R")
 
-# Figure 3:
 exp.show = 1
-res[[exp.show]]$tbl
-#matplot(t(-res[[exp.show]]$fpca$v)[,1:min(3,nrow(res[[exp.show]]$fpca$v))],t='l',lwd = 4)
-
-scalar = sqrt(rowSums(res[[exp.show]]$fpca$v**2)[1])
-vlist = list(res[[exp.show]]$fpca$v / scalar,
-             res[[exp.show]]$fimp$v)
-vlist[[2]][2:3,] = vlist[[2]][2:3,]*(-1)
-ttl = c("Components of fPCA","Components of SFI")
-names = c("fpca","fimp")
-
-for (j in 1:length(vlist)){
-  cols = gg_color_hue(3)
-  v = vlist[[j]]
-  pp = ggplot(data.frame(x=c(0, 1)), aes(x)) + paper.theme +
-    xlim(0,1) + ylim(-0.4,0.5) + labs(x = "time", y = "value", title=ttl[j])
-  for (i in 1:min(3,nrow(v))){
-    df = data.frame(x=0:30/30,y=v[i,])
-    pp = pp + geom_segment(data=df, aes(x=x,y=y,xend=dplyr::lead(x),yend=dplyr::lead(y)),
-                           color=cols[i], size=1.5, linetype=i)
-  }
-  print(pp)
-  myggsave(filename=paste0("docs/plots/components-",names[[j]],".pdf"), plot=pp,width = 7, height = 7)
-}
-
-# Figure 4:
-ind = 1:3 + 10
-# plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$mean$fit[ind,],
-#            filename="pred-mean", title = "Mean")
-ylim = c(min(res[[exp.show]]$simulation$fobs[ind,]) - 0.1, max(res[[exp.show]]$simulation$fobs[ind,]) + 0.1)
-install(".")
-plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], NULL,
-           filename="pred-mean", title = "True curves & observations",ylim=ylim)
-plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fpca$fit[ind,],
-           filename="pred-fpca", title = "Functional PCA",ylim=ylim)
-plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fimp$fit[ind,],
-           filename="pred-fimp", title = "Sparse Functional Impute",ylim=ylim)
-plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fslr$fitR[ind,],
-           filename="pred-freg", title = "Sparse Functional Regression",ylim=ylim)
-plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fslr$fitI[ind,],
-           filename="pred-freg", title = "Sparse Functional Regression",ylim=ylim)
-plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fslr$fit[ind,],
-           filename="pred-freg", title = "Sparse Functional Regression",ylim=ylim)
-
 # Figure 5: Sample error by cross-val
 res[[exp.show]]$fimp$meta$cv.K = round(res[[exp.show]]$fimp$meta$cv.K)
 pp = ggplot(data = res[[exp.show]]$fimp$meta, aes(x=lambda, y=cv.err)) + paper.theme +
@@ -158,6 +116,49 @@ pp = ggplot(data = res[[exp.show]]$fimp$meta, aes(x=lambda, y=cv.K)) + paper.the
   labs(x = TeX("$\\lambda$"), y = "K")
 print(pp)
 myggsave(filename=paste0("docs/plots/K-of-lambda.pdf"), plot=pp)
+
+# Figure 3:
+res[[exp.show]]$tbl
+#matplot(t(-res[[exp.show]]$fpca$v)[,1:min(3,nrow(res[[exp.show]]$fpca$v))],t='l',lwd = 4)
+
+scalar = sqrt(rowSums(res[[exp.show]]$fpca$v**2)[1])
+vlist = list(res[[exp.show]]$fpca$v / scalar,
+             res[[exp.show]]$fimp$v)
+vlist[[2]][1,] = vlist[[2]][1,]*(-1)
+ttl = c("Components of fPCA","Components of SFI")
+names = c("fpca","fimp")
+
+for (j in 1:length(vlist)){
+  cols = gg_color_hue(3)
+  v = vlist[[j]]
+  pp = ggplot(data.frame(x=c(0, 1)), aes(x)) + paper.theme +
+    xlim(0,1) + ylim(-0.4,0.5) + labs(x = "time", y = "value", title=ttl[j])
+  for (i in 1:min(3,nrow(v))){
+    df = data.frame(x=0:30/30,y=v[i,])
+    pp = pp + geom_segment(data=df, aes(x=x,y=y,xend=dplyr::lead(x),yend=dplyr::lead(y)),
+                           color=cols[i], size=1.5, linetype=i)
+  }
+  print(pp)
+  myggsave(filename=paste0("docs/plots/components-",names[[j]],".pdf"), plot=pp)
+}
+
+# Figure 4:
+ind = 1:3 + 10
+# plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$mean$fit[ind,],
+#            filename="pred-mean", title = "Mean")
+ylim = c(min(res[[exp.show]]$simulation$fobs[ind,]) - 0.1, max(res[[exp.show]]$simulation$fobs[ind,]) + 0.1)
+plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], NULL,
+           filename="pred-mean", title = "True curves & observations",ylim=ylim)
+plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fpca$fit[ind,],
+           filename="pred-fpca", title = "Functional PCA",ylim=ylim)
+plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fimp$fit[ind,],
+           filename="pred-fimp", title = "Sparse Functional Impute",ylim=ylim)
+plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fslr$fitR[ind,],
+           filename="pred-freg", title = "Sparse Functional Regression",ylim=ylim)
+plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fslr$fitI[ind,],
+           filename="pred-freg", title = "Sparse Functional Regression",ylim=ylim)
+plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fslr$fit[ind,],
+           filename="pred-freg", title = "Sparse Functional Regression",ylim=ylim)
 
 # Figure 6: Example curves from the simulation
 cols = gg_color_hue(3)
@@ -182,8 +183,10 @@ for (showLines in 0:1){
 
 # Figure 7: Boxplots for all methods
 library(tidyr)
-tmp = t(boxplot.data)[-c(4,6),-c(1,4)]
-colMeans(tmp)
+tmp = t(boxplot.data)
+r = colMeans(tmp)
+r
+(1 - r / r[1]) * 100
 apply(tmp,2,sd)
 
 rownames(tmp) = 1:nrow(tmp)

@@ -3,7 +3,7 @@ gg_color_hue <- function(n) {
   hues = seq(15, 375, length = n + 1)
   hcl(h = hues, l = 65, c = 100)[1:n]
 }
-myggsave = function(filename,plot,width=7,height=7){
+myggsave = function(filename,plot,width=10,height=10){
   ggsave(filename=filename,plot=plot,width=width,height=height)
 }
 paper.theme = theme_set(theme_grey(base_size = 36)) +
