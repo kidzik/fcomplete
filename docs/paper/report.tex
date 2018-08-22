@@ -1045,89 +1045,100 @@ Compared to the null model all three methods reduce the \verb|MSE| by $\sim 30\%
 \bibliography{report}
 %\printbibliography
 
-%% \appendix
+\appendix
 
-%% \section{\tr{TODO: Convergence Analysis}}\label{s:convergence}
+\section{Proofs}\label{s:convergence}
 
-%% We prove convergence by mapping our problem into the framework of \citet{mazumder2010spectral}. First we redefine the observed values by defining the operators
+We prove convergence by mapping our problem into the framework of \citet{mazumder2010spectral}.
+%% First, we define operators
 %% \[
-%% P_{\Omega,M}(X) = P_\Omega(X)M \text{ and } P_{\Omega,M}^\perp(X) = P_\Omega^\perp(X)M
+%% P_{\Omega,B}(Y) = P_\Omega(Y)B' \text{ and } P_{\Omega,B}^\perp(Y) = P_\Omega^\perp(Y)B'
 %% \]
-%% Note that $P_{\Omega,M}$ is not a projection, but it shares some properties, required for directly applying proofs from \citep{mazumder2010spectral}. In particular, 
-%% $P_{\Omega,M}(X) + P_{\Omega,M}^\perp(X) = XM$ and
+%% Note that $P_{\Omega,B}$ is a linear operator and $P_{\Omega,B}(Y) + P_{\Omega,B}^\perp(Y) = YB'$. %, which is the only property of $P_\Omega$ required for directly applying proofs from \citep{mazumder2010spectral}. 
+%% and
 %% \begin{equation}
-%%     \|P_{\Omega,M}(X) + P_{\Omega,M}^\perp(X)\|_F^2 = \|P_{\Omega,M}(X)\|_F^2 + \|P_{\Omega,M}^\perp(X)\|_F^2.
+%%     \|P_{\Omega,B'}(Y) + P_{\Omega,B'}^\perp(Y)\|_F^2 = \|P_{\Omega,B'}(Y)\|_F^2 + \|P_{\Omega,B'}^\perp(Y)\|_F^2.
 %% \end{equation} We define
-%% \begin{align}\label{eq:helper-function}
-%%  f_\lambda(W) := \frac{1}{2} \|P_{\Omega,M}(X) - P_{\Omega,M}(WM')\|_F^2 + \lambda\|W\|_*.
-%% \end{align}
-%% Our objective is to find $ Z_\lambda = {\arg\min}_Z f_\lambda(W)$. We define
-%% \[
-%% Q_\lambda(W|\tilde{W}) = \frac{1}{2}\|P_{\Omega,M}(X) + P_{\Omega,M}^{\perp}(\tilde{W} M') - Z\|_F^2 + \lambda \|W\|_*,
-%% \]
-%% as a surrogate of $f_\lambda$. One can show that Algorithm \ref{alg:soft-impute} in the step $k$ computes $W_\lambda^{k+1} = \argmin_Z Q_\lambda(W|W_\lambda^k)$.
+Following their notation we define
+\begin{align}\label{eq:helper-function}
+ f_\lambda(W) = \frac{1}{2} \|P_{\Omega}(Y) - P_{\Omega}(WB')\|_F^2 + \lambda\|W\|_*.
+\end{align}
+Our objective is to find $ W_\lambda = {\arg\min}_W f_\lambda(W)$. We define
+\begin{align}\label{eq:q}
+Q_\lambda(W|\tilde{W}) = \frac{1}{2}\|P_{\Omega}(Y) + P_{\Omega}^{\perp}(\tilde{W} B') - WB'\|_F^2 + \lambda \|W\|_*.
+\end{align}
+%as a surrogate of $f_\lambda$.
+We first show that Algorithm \ref{alg:soft-impute} in the step $k$ computes $W_\lambda^{k+1} = \argmin_W Q_\lambda(W|W_\lambda^k)$. Next we show that $W_\lambda^k$ converges to the solution of \eqref{eq:helper-function}, i.e. $W_\lambda^k \rightarrow W_\lambda$.
+\begin{lemma}\label{lemma:svt}
+Let $W$ be an $N \times K$ matrix of rank $r \leq K$ and $B$ is an orthogonal $T \times K$ matrix. The solution to the optimization problem
+\begin{equation}\label{eq:lemma1}
+\min_W \frac{1}{2}\|Y - WB' \|_F^2 + \lambda\|W\|_*
+\end{equation}
+is given by $\hat{W} = S_\lambda(YB)$ where
+\[
+S_\lambda(YB) \equiv WD_\lambda V' \text{ with } D_\lambda = \diag[(d_1 - \lambda)_+, ..., (d_r - \lambda)_+],
+\]
+$WDV'$ is the SVD of $YB$, $D = \diag[d_1,...,d_r]$, and $t_+ = \max(t,0)$.
+\end{lemma}
+\begin{proof}
+% Note that for any $A_{N\times T}$ of rank $K$, we have $S_\lambda(AB) = S_\lambda(A)B$ and since \eqref{eq:lemma1} is equivalent to
+% \[
+% \min_Z \frac{1}{2}\|WB' - Z \|_F^2 + \lambda\|W\|_*,
+% \]
+By Lemma 1 from \citet{mazumder2010spectral} we know that $S_\lambda(YB)$ solves
+\[
+\min_W \frac{1}{2}\|YB - W \|_F^2 + \lambda\|W\|_*.
+\]
+Now, since we have $\|Y - WB' \|_F = \|YB - W \|_F$, $S_\lambda(YB)$ also solves our Lemma~\ref{lemma:svt}.
+\end{proof}
+\begin{lemma}\label{eq:z-sequence}
+For every fixed $\lambda \geq 0$, define a sequence $W_\lambda^k$ by
+\[
+W_\lambda^{k+1} = \argmin_W Q_\lambda(W|W_\lambda^k)
+\]
+with any starting point $W_\lambda^0$. The sequence $W_\lambda^k$ satisfies 
+\[
+f_\lambda(W_\lambda^{k+1}) \leq  Q_\lambda(W_\lambda^{k+1} | W_\lambda^k ) \leq f_\lambda(W_\lambda^{k})
+\]
+\end{lemma}
+\begin{proof}
+By Lemma \ref{lemma:svt} and the definition \eqref{eq:q}, we have:
+\begin{align*}
+  f_\lambda(W_\lambda^k) &= Q_\lambda(W_\lambda^k | W_\lambda^k)\\
+  &= \frac{1}{2}\|P_{\Omega}(Y) + P_{\Omega}^{\perp}(W_\lambda^k B') - W_\lambda^kB'\|_F^2 + \lambda \|W_\lambda^k\|_*\\
+  &\geq \min_W \frac{1}{2}\|P_{\Omega}(Y) + P_{\Omega}^{\perp}(W_\lambda^k B') - WB'\|_F^2 + \lambda \|W\|_*\\
+  &= Q_\lambda(W_\lambda^{k+1} | W_\lambda^k)\\
+  &= \frac{1}{2}\|P_{\Omega}(Y) + P_{\Omega}^{\perp}(W_\lambda^k B') - W_\lambda^{k+1}B'\|_F^2 + \lambda \|W_\lambda^{k+1}\|_*\\
+  &= \frac{1}{2}\|(P_{\Omega}(Y) - P_\Omega(W_\lambda^{k+1}B'))+ (P_{\Omega}^{\perp}(W_\lambda^k B') - P_\Omega^\perp(W_\lambda^{k+1}B'))\|_F^2 + \lambda \|W_\lambda^{k+1}\|_*\\
+  &= \frac{1}{2}\|P_{\Omega}(Y) - P_\Omega(W_\lambda^{k+1}B')\|_F^2 + \frac{1}{2}\|P_{\Omega}^{\perp}(W_\lambda^k B') - P_\Omega^\perp(W_\lambda^{k+1}B')\|_F^2 + \lambda \|W_\lambda^{k+1}\|_*\\
+  &\geq \frac{1}{2}\|P_{\Omega}(Y) - P_\Omega(W_\lambda^{k+1}B')\|_F^2 + \lambda \|W_\lambda^{k+1}\|_*\\
+  &= Q_\lambda(W_\lambda^{k+1} | W_\lambda^{k+1})\\
+  &= f(W_\lambda^{k+1}).
+\end{align*}
+\end{proof}
+    Note that proofs of Lemma \ref{lemma:svt} and Lemma \ref{eq:z-sequence} are just elementary extentions of their counterparts in \citet{mazumder2010spectral}. Similarly, we get equivalent results for their Lemma 3-5 and the main theorem.
+\begin{theorem}
+The sequence of $W_{\lambda}^k$ defined in Lemma \ref{eq:z-sequence} converges to a limit $W_\lambda^\infty$ that solves
+\[
+\min_W \frac{1}{2} \|P_\Omega(Y) - P_\Omega(WB)\|_F^2 + \lambda\|W\|_*.
+\]
+\end{theorem}
 
-%% The key ingredients of the proof of convergence are the following two lemmas,
-%% \begin{lemma}
-%% Suppose the matrix $W_{N \times T}$ has rank $r \leq K$. The solution to the optimization problem
-%% \begin{equation}\label{eq:lemma1}
-%% \min_Z \frac{1}{2}\|WM - Z \|_F^2 + \lambda\|W\|_*
-%% \end{equation}
-%% is given by $\hat{W} = S_\lambda(WM)$ where
-%% \[
-%% S_\lambda(WM) \equiv WD_\lambda V' \text{ with } D_\lambda = \diag[(d_1 - \lambda)_+, ..., (d_r - \lambda)_+],
-%% \]
-%% $WDV'$ is the SVD of $WM$, $D = \diag[d_1,...,d_r]$, and $t_+ = \max(t,0)$.
-%% \end{lemma}
 %% \begin{proof}
-%% % Note that for any $A_{N\times T}$ of rank $K$, we have $S_\lambda(AM') = S_\lambda(A)M'$ and since \eqref{eq:lemma1} is equivalent to
-%% % \[
-%% % \min_Z \frac{1}{2}\|WM - Z \|_F^2 + \lambda\|W\|_*,
-%% % \]
-%% The proof follows from Lemma 1 from \citep{mazumder2010spectral}. %, and $\hat{W} = S_\lambda(WM) = S_\lambda(W)M$.
-%% % Similarly, we can show that the sequence 
-%% % \begin{equation}\label{eq:sequence}
-%% % Z_\lambda^{k+1}M' = S_\lambda(P_\Omega(X) - P_\Omega(W_\lambda^k M')),
-%% % \end{equation}
-%% % defined in Algorithm \ref{alg:soft-impute}, converges to the solution of \eqref{eq:matrixproblem-final}. 
-%% \end{proof}
-%% \begin{lemma}\label{eq:z-sequence}
-%% For every fixed $\lambda \geq 0$, define a sequence $W_\lambda^k$ by
-%% \[
-%% Z_\lambda^{k+1} = \argmin_Z Q_\lambda(W|W_\lambda^k)
-%% \]
-%% with any starting point $W_\lambda^0$. The sequence $W_\lambda^k$ satisfies 
-%% \[
-%% f_\lambda(W_\lambda^{k+1}) \leq  Q_\lambda(W_\lambda^{k+1} | Z_\lambda^k ) \leq f_\lambda(W_\lambda^{k})
-%% \]
-%% \end{lemma}
-%% \begin{proof}
-%% Thanks to properties of $P_{\Omega,M}(X)$, the proof follows from Lemma 2 from \citep{mazumder2010spectral}.
-%% \end{proof}
-%% Similarly, thanks to equivalent properties of $P_\Omega$ and $P_{\Omega,M}$, we get equivalent results for Lemmas 3-6 from \citep{mazumder2010spectral}. This also allows implies the main result
-%% \begin{theorem}
-%% The sequence of $W_{\lambda}^k$ defined in Lemma \ref{eq:z-sequence} converges to a limit $W_\lambda^\infty$ that solves
-%% \[
-%% \min_Z \frac{1}{2} \|P_{\Omega,M}(X) - P_{\Omega,M}(WM')\|_F^2 + \lambda\|W\|_*,
-%% \]
-%% \end{theorem}
-
-%% \begin{proof}
-%% It's sufficient to show that $W_{\lambda}^k$ has a limit. Then, the convergence follows from Lemma 5 in \citep{mazumder2010spectral}.
+%% It's sufficient to show that $W_{\lambda}^k$ has a limit. Then, the convergence follows from Lemma 5 from \citet{mazumder2010spectral}.
 
 %% Now
 %% \begin{align*}
-%% \|W_\lambda - Z_\lambda^k\|_F^2 &= \|S_\lambda((P_{\Omega,M}(X) + P_{\Omega,M}^\perp(W_\lambda M'))M) - S_\lambda((P_{\Omega,M}(X) + P_{\Omega,M}^\perp(W_\lambda^{k-1}M'))M)\|_F^2 \\
-%% &\leq \|(P_{\Omega,M}(X) + P_{\Omega,M}^\perp(W_\lambda M'))M - (P_{\Omega,M}(X) + P_{\Omega,M}^\perp(W_\lambda^{k-1}M'))M\|_F^2\\
-%% &= \|P_{\Omega,M}^\perp(W_\lambda M') - P_{\Omega,M}^\perp(W_\lambda^{k-1}M')\|_F^2\\
-%% &= \|P_{\Omega,M}^\perp(W_\lambda M' - Z_\lambda^{k-1}M')\|_F^2\\
-%% &\leq \|W_\lambda - Z_\lambda^{k-1}\|_F^2
+%% \|W_\lambda - W_\lambda^k\|_F^2 &= \|S_\lambda((P_\Omega(Y) + P_\Omega^\perp(W_\lambda B))B') - S_\lambda((P_\Omega(Y) + P_\Omega^\perp(W_\lambda^{k-1}B))B')\|_F^2 \\
+%% &\leq \|(P_\Omega(Y) + P_\Omega^\perp(W_\lambda B))B' - (P_\Omega(Y) + P_\Omega^\perp(W_\lambda^{k-1}B))B'\|_F^2\\
+%% &= \|P_\Omega^\perp(W_\lambda B) - P_\Omega^\perp(W_\lambda^{k-1}B)\|_F^2\\
+%% &= \|P_\Omega^\perp(W_\lambda B - W_\lambda^{k-1}B)\|_F^2\\
+%% &\leq \|W_\lambda - W_\lambda^{k-1}\|_F^2
 %% \end{align*}
-%% and the reminder of the proof follows from the proof of Theorem 1 in \citep{mazumder2010spectral}.
+%% and the reminder of the proof follows from the proof of Theorem 1 from \citet{mazumder2010spectral}.
 %% \end{proof}
 
 %% \section{\texttt{fimpute} package}
-
 %% Let \verb|data| be the data matrix with columns \verb|subjectID, time, gdi, weight, dmc|, with $2-10$ observations for each \verb|subjectID|. Package \verb|fimpute| enables performing three tasks:
 %% \begin{enumerate}
 %% \item imputing missing values in \verb|gdi|,
