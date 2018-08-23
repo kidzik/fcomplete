@@ -10,7 +10,9 @@ paper.theme = theme_set(theme_grey(base_size = 36)) +
   theme(legend.position="none", plot.title = element_text(hjust = 0.5),
         panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1))
 
-plot_preds = function(obs, true = NULL, fit = NULL, title = NULL, filename = NULL, d = 31, ylim = NULL){
+plot_preds = function(obs, true = NULL, fit = NULL, title = NULL, filename = NULL, ylim = NULL){
+  ylim = c(min(obs),max(obs))
+  d = ncol(obs)
   cols = gg_color_hue(nrow(obs))
   pp = ggplot(data.frame(x=c(0, 1)), aes(x)) + paper.theme + #ylim(-6,6) +
     xlim(0,1) + labs(x = "time", y = "value")
