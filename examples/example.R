@@ -1,5 +1,8 @@
 library("devtools")
 install(".")
+library("fcomplete")
+library("ggplot2")
+library("mclust")
 source("tests/plot.helpers.R")
 
 # Load simulated 'toy' data
@@ -16,7 +19,7 @@ idx = 1:5
 plot_preds(model$Y[idx,], model$fit[idx,], NULL,
            filename="pred-mean", title = "True curves & observations")
 
-# Some output elements
+# Some output elements (basically the SVD decomposition)
 model$v # principal components (elements from K + 1 are meaningless, I'll remove them)
 model$u # loadings on the first K principal components
 
@@ -25,3 +28,11 @@ plot(model$u[,1:2])
 
 # 'Progression' trends
 matplot(t(model$v[1:3,]),t='l')
+
+## Clustering
+fit <- Mclust(model$u)
+plot(fit) # plot results
+summary(fit) # display the best model
+
+# Get cluster means in functional space
+matplot( t(t(fit$parameters$mean) %*% model$v[1:3,]), t='l')
