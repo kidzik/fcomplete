@@ -14,3 +14,11 @@ For now it's designed for R Studio.
     * Run the method
     * Plot estimates, components and projections,
     * Run basic clustering on projections
+
+## Manual
+
+You can generate the manual by running
+```bash
+R CMD Rd2pdf fcomplete
+```
+from the parent directory to `fcomplete`.
