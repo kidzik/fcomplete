@@ -22,3 +22,9 @@ You can generate the manual by running
 R CMD Rd2pdf fcomplete
 ```
 from the parent directory to `fcomplete`.
+
+## Tests
+
+Examples are in tests for now. The main two examples (from the paper) are:
+* `simulation.full.R` -- the simulation study from the paper
+* `data.full.R` -- the data study from the paper
