@@ -86,6 +86,7 @@
   
   In this study, we propose an alternative elementary framework for analyzing longitudinal data, relying on matrix factorization. Our method yields point estimates of progression curves by iterative application of the SVD. Our framework covers multivariate longitudinal data, regression and can be easily extended to other settings.
 
+  We apply our methods to understand trends of progression of motor impairment in children with Cerebral Palsy. Our model approximates individual progression curves and explains 30\% of variability. Low rank representation of progression trends enable discovering that subtypes of impairment exhibit different progression trends. 
   
 \end{abstract}
 
@@ -930,8 +931,9 @@ The SLI achieves performance similar to \citep{james2000principal}, as presented
   SLI & 0.121 & 0.03 \\ 
   SLR & 0.064 & 0.03 \\ 
    \hline
-\end{tabular}\label{tbl:simulations}
+\end{tabular}
 \caption{Average (across 10 trials) variance explained by (1) subject's mean of observed points (mean), (2) functional principal components (fPCA), (3) Sparse-Longitudinal-Impute (SLI) and (4) Sparse-Longitudinal-Regression (SLR) with extra data available for this procedure.}
+\label{tbl:simulations}
 \end{table}
 
 In Figure \ref{fig:principal-components} we present the first components derived from both sparse functional PCA and SLI. In Figure \ref{fig:example-predictions} we present example predictions from all four methods. In Figure \ref{fig:estimated-rank}, we present the estimated rank and cross-validation error of one of the simulation runs.
@@ -955,24 +957,51 @@ In Figure \ref{fig:principal-components} we present the first components derived
 
 \section{Data study}
 
-The target class of problems motivating this study is the prediction of a trajectory of disease progression from sparse observations. As an example application, we analyze a dataset of Gillette Children's Hospital patients visiting the clinic between 1994 and 2014, mostly diagnosed with Cerebral Palsy (CP), age ranging between 4 and 19 years. The dataset contains $84$ visits of $36$ patients without gait disorders and $6066$ visits of $2898$ patients with gait pathologies. 
+The target class of problems motivating this study is prediction of trajectories of disease progression of individual patients from sparse observations. In this section, we present how our methods are applied for understanding progression of neurological disorders leading to motor impairments and gait pathologies. First, we discuss how practitioners collect the data and use them to guide decision process. Next, we describe our dataset and present how our methodology can improve current workflows. Then, we present and discuss results.
 
-At each visit movement of a child is recorded using optical motion capture. These signals are then converted to trajectories of joint angles using biomechanical models. Finally, practitioners extract summary statistics of gait, which are then used for clinical decisions.
+In clinical gait analysis, at each visit movement of a child is recorded using optical motion capture. Optical motion capture is a data acquisition technique. It allows to estimate 3D positions of body parts using a set of cameras tracking markers positions on the subject's body. A set of at least three markers is placed at each analyzed body segment (e.g. hand, lower leg, upper arm), so that its 3D position and orientation can be identified uniquely. These data is then used to determine relative positions of body segments by computing the angle between the corresponding planes. Typically it is done using a biomechanical model for enforcing biomechanical constraints and improving accuracy.
 
-One of the most widely adopted quantitative measurements of gait impairments in pediatrics is Gait Deviation Index (GDI) introduced by \citet{schwartz2008gait}. GDI is derived from joint angle trajectories and measures deviation of the principal component scores from the population average in a normally developing population. GDI is normalized in such a way that $100$ corresponds to the mean value of normally developing children, with the standard deviation equal $10$. 
+Practitioners are usually concerned about movement pattern of the lower-limbs and nine joints: ankle, knee, hip in each leg and pelvis (Figure \ref{fig:joint-angles}). Eeach joint angle is measured in time. For making the curves comparable between the patients, usually the time dimension is normalized to the percentage of gait cycle, defined as the time between two foot strikes (Figure \ref{fig:joint-angles-in-time}).
 
-A model of progression trajectories of GDI can constitute an essential baseline for analyzing effects of treatments -- an accurate prediction of a trajectory can help practitioners understand if an improvement after therapy is due to the treatment or purely a result of natural progression.
+While trajectories of joint angles are a piece of data commonly used by practitioners for taking decisions regarding treatment, their high-dimensional nature hinders their use as a quantitative metric of gait pathology or treatment outcome. This motivates development of univariate summary metrics of gait impairment, such as questionnaire-based metrics Gillette Functional Assessment Walking Scale (FAQ) \citep{gorton2011gillette}, Gross Motor Function Classification System (GMFCS) \citep{palisano2008content} and Functional Mobility Scale (FMS) \citep{graham2004functional}, or observational videa analysis scores such as Edinburgh Gait Score \citep{read2003edinburgh}.
 
-To illustrate applicability of our method in this context, we are predicting patient's GDI development trajectory in two settings: (1) solely based on their GDI history and histories of other patients, (2) using sparsely observed covariates, namely BMI or O2 expenditure. 
+One of the most widely adopted quantitative measurements of gait impairments in pediatrics is Gait Deviation Index (GDI) \citep{schwartz2008gait}. GDI is derived from joint angle trajectories and measures deviation of the first ten singular values from the population average of the normally developing population. GDI is normalized in such a way that $100$ corresponds to the mean value of normally developing children, with the standard deviation equal $10$. It is proven to be highly correlated with questionnaire-based methods. Thanks to its deterministic derivation from the motion capture measurements this method is considered very objective.
 
-We test three methods: functional principal components (fPCA), \textsc{Soft-Longitudinal-Impute} (SLI) and \textsc{Sparse-Longitudinal-Regression} (SLR). We compare the results to the \emph{null model} -- the population mean (\verb|mean|). In SLR, we approximate GDI using latent variables of sparsely observed covariates \textit{O2 expenditure} and \textit{walking speed}, following the methodology from Section \ref{ss:regression}.
+%\afterpage{\clearpage}
+\begin{figure}[p]
+  \includegraphics[width=\linewidth]{images/bodies-chart-paper-layout.png}
+  \caption{Four joints measured in clinical gait analysis: pelvis, hip, knee, and ankle. Each joint can be measured in three planes: saggital plane (top row), frontal plate (middle row), and transverse plane (bottom row).}
+    \label{fig:joint-angles}
+%  \vskip 0.5cm
+  \includegraphics[width=\linewidth]{images/kinematics.pdf}
+  \caption{Recordings of joint angles during the gait cycle (fraction of the gait cycle on each X axis)}
+    \label{fig:joint-angles-in-time}
+\end{figure}
 
-In our evaluation procedure, we randomly select $5\%$ of observations from patients who visited the clinic at least $4$ times as our test set. Then, we split the remaining $95\%$ of observations into a training and validation sets. We train the algorithms with all combinations of parameters: the regularization parameter for SLI and SLR procedures $\lambda \in \{0, 0.1, 0.2, ..., 2.0\}$ and the rank for fPCA procedure $d \in \{2,3,4,...,K\}$. We define the grid of $T = 51$ points. We repeat the entire evaluation procedure $20$ times.
+%These signals are then converted to trajectories of joint angles using biomechanical models. Finally, practitioners extract summary statistics of gait, which are then used for clinical decisions.
 
-Let us denote the test set as $\Omega \subset \{1,2,...,N\} \times \{1,2,...,T\}$. We validate each model $M$ on held-out indices by computing the mean squared error as defined in \eqref{eq:err}. We select the parameters of each of the three models using cross-validation. %We estimate errors by cross-validation, sampling $95\%$ of points to train the models and leaving $5\%$ for estimating the \verb|MSE|. 
+In medical practice, GDI has been adapted as a metric for diagnosing severity of impairment and it constitutes an important part of the clinical decision taking and evaluation of treatment outcomes. However, in order to correctly identify the surgery outcome, its crucial to understand the natural progression of GDI. In particular, a positive outcome of a surgery, might be negligible when compared to natural improvement during puberty. Similarly, a surgery maintaning the same level of GDI might be incorrectly classified as a failaure, if the decline in patient's function over time is not accounted for.
 
-% latex table generated in R 3.4.1 by xtable 1.8-2 package
-% Tue Sep  5 22:27:27 2017
+%Therefore, a model of its progression can  an essential baseline for analyzing effects of treatments -- an accurate prediction of a trajectory can help practitioners understand if an improvement after therapy is due to the treatment or purely a result of natural progression.
+
+Methods introduced in this article can be used to approximate individual progressions of GDI. First, we present how prediction can be done solely based on patient's GDI history and histories of other patients. Next, using our regression procedure, we predict GDI trajectories using other sparsely observed covariates, namely O2 expenditure and walking speed.
+
+\subsection{Materials and methods}
+
+We analyze a dataset of Gillette Children's Hospital patients visiting the clinic between 1994 and 2014, mostly diagnosed with Cerebral Palsy, age ranging between 4 and 19 years. The dataset contains $84$ visits of $36$ patients without gait disorders and $6066$ visits of $2898$ patients with gait pathologies.
+
+Motion capture data was collected at 120Hz and joint angles in time were extracted. These joint angles were then normalized in time to the gait cycle, resulting in curves as in Figure \ref{fig:joint-angles-in-time}. Points from these curves were then subsampled (51 equidistributed points). Given the data in this form, we computed GDI metric from each visit and each leg.
+
+In the dataset we received, for each patient we observe their birthday and disease subtype. From each visit we observe following variables: patient ID, time of the visit, GDI of the left leg, GDI of the right leg, walking speed, and O2 expenditure. Other clinical variables that we received from Gillette Children's Hospital were not included in this study. Note that the walking speed is related to information we loose during normalization of the gait cycle in time. O2 expenditure is a measure of subject's energy expenditure during walking. Pathological gait is often energy inefficient and reduction of O2 expenditure is one of the objectives of treatments. Finally, GDI is computed for two legs while in many cases the neurological disorder affects only one limb. To simplify the analysis, we focus on the more impaired limb by analyzing minimum of left and right GDIs.
+
+Our objective is to model individual progression curves. We test three methods: functional principal components (fPCA), \textsc{Soft-Longitudinal-Impute} (SLI) and \textsc{Sparse-Longitudinal-Regression} (SLR). We compare the results to the \emph{null model} -- the population mean (\verb|mean|). In SLR, we approximate GDI using latent variables of sparsely observed covariates \textit{O2 expenditure} and \textit{walking speed}, following the methodology from Section \ref{ss:regression}.
+
+In our evaluation procedure, for the test set we randomly select $5\%$ of observations of patients who visited the clinic at least $4$ times. Then, we split the remaining $95\%$ of observations into a training and validation sets in $90-10$ proportion. We train the algorithms with the following combinations of parameters: the regularization parameter for SLI and SLR procedures $\lambda \in \{0, 0.1, 0.2, ..., 2.0\}$ and the rank for fPCA procedure $d \in \{2,3,4,...,K\}$. We define the grid of $T = 51$ points. We repeat the entire evaluation procedure $20$ times.
+
+Let us denote the test set as $\Omega \subset \{1,2,...,N\} \times \{1,2,...,T\}$. We validate each model $M$ on held-out indices by computing the mean squared error as defined in \eqref{eq:err}. We select the parameters of each of the three methods using cross-validation, using the same validation set.
+
+For the purpose of this study we created an \verb|R| package \verb|fcomplete|. The package contains implementations of algorithms \ref{alg:soft-impute}, \ref{alg:hard-impute}, \ref{alg:longitudinal-regression}, and \ref{alg:sparse-regression}, and helper functions for transforming the data, sampling training and test datasets, and plotting functions. For convenince, we also provided an interface for using the \verb|fpca| package implementing Sparse Functional Principal Components algorithms \citep{james2000principal,peng2009geometric}. The analysis was perform on a desktop PC with 32 GB RAM memmory and an Intel\textsuperscript{\textregistered} Core\textsuperscript{\texttrademark} i7-6700K CPU @ 4.00GHz, operating on a Ubuntu 18.04 system with \verb|R| version 3.4.4.
+
 \begin{table}[ht]
   \centering
 \begin{tabular}{rrr}
@@ -983,54 +1012,41 @@ Let us denote the test set as $\Omega \subset \{1,2,...,N\} \times \{1,2,...,T\}
   SLI & 0.70 & 0.10\\
   SLR & 0.68 & 0.08 \\
    \hline
-\end{tabular}\label{tbl:data-res}
+\end{tabular}
 \caption{Distribution of cross-validated MSE of the three procedures: functional principal components (fPCA), Soft-Longitudinal-Impute (SLI), Soft-Longitudinal-Regression with two additional predictors: O2 expenditure and walking speed (SLR).}
+\label{tbl:data-res}
 \end{table}
 
-%% \begin{figure}[h!]
-%%   \includegraphics[width=0.7\linewidth]{../plots/data-boxplot}
-%%   \caption{Distribution of variance explained by three procedures: functional principal components (fPCA), Soft-Longitudinal-Impute (SLI), Soft-Longitudinal-Regression (SLR).}
-%%   \label{fig:Boxplots}
-%% \end{figure}
+\subsection{Results}\label{ss:results}
 
-Compared to the null model all three methods reduce the \verb|MSE| by $\sim 30\%$. We present detailed results in Table \ref{tbl:data-res}. %\tr{[TODO: UPDATE WITH BETTER RESULTS]}
+Compared to the null model, all three methods explain around $\sim 30\%$ of the variance. We present detailed results in Table \ref{tbl:data-res}. \textsc{Sparse-Longitudinal-Regression} had smaller mean and variance than two other methods indicating that two other variables. We conclude that O2 expanditure and walking speed provide additional information for prediction of GDI progression.
 
-% \section{Simulations}
+Both fPCA and \textsc{Sparse-Longitudinal-Impute} provide latent representations of patients' pregression curves which can potentially be interpreted. To this end we first analyze the singular value vectors from our SVD solution to which we reffer as principal components.
 
-% We take the grid of size $d = 51$ and a spline basis of $9$ functions (Figure \ref{fig:basis}). We generate observations from model $\eqref{eq:model}$ with $k = 9$ true components. We set $\Theta\Theta'$ to be a matrix with eigenvalues $\diag[1,0.9,0.5,e^{-3},...,e^{-8}]$. We observed values with uncorrelated gaussian noise with $\sigma^2 = 0.25$. The matrix is fully-observed.
+In the left plot in Figure \ref{fig:data-components} we plotted the first two estimated principal components. We found that the first component estimates the change between GDI before and after age of 20. The second component models changes around age of 10 and around age of 18. In the right plof in Figure \ref{fig:data-components}, by adding a principle component to the population mean curve, we illustrate how differences in the first component are reflected in the patients trajectory. By visual investigation of curves returned by our \textsc{Sparse-Longitudinal-Impute} and by fPCA we found similar trends in the first two components.
 
-% In functional PCA we run the procedure with different $K = 1,2,...,9$ and in Soft-Impute we run the estimation procedure with different $\lambda$. We present the best results in Figure \ref{fig:results}. We analyze two errors: mean squared distance (1) from the observed points ($M_O$) and (2) from the true processes ($M_T$). For now, no cross-validation -- only in-sample fit.
+Since our SVD decomposition defines a low-rank representation of the progression trends, we can also use it to gain insights on progression in different groups of patients. We find differences between trends of progression for different subtypes of paralysis of patients. In Cerebral Palsy we devide paralysis into subtypes depending on which limbs are affected: monolegia (one leg), diplegia (two legs), hemiplegia (one side of the body), triplegia (three limbs), quadriplegia (four limbs). Hemiplegia is the most prevalent in our population and it might be devided depending on severity, from type I (weak muscles, drop foot) to type IV (severe spasticity).
 
-% Preliminary results are presented in (Table \ref{tab:results}).
-% \begin{table}[h]
-%   \centering
-% \begin{tabular}{lcc}
-%                   & $M_O$ & $M_T$\\
-% \hline
-% Soft-Impute  & 0.91 (sd=0.006) & 0.97 (sd=0.07)\\ 
-% Sparse fPCA & 0.93 (sd=0.009) & 0.91 (sd=0.07)\\
-% \end{tabular}
-%   \caption{Results from only ten trials (TODO).}\label{tab:results}
-% \end{table}
+\begin{figure}[h!]
+  \includegraphics[width=0.49\linewidth]{images/data-components.pdf}
+  \includegraphics[width=0.49\linewidth]{images/data-components-added.pdf}
+\caption{Left: Trends of variability (principal compontents). Right: Effect of principal components on individual trajectories.}
+    \label{fig:data-components}
+  \includegraphics[width=0.9\linewidth]{images/paralysis-subtypes}
+\caption{Progression trends is differnt subsets of diseases. Negative values of the score, such as most of the quadriplegic group, correspond to individual trends where the first component (the red curve Figure \ref{fig:data-components} left) is subtracted from the mean (the green curve in Figure \ref{fig:data-components} right). Positive values of the score, such as most of the hemiplegic group, correspond to individual trends where the first component is added (the red curve in Figure \ref{fig:data-components} right).}
+    \label{fig:subtypes}
+\end{figure}
 
-% Results from one of the simulations are presented in Figure \ref{fig:results}. In Figure \ref{fig:components} we plot components and in Figure \ref{fig:scores} we plot scores.
+\section{Discussion}
 
-% \begin{figure}[h]
-%   \includegraphics[width=\linewidth]{images/simulation-results}
-%   \caption{5 example curves. True processes (top-left), Observed processes (top-right). Soft-impute estimates (bottom-left) and sparse functional PCA estimates (bottom-right).}
-%   \label{fig:results}
-% \end{figure}
+Results presented in Section \ref{ss:results} imply that our \textsc{Sparse-Longitudinal-Impute} and \textsc{Sparse-Longitudinal-Regression} methods can be successfully applied to understands trends of variability of disease progression. We show how to incorporate progressions of O2 expenditure and walking speed in the prediction of the pregression of GDI. We present how low-rank representation can be laveraged to gain insights about sybtypes of impairment.
 
-% \begin{figure}[h]
-%   \includegraphics[width=\linewidth]{images/simulation-components}
-%   \caption{Components}
-%   \label{fig:components}
-% \end{figure}
+While a large portion of variance remains unexplained, it is important to note that in practice the individual progression is not accounted for explicitely in the current decision-making process. Instead, practitioners only use the population-level characteristics of the dependence between age and impairment severity. Our model can greatly improve current practice.
 
-% \begin{figure}[h]
-%   \includegraphics[width=\linewidth]{images/simulation-scores}
-%   \caption{Scores}
-%   \label{fig:scores}
+Despite successful application, we identify limatations that could be potentially addressed in the extensions of our model. Here, we name three of them. First, the method is meant to capture natural continuous progression of GDI, while in practice there are many discrete events, such as surgeries that break continuity assumption and render the mean trajectories less interpretable. Second, our methodology does not address the ``cold start problem'', i.e. we do not provide tools for predictions with only one or zero observations. Third, we do not provide explicit equations for confidence bounds of predicted paramaters.
+
+While these and other limitations can constrain applicability of the method in the current form, they can be addressed using existing techniques of matrix factorization. The focus of this paper is to introduce a computational framework rather than build a full solution for all cases. Elementary formulation of the optimization problem as well as the full-functional \verb|R| implementation of the methods can foster development of new tools using matrix factorization for logitudinal analysis and for mixed-effect models.
+
 % \end{figure}
 
 % \section{Other applications}

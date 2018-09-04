@@ -61,7 +61,7 @@ experiment.sim = function(exp.id){
   res
 }
 
-res = mclapply(1:16, experiment.sim, mc.cores = 4)
+res = mclapply(1:6, experiment.sim, mc.cores = 6)
 res[[1]]$fslr$meta
 
 #save(res,file = "sim-study.Rda")
@@ -108,14 +108,14 @@ pp = ggplot(data = res[[exp.show]]$fimp$meta, aes(x=lambda, y=cv.err)) + paper.t
   ggtitle("Error by cross-validation") +
   labs(x = TeX("$\\lambda$"), y = "error")
 print(pp)
-myggsave(filename=paste0("docs/plots/error-of-lambda.pdf"), plot=pp)
+myggsave(filename=paste0("docs/plots/error-of-lambda.pdf"), plot=pp, width = 10, height = 10)
 
 pp = ggplot(data = res[[exp.show]]$fimp$meta, aes(x=lambda, y=cv.K)) + paper.theme +
   geom_point(size=4) +
   ggtitle(TeX("Dimension K corresponding to $\\lambda$")) +
   labs(x = TeX("$\\lambda$"), y = "K")
 print(pp)
-myggsave(filename=paste0("docs/plots/K-of-lambda.pdf"), plot=pp)
+myggsave(filename=paste0("docs/plots/K-of-lambda.pdf"), plot=pp, width =10 , height = 10)
 
 # Figure 3:
 res[[exp.show]]$tbl
@@ -139,10 +139,11 @@ for (j in 1:length(vlist)){
                            color=cols[i], size=1.5, linetype=i)
   }
   print(pp)
-  myggsave(filename=paste0("docs/plots/components-",names[[j]],".pdf"), plot=pp)
+  myggsave(filename=paste0("docs/plots/components-",names[[j]],".pdf"), plot=pp, width = 10, height = 10)
 }
 
 # Figure 4:
+source("tests/plot.helpers.R")
 ind = 1:3 + 10
 # plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$mean$fit[ind,],
 #            filename="pred-mean", title = "Mean")

@@ -18,6 +18,7 @@ if (!("all.data" %in% ls())){
   pcas = prcomp(gait.cycles)
   all.data = cbind(all.data, pcas$x[,1:10])
   all.data = merge(all.data, gdi,by = c("Patient_ID","examid","side"))
+  trialInfo = read.csv("/home/kidzik/Dropbox/DATA/CP/trialInfo_CP.csv")
 #  all.data = read.csv("/home/lukasz/alldata.csv")
 #  gait.cycles = t(read.csv("/home/lukasz/G_avg_CP.csv"))
 }
@@ -98,8 +99,79 @@ experiment.data = function(i)
        data = data)
 }
 
-models = mclapply(1:20, experiment.data, mc.cores = 4)
-#models = lapply(1:1, data.experiment)
+#models = list()
+#models = mclapply(1:4, experiment.data, mc.cores = 4)
+models[[1]] = experiment.data(4)
+
+plot(models[[1]]$model.fimp$fit[!is.na(models[[1]]$data$test.matrix)], models[[1]]$model.fimp$Y[!is.na(models[[1]]$data$test.matrix)])
+
+pred = models[[1]]$model.fimp$u[] %*% models[[1]]$model.fimp$d[1] %*% models[[1]]$model.fimp$v[1,]
+mean((pred - models[[1]]$data$test.matrix)**2, na.rm = TRUE)
+models[[1]]$errors
+
+#df.quadtmp = data.frame(Patient_id = all.data$Patient_ID, quadriplegic = all.data$isQuadriplegic, triplegic = all.data$isTriplegic)
+#df.quad = aggregate(list(quadriplegic = df.quadtmp$quadriplegic, triplegic = df.quadtmp$triplegic), list(df.quadtmp$Patient_id), max)
+df.quad = aggregate(list(dxmod = as.character(trialInfo$dxmod)), list(Patient_id = trialInfo$Patient_ID), function(x){unique(x)[1]})
+#names(df.quad) = c("Patient_id", "quadriplegic_bin","triplegic_bin")
+df = data.frame(Patient_id = row.names(models[[1]]$data$train.matrix), trend.pc1 = models[[1]]$model.fimp$u)
+df.quad$dxmod = as.character(df.quad$dxmod)
+df.quad = df.quad[df.quad$dxmod != "Femoral anteversion",]
+df.quad = df.quad[df.quad$dxmod != "Hemiplegia type I",]
+
+df.merged = merge(df,df.quad)
+
+plt <- ggplot(df.merged, aes(x=df.merged$dxmod, y=df.merged$trend.pc1)) +
+  geom_boxplot() +
+  weartals_theme +
+  xlab("Subtype of the paralysis") +
+  ylab("Score of the first PC")
+print(plt)
+ggsave(plt, filename = "docs/paper/images/paralysis-subtypes.pdf",width = 10, height = 6)
+
+library(ggplot2)
+source("tests/plot.helpers.R")
+
+ind = 1:2 + 60
+plt = plot_preds(models[[1]]$model.fimp$Y[ind,], NULL, models[[1]]$model.fimp$fit[ind,],
+                 filename="pred-freg-data", title = "Sparse Functional Impute")
+plt = plot_preds(models[[1]]$model.fslr$Y[ind,], NULL, models[[1]]$model.fslr$fit[ind,],
+                 filename="pred-freg-data", title = "Sparse Functional Regression")
+plt = plot_preds(models[[1]]$model.fpca$Y[ind,], NULL, models[[1]]$model.fpca$fit[ind,],
+                 filename="pred-freg-data", title = "Functional Principal Components")
+
+age.min = min(all.data.filtered.sample$age)
+age.max = max(all.data.filtered.sample$age)
+age = age.min + (age.max - age.min) * ((0:50)/50)
+
+## Figure components in data study
+df1 = data.frame(age = age, GDI = models[[1]]$model.fimp$v[1,], component = "1")
+df2 = data.frame(age = age, GDI = models[[1]]$model.fimp$v[2,], component = "2")
+df = rbind(df1,df2)
+plt = ggplot(df, aes(x = age, y = GDI, group = component, color = component)) + weartals_theme + geom_line(size=1.5)
+print(plt)
+ggsave(plt, filename = "docs/paper/images/data-components.pdf",width = 6, height = 4)
+
+## FPCA
+df1 = data.frame(age = age, GDI = models[[1]]$model.fpca$v[1,], component = "1")
+df2 = data.frame(age = age, GDI = models[[1]]$model.fimp$v[2,], component = "2")
+df = rbind(df1,df2)
+plt = ggplot(df, aes(x = age, y = GDI, group = component, color = component)) + weartals_theme + geom_line(size=1.5)
+print(plt)
+ggsave(plt, filename = "docs/paper/images/data-components-FPCA.pdf",width = 6, height = 4)
+
+df1 = data.frame(age = age, GDI = models[[1]]$model.fimp$cmeans + 10*models[[1]]$model.fimp$v[1,], curve = "mean + PC1")
+df2 = data.frame(age = age, GDI = models[[1]]$model.fimp$cmeans, curve = "mean")
+df3 = data.frame(age = age, GDI = models[[1]]$model.fimp$cmeans - 10*models[[1]]$model.fimp$v[1,], curve = "mean - PC1")
+df = rbind(df1,df2,df3)
+colors = gg_color_hue(3)
+plt = ggplot(df, aes(x = age, y = GDI, group = curve, color = curve)) + weartals_theme +
+  geom_line(aes(linetype=curve, color=curve), size=1.5) +
+  scale_linetype_manual(values=c("dashed", "solid", "dashed")) +
+  scale_color_manual(values=c(colors[1], "black", colors[2]))
+print(plt)
+ggsave(plt, filename = "docs/paper/images/data-components-added.pdf",width = 6, height = 4)
+
+
 
 if (length(models))
   save(models, file="data-study.Rda")

@@ -10,7 +10,7 @@ paper.theme = theme_set(theme_grey(base_size = 36)) +
   theme(legend.position="none", plot.title = element_text(hjust = 0.5),
         panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1))
 
-plot_preds = function(obs, true = NULL, fit = NULL, title = NULL, filename = NULL, ylim = NULL){
+plot_preds = function(obs, true = NULL, fit = NULL, title = NULL, filename = NULL, ylim = NULL, width = 10, height = 10){
   ylim = c(min(obs),max(obs))
   d = ncol(obs)
   cols = gg_color_hue(nrow(obs))
@@ -49,6 +49,13 @@ plot_preds = function(obs, true = NULL, fit = NULL, title = NULL, filename = NUL
   if (!is.null(title))
     pp = pp + labs(title = title)
   print(pp)
-  myggsave(filename=paste0("docs/plots/",filename,".pdf"), plot=pp)
+  myggsave(filename=paste0("docs/plots/",filename,".pdf"), plot=pp, width = width, height = height)
   pp
 }
+
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+
+weartals_theme = theme_classic() + theme(text = element_text(size=18), panel.border = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1))
