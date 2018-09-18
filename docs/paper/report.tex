@@ -63,12 +63,12 @@
 
 
 \begin{aug}
-\author{\fnms{Trevor} \snm{Hastie}\ead[label=e1]{hastie@stanford.edu}}%\thanksref{t1}
+\author{\fnms{\L ukasz} \snm{Kidzi\'nski}\ead[label=e1]{lukasz.kidzinski@stanford.edu}}%\thanksref{t1}
 \and
-\author{\fnms{\L ukasz} \snm{Kidzi\'nski}\ead[label=e2]{lukasz.kidzinski@stanford.edu}}%\thanksref{t1}
+\author{\fnms{Trevor} \snm{Hastie}\ead[label=e2]{hastie@stanford.edu}}%\thanksref{t1}
 
 \thankstext{t1}{Research supported by the Mobilize Center, a National Institutes of Health Big Data to Knowledge (NIH BD2K) Center of Excellence supported through Grant U54EB020405.}
-\runauthor{Trevor Hastie and {\L}ukasz Kidzi\'nski}
+\runauthor{{\L}ukasz Kidzi\'nski and Trevor Hastie }
 
 \affiliation{Stanford University}
 
@@ -119,12 +119,12 @@ While in many situations multiple data points from patients' histories are avail
 
 %This motivates research on the longitudinal statistical analysis of progression, recovering trajectories from sparse observations. 
 
-To illustrate potential benefits of temporal models in these scenarios, in Figure \ref{fig:motivation}, we present measurements of BMI of patients with gait pathologies. The thick solid line represents the estimated mean and indicates a clear trend of growth during puberty. However, by looking at individual processes and by modeling between-subject similarities, we may model the progression more accurately. This could result in personalized predictions, new clustering techniques patients based on progression patterns, or extraction of latent representation of progression patterns, which then could be used as predictors in other models. 
+To illustrate potential benefits of temporal models in these scenarios, in Figure \ref{fig:motivation}, we present measurements of gait pathology progression. The thick solid line represents the estimated mean and indicates a clear trend of growth during puberty. However, by looking at individual processes and by modeling between-subject similarities, we may model the progression more accurately. This could result in personalized predictions, new clustering techniques patients based on progression patterns, or extraction of latent representation of progression patterns, which then could be used as predictors in other models. 
 
 \begin{figure}[h]
   \includegraphics[width=0.49\linewidth]{../plots/points}
   \includegraphics[width=0.49\linewidth]{../plots/grouped}
-  \caption{We observe BMI of patients at every visit (left plot), and we can easily derive the population progression (the thick solid curve). The analysis of individual patients (connected dots in the right plot, also differing by color) can reveal patterns in individual trends.}
+  \caption{We observe GDI of patients at every visit (left plot), and we can easily derive the population progression (the thick solid curve). The analysis of individual patients (connected dots in the right plot, also differing by color) can reveal patterns in individual trends.}
   \label{fig:motivation}
 \end{figure}
 

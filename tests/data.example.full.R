@@ -248,9 +248,9 @@ dd$Patient_ID = as.factor(dd$Patient_ID)
 dd = dd[dd$bmi > 10,]
 
 # Figure 1: BMI over time
-pp = ggplot(aes(x = age, y = bmi, color = Patient_ID), data = dd[1:200,]) + ylab("BMI") +
+pp = ggplot(aes(x = age, y = GDI, color = Patient_ID), data = dd[1:200,]) + ylab("GDI") +
   geom_point(size = 3) + theme_set(theme_grey(base_size = 26)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
-  stat_function(fun = approxfun(lowess(dd$age,dd$bmi)), size = 1.5, colour = "#000000")+ scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0))
+  stat_function(fun = approxfun(lowess(dd$age,dd$GDI)), size = 1.5, colour = "#000000")+ scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0))
 pp
 ggsave("docs/plots/points.pdf",width=7,height=5)
 pp + geom_line(size=0.7)
