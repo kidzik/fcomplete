@@ -99,7 +99,7 @@ experiment.data = function(i)
        data = data)
 }
 
-#models = list()
+models = list()
 #models = mclapply(1:4, experiment.data, mc.cores = 4)
 models[[1]] = experiment.data(4)
 
@@ -119,6 +119,7 @@ df.quad = df.quad[df.quad$dxmod != "Femoral anteversion",]
 df.quad = df.quad[df.quad$dxmod != "Hemiplegia type I",]
 
 df.merged = merge(df,df.quad)
+summary(lm(df.merged$trend.pc1 ~ df.merged$dxmod))
 
 plt <- ggplot(df.merged, aes(x=df.merged$dxmod, y=df.merged$trend.pc1)) +
   geom_boxplot() +

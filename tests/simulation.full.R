@@ -22,7 +22,7 @@ experiment.sim = function(exp.id){
   K = simulation$params$K
 
   # TUNING PARAMS
-  lambdas.pca = seq(0,1,length.out = 5)
+  lambdas.pca = seq(0.05,1,length.out = 20)
   lambdas.reg = seq(0,1,length.out = 5)
 
   model.mean = fregression(Y:time ~ 1 | id, data, method = "mean", bins = dgrid)
@@ -61,7 +61,7 @@ experiment.sim = function(exp.id){
   res
 }
 
-res = mclapply(1:6, experiment.sim, mc.cores = 6)
+res = mclapply(1:1, experiment.sim, mc.cores = 1)
 res[[1]]$fslr$meta
 
 #save(res,file = "sim-study.Rda")
@@ -125,6 +125,7 @@ scalar = sqrt(rowSums(res[[exp.show]]$fpca$v**2)[1])
 vlist = list(res[[exp.show]]$fpca$v / scalar,
              res[[exp.show]]$fimp$v)
 vlist[[2]][1,] = vlist[[2]][1,]*(-1)
+vlist[[2]][3,] = vlist[[2]][3,]*(-1)
 ttl = c("Components of fPCA","Components of SFI")
 names = c("fpca","fimp")
 
@@ -139,7 +140,7 @@ for (j in 1:length(vlist)){
                            color=cols[i], size=1.5, linetype=i)
   }
   print(pp)
-  myggsave(filename=paste0("docs/plots/components-",names[[j]],".pdf"), plot=pp, width = 10, height = 10)
+  myggsave(filename=paste0("docs/plots/components-",names[[j]],".pdf"), plot=pp, width = 12, height = 12)
 }
 
 # Figure 4:
@@ -147,19 +148,21 @@ source("tests/plot.helpers.R")
 ind = 1:3 + 10
 # plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$mean$fit[ind,],
 #            filename="pred-mean", title = "Mean")
+w = 12
+h = 12
 ylim = c(min(res[[exp.show]]$simulation$fobs[ind,]) - 0.1, max(res[[exp.show]]$simulation$fobs[ind,]) + 0.1)
 plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], NULL,
-           filename="pred-mean", title = "True curves & observations",ylim=ylim)
+           filename="pred-mean", title = "True curves & observations",ylim=ylim, width = w, height = h)
 plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fpca$fit[ind,],
-           filename="pred-fpca", title = "Functional PCA",ylim=ylim)
+           filename="pred-fpca", title = "Functional PCA",ylim=ylim, width = w, height = h)
 plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fimp$fit[ind,],
-           filename="pred-fimp", title = "Sparse Functional Impute",ylim=ylim)
+           filename="pred-fimp", title = "Sparse Functional Impute",ylim=ylim, width = w, height = h)
 plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fslr$fitR[ind,],
-           filename="pred-freg", title = "Sparse Functional Regression",ylim=ylim)
+           filename="pred-freg", title = "Sparse Functional Regression",ylim=ylim, width = w, height = h)
 plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fslr$fitI[ind,],
-           filename="pred-freg", title = "Sparse Functional Regression",ylim=ylim)
+           filename="pred-freg", title = "Sparse Functional Regression",ylim=ylim, width = w, height = h)
 plot_preds(res[[exp.show]]$simulation$fobs[ind,], res[[exp.show]]$simulation$ftrue[ind,], res[[exp.show]]$fslr$fit[ind,],
-           filename="pred-freg", title = "Sparse Functional Regression",ylim=ylim)
+           filename="pred-freg", title = "Sparse Functional Regression",ylim=ylim, width = w, height = h)
 
 # Figure 6: Example curves from the simulation
 cols = gg_color_hue(3)
