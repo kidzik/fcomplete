@@ -5,8 +5,8 @@
 \title{Approximate low-rank processes from sparse longitudinal observations}
 \usage{
 fregression(formula, data, bins = 51, method = c("fimpute", "fpcs", "mean"),
-  lambda = c(0), maxIter = 1e+05, lambda.reg = 0, K = NULL,
-  K.reg = NULL, thresh = 1e-05, final = "soft", d = 7, fold = 5,
+  lambda = c(0), maxIter = 1e+05, lambda.reg = 0, d = 7, K = NULL,
+  K.reg = NULL, thresh = 1e-05, final = "soft", fold = 5,
   cv.ratio = 0.05, projection = "separate")
 }
 \arguments{
@@ -23,6 +23,8 @@ fregression(formula, data, bins = 51, method = c("fimpute", "fpcs", "mean"),
 
 \item{lambda.reg}{lambdas for SVD regularization in regression}
 
+\item{d}{dimensionality of the basis}
+
 \item{K}{upper bound of dimensionality for SVD regularization}
 
 \item{K.reg}{upper bound of dimensionality for regression}
@@ -31,7 +33,11 @@ fregression(formula, data, bins = 51, method = c("fimpute", "fpcs", "mean"),
 
 \item{final}{should the final model use \code{"hard"} or \code{"soft"} impute after choosing the optimal \code{lambda}}
 
+\item{fold}{number of repetitions in cross-validation}
+
 \item{projection}{"joint" or "separate" (default). If multiple regressors are available project them jointly or separately}
+
+\item{fold}{how many folds in cross-validation}
 }
 \value{
 Returns a list

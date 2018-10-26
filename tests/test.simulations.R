@@ -59,14 +59,3 @@ rownames(tbl.true) = c("mean",
                        "fimpute",
                        "regression")
 print(tbl.true)
-
-# SAVE EXPERIMENT RESULTS
-res = list()
-res$tbl = tbl.true
-res$errors = errors
-res$mean = model.mean
-res$fimp = model.fimp
-res$fpca = model.fpca
-res$fslr = model.fslr
-res$simulation = simulation
-res

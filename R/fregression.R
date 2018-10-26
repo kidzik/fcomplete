@@ -28,11 +28,14 @@
 #' @param method method for functional impute: \code{fpca} for functional principal components,
 #' \code{mean} for mean impute and \code{fimpute} for functional impute
 #' @param lambda lambdas for SVD regularization in functional impute
+#' @param d dimensionality of the basis
 #' @param K upper bound of dimensionality for SVD regularization
 #' @param lambda.reg lambdas for SVD regularization in regression
 #' @param K.reg upper bound of dimensionality for regression
 #' @param thresh thershold for convergence in functional imputee
 #' @param final should the final model use \code{"hard"} or \code{"soft"} impute after choosing the optimal \code{lambda}
+#' @param fold number of repetitions in cross-validation
+#' @param fold how many folds in cross-validation
 #' @param projection "joint" or "separate" (default). If multiple regressors are available project them jointly or separately
 #' @return Returns a list
 #' * \code{fit} fitted matrix \code{Y}
@@ -68,7 +71,7 @@
 #' @export
 fregression = function(formula, data,
                        bins = 51, method = c("fimpute", "fpcs", "mean"), lambda = c(0), maxIter = 1e5,
-                       lambda.reg = 0, K = NULL, K.reg = NULL, thresh = 1e-5, final="soft", d = 7, fold = 5, cv.ratio = 0.05,
+                       lambda.reg = 0, d = 7, K = NULL, K.reg = NULL, thresh = 1e-5, final="soft", fold = 5, cv.ratio = 0.05,
                        projection = "separate")
 {
   if (length(method) > 1)
