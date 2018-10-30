@@ -13,5 +13,6 @@ Depends:
     mvtnorm,
     fda,
     fpca,
+    ggplot2,
     clusterGeneration
 Roxygen: list(markdown = TRUE)

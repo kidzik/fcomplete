@@ -4,6 +4,21 @@ myggsave = function(filename,plot,width=10,height=10){
 
 weartals_theme = theme_classic() + theme(text = element_text(size=18), panel.border = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1))
 
+#' Plots the fcomplete fit object
+#'
+#' @title Plots the fcomplete fit object
+#'
+#' @details The function simulates data as described in the paper.
+#' Generates observations \code{X1,X2} and a \code{Y = X1 + X2 + noise}
+#'
+#' @seealso \code{\link{fregression}}
+#' @param n number of observations
+#' @param d number of dimensions
+#' @param K true 'low dimension'
+#' @param dgrid size of the grid
+#' @param clear fraction of observations to remove
+#' @param noise_mag the magnitude of noise
+#' @export
 plot.fcomplete = function(obs, true = NULL, fit = NULL, title = NULL, filename = NULL, ylim = NULL, width = 10, height = 10){
   ylim = c(min(obs),max(obs))
   d = ncol(obs)
