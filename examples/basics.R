@@ -35,3 +35,5 @@ summary(fit) # display the best model
 
 # Get cluster means in functional space
 matplot( t(t(fit$parameters$mean) %*% model$v[1:3,]), t='l')
+
+devtools::install_github('IRkernel/IRkernel')
