@@ -1,3 +1,9 @@
+myggsave = function(filename,plot,width=10,height=10){
+  ggsave(filename=filename,plot=plot,width=width,height=height)
+}
+
+weartals_theme = theme_classic() + theme(text = element_text(size=18), panel.border = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1))
+
 plot.fcomplete = function(obs, true = NULL, fit = NULL, title = NULL, filename = NULL, ylim = NULL, width = 10, height = 10){
   ylim = c(min(obs),max(obs))
   d = ncol(obs)

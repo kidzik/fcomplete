@@ -1,7 +1,7 @@
 library("fcomplete")
 library("ggplot2")
-spnbmd = read.csv("data/spnbmd.csv")
 
+spnbmd = ElemStatLearn::bone
 
 model.impute = fregression(as.formula(paste0("spnbmd:age ~ 1 | idnum")), spnbmd,
                            lambda= 0:10/10, thresh = 1e-10, maxIter = 10000,
