@@ -72,7 +72,7 @@
 fregression = function(formula, data,
                        bins = 51, method = c("fimpute", "fpcs", "mean"), lambda = c(0), maxIter = 1e5,
                        lambda.reg = 0, d = 7, K = NULL, K.reg = NULL, thresh = 1e-5, final="soft", fold = 5, cv.ratio = 0.05,
-                       projection = "separate")
+                       projection = "separate", verbose = 0)
 {
   if (length(method) > 1)
     method = "fimpute"
@@ -83,11 +83,15 @@ fregression = function(formula, data,
 
   vars = parse.formula(formula)
   subj.var = vars$groups
+  params = list(formula = formula, d = d, method = method, lambda = lambda, maxIter = maxIter,
+                lambda.reg = lambda.reg, d = d, K = K, K.reg = K.reg, thresh = thresh, final=final, fold = fold, cv.ratio = cv.ratio,
+                projection = projection)
 
   if (length(vars$response) == 1)
   {
     # If no Y and we do unsupervised learning
     time.var = vars$response[1]
+    time = data[[time.var]]
   }
   else
   {
@@ -108,6 +112,11 @@ fregression = function(formula, data,
     Y.wide[!is.na(Y.wide)] = Y.wide[!is.na(Y.wide)] #/ yscale
   }
 
+  mint = min(time)
+  maxt = max(time)
+  time.grid = ((0:(bins - 1)) / (bins-1)) * (maxt - mint) + mint
+
+
   # Case 1: Y ~ 1 -- do functional impute
   if (length(vars$covariates) == 0)
   {
@@ -119,7 +128,7 @@ fregression = function(formula, data,
       res = list(fit = fc.mean(Y.wide))
     }
     else {
-      res = functionalMultiImputeCV(Y.wide, basis = basis, lambda = lambda, K = K, thresh = thresh, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter)
+      res = functionalMultiImputeCV(Y.wide, basis = basis, lambda = lambda, K = K, thresh = thresh, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter, verbose = verbose)
     }
     if (method != "fpcs"){
       res$fit = t(t(res$fit) + cmeans)
@@ -127,7 +136,17 @@ fregression = function(formula, data,
     res$Y = t(t(Y.wide) + cmeans)
     res$cmeans = cmeans
     res$basis = basis
+
+    res$time.grid = time.grid
+    res$subj.var = subj.var
+    res$y.var = y.var
+    res$time.var = time.var
+    res$data = data
+    res$params = params
+
     row.names(res$fit) = row.names(Y.wide)
+    rownames(res$v) = paste("eigenfunction",1:nrow(res$v))
+    class(res) = "fcomplete"
     return(res)
   }
 
@@ -152,8 +171,18 @@ fregression = function(formula, data,
     args$thresh = thresh
     args$final = final
     args$K = K
+    args$verbose = verbose
     res = do.call(functionalMultiImputeCV, args)
     row.names(res$fit) = row.names(Y.wide)
+
+    res$time.grid = time.grid
+    res$subj.var = subj.var
+    res$y.var = y.var
+    res$time.var = time.var
+    res$data = data
+    res$params = params
+
+    class(res) = "fcomplete"
     return(res)
   }
 
@@ -179,7 +208,7 @@ fregression = function(formula, data,
 #     models[[i]] = functionalMultiImputeCV(X.wide[[i]], basis = basis, lambda = lambda, K = K, thresh = 0, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter)
 #     print(names(X.long[[i]]))
       nm = names(X.long[[i]])
-     models[[i]] = fregression(paste0(nm[3],":",nm[2]," ~ 1|",nm[1]), X.long[[i]], bins = bins, lambda = lambda, K = K, thresh = thresh, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter, method="fimpute")
+     models[[i]] = fregression(paste0(nm[3],":",nm[2]," ~ 1|",nm[1]), X.long[[i]], bins = bins, lambda = lambda, K = K, thresh = thresh, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter, method="fimpute", verbose = verbose)
      combinedU = cbind(combinedU, models[[i]]$u)
     }
     # }
@@ -203,20 +232,27 @@ fregression = function(formula, data,
 
   combinedU = cbind(1,scale(combinedU))
   # Case 3: Y ~ X -- do principal component regression without Y
-  print("Case 3")
   res = functionalRegression(Y.wide, combinedU, basis, lambda = lambda.reg, K = K.reg, thresh = 1e-10, mask = maskedY, maxIter = maxIter)
   res$Y = t(t(Y.wide) + cmeans)
   res$X = X.wide
   res$U = combinedU
   res$X.models = models
   res$fit = t(t(res$fit) + cmeans)
+
+  res$time.grid = time.grid
+  res$subj.var = subj.var
+  res$y.var = y.var
+  res$time.var = time.var
+  res$data = data
+  res$params = params
+
   row.names(res$fit) = row.names(Y.wide)
+  class(res) = "fcomplete"
   return(res)
 }
 
 # case4 = function(){
 #   # Case 4 experimental: Y ~ Y + X -- do principal component regression with Y
-#   print("Case 4")
 #   Y.tmp = Y.wide
 #
 #   lastFitR = 0

@@ -14,5 +14,8 @@ Depends:
     fda,
     fpca,
     ggplot2,
-    clusterGeneration
+    clusterGeneration,
+    ElemStatLearn,
+    tidyr,
+    dplyr
 Roxygen: list(markdown = TRUE)

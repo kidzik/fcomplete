@@ -1,5 +1,5 @@
 # @export
-functionalMultiImputeCV = function(..., basis = fc.basis(), K = ncol(basis), maxIter = 10e3, thresh = 10e-4, lambda = 0, final="soft", fold = 5, cv.ratio = 0.05){
+functionalMultiImputeCV = function(..., basis = fc.basis(), K = ncol(basis), maxIter = 10e3, thresh = 10e-4, lambda = 0, final="soft", fold = 5, cv.ratio = 0.05, verbose = verbose){
   args <- list(...)
   meta = 0
 
@@ -9,7 +9,7 @@ functionalMultiImputeCV = function(..., basis = fc.basis(), K = ncol(basis), max
   }
   else {
     for (i in 1:fold){
-      res = functionalMultiImpute(..., basis = basis, K=K, maxIter = maxIter, thresh = thresh, lambda = lambda, final = final) # TODO: cv.ratio goes here
+      res = functionalMultiImpute(..., basis = basis, K=K, maxIter = maxIter, thresh = thresh, lambda = lambda, final = final, verbose = verbose) # TODO: cv.ratio goes here
       meta = meta + res$meta
     }
     meta = meta / fold
@@ -26,9 +26,10 @@ functionalMultiImputeCV = function(..., basis = fc.basis(), K = ncol(basis), max
   args.smpl[["K"]] = K
   args.smpl[["maxIter"]] = maxIter
   args.smpl[["thresh"]] = thresh
+  args.smpl[["verbose"]] = verbose
 
-  print(nargs)
   for (i in 1:nargs){
+    args.smpl[[i]] = list() # Coercing LHS to a list
     args.smpl[[i]]$train = args[[i]]
   }
   if (final=="hard"){

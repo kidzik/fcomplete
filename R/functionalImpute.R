@@ -42,7 +42,6 @@ functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIt
         err.new = err.new + sqrt(mean((args.smpl[[i]]$test - model$multiFit[[i]])[args.smpl[[i]]$test.mask]**2))
       }
 
-      print(model$err)
       if (verbose > 0)
         cat(paste("Error with lambda=",l,"\t",err.new,"\n"))
       cv.K = c(cv.K, sum(model$d > 1e-5))
