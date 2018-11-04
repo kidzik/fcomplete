@@ -29,7 +29,7 @@ fc.fpca = function(X, d=5, K=2, grid.l=0:99/99){
   #  grid.l= min(X[,2]) + (max(X[,2]) - min(X[,2])) * 0:99/99
   grids = (grid.l - (min(grid.l))) / (max(grid.l) - min(grid.l)) #seq(0,1,0.002)
   ##fit candidate models by fpca.mle
-  result=fpca.mle(cbind(ids,values,time), M.set,r.set,ini.method, basis.method,sl.v,max.step,grid.l,grids)
+  capture.output({result=fpca.mle(cbind(ids,values,time), M.set,r.set,ini.method, basis.method,sl.v,max.step,grid.l,grids)})
   muest<-result$fitted_mean
 
   #get predicted trajectories on a fine grid: the same grid for which mean and eigenfunctions are evaluated
@@ -43,5 +43,5 @@ fc.fpca = function(X, d=5, K=2, grid.l=0:99/99){
 
   #X[,c(1,3,2)]
   fpcs<-fpca.score.fixed(cbind(ids,values,time),grids.new,muest,evalest,eigenfest,sig2est,r)
-  list(fit = t(fpca.pred(fpcs, muest, eigenfest)), sigma.est = sqrt(sig2est), mu.est = muest, selected_model = result$selected_model, fpcs = fpcs, v = eigenfest)
+  list(fit = t(fpca.pred(fpcs, muest, eigenfest)), sigma.est = sqrt(sig2est), mu.est = muest, selected_model = result$selected_model, d = evalest*sqrt(length(grid.l)-1), u = fpcs, v = eigenfest/sqrt(length(grid.l)-1))
 }

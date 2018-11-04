@@ -1,14 +1,6 @@
 predict.fcomplete.one = function(model, newdata){
   timepoint = newdata[[model$time.var]]
   subj.id = newdata[[model$subj.var]]
-  # row = model$fit[rownames(model$fit) %in% subj.id,]
-  #
-  # n = length(model$time.grid)
-  # if (max(timepoint) > model$time.grid[n] || min(timepoint) < model$time.grid[1]){
-  #   error("prediction outside the time scale")
-  # }
-  # m = sum(model$time.grid <= timepoint)
-  # row[m]
   predict.slice(model, subj.id, timepoint)
 }
 

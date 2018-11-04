@@ -5,10 +5,20 @@ sample.long = function(X, id.var, time.var, value.var, ratio = 0.1, min.per.sbj 
   res = list(X = X)
   ntest = nrow(X)*ratio
   tbl.X = table(X[[id.var]])
-  nm = names(tbl.X[tbl.X > min.per.sbj])
+
+  nm = sample(names(tbl.X[tbl.X > min.per.sbj]))
+  nm = nm[1:min(ntest,length(nm))]
+
+  test.obs = c()
+  for (uid in nm)
+    test.obs = c(test.obs, sample(which(X[[id.var]] == uid))[1])
+
   test.mask = X[[id.var]] %in% nm
-  test.obs = sample(which(test.mask))
+
+  # get at most one per subject
   test.obs = test.obs[1:min(ntest,length(test.obs))]
+
+
   test.mask[] = FALSE
   test.mask[test.obs] = TRUE
 

@@ -4,7 +4,7 @@
 \alias{plot.fcomplete}
 \title{Plots the fcomplete fit object}
 \usage{
-\method{plot}{fcomplete}(obs, true = NULL, fit = NULL, title = NULL,
+\method{plot}{fcomplete}(model, rows = 1, true = NULL, title = NULL,
   filename = NULL, ylim = NULL, width = 10, height = 10)
 }
 \arguments{

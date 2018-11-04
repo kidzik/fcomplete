@@ -83,7 +83,7 @@ fregression = function(formula, data,
 
   vars = parse.formula(formula)
   subj.var = vars$groups
-  params = list(formula = formula, d = d, method = method, lambda = lambda, maxIter = maxIter,
+  params = list(formula = formula, method = method, lambda = lambda, maxIter = maxIter,
                 lambda.reg = lambda.reg, d = d, K = K, K.reg = K.reg, thresh = thresh, final=final, fold = fold, cv.ratio = cv.ratio,
                 projection = projection)
 
@@ -100,6 +100,7 @@ fregression = function(formula, data,
     time.var = vars$response[2]
     Y = na.omit(data[,c(subj.var, time.var, y.var)])
     Y.wide = fc.long2wide(Y[,1], as.numeric(Y[,2]), as.numeric(Y[,3]), bins = bins)
+    params[["Y.wide"]] = Y.wide
 
     time = data[[time.var]]
 
@@ -161,6 +162,7 @@ fregression = function(formula, data,
     X.wide[[i]] = fc.long2wide(X.long[[i]][,1], as.numeric(X.long[[i]][,2]), as.numeric(X.long[[i]][,3]), bins = bins)
 #    print(dim(!is.na(X.wide[[i]])))
   }
+  params[["X.wide"]] = X.wide
 
   # Case 2: 1 ~ X -- do unsupervised learning
   if (length(vars$response) == 1)

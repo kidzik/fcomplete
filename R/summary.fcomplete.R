@@ -7,6 +7,6 @@ summary.fcomplete = function(model){
   cat("\n  Observed to N*K ratio:\t\t", nrow(model$data)  / (model$params$K * nrow(model$fit)) )
 
   r.sqr = 1 - sum(residuals(model)**2) / sum((model$data[[model$y.var]])**2)
-  cat("\n\tEstimated r-squared:\t\t",r.sqr )
+  cat("\n  Estimated r-squared:\t\t\t",r.sqr )
 
 }

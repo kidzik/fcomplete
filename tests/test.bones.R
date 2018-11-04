@@ -6,11 +6,10 @@ library("ggplot2")
 spnbmd = ElemStatLearn::bone
 
 model.impute = fregression(as.formula(paste0("spnbmd:age ~ 1 | idnum")), spnbmd,
-                           lambda= 0, thresh = 1e-10, maxIter = 10000,
+                           lambda= 0.1, thresh = 1e-10, maxIter = 10000,
                            method = "fimpute", final = "soft",
                            K=2, d=7, fold = 5)
-devtools::install(".")
-library("fcomplete")
+plot(model.impute, rows=3:5)
 summary.fcomplete(model.impute)
 #fcomplete:::predict.fcomplete(model.impute,ids=c(3,5),time=c(10,15,22))
 
