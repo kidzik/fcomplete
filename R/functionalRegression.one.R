@@ -13,7 +13,8 @@ functionalRegression.one= function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 
   X = cbind(1,X)
 
   dims = 1:K
-  err = 0
+  err = sqrt(mean( ((mean(Y,na.rm = TRUE) - Y)[!ynas])**2))
+
   for (i in 1:maxIter){
     Yfill[ynas] = Yhat[ynas]
 
