@@ -237,15 +237,23 @@ fregression = function(formula, data, covariates = NULL,
 
 #  maskedY = fc.sample(Y.wide, 0.05)
   combinedU = covariates[,colnames(covariates) %in% vars$covariates]
-  combinedU = cbind(1,scale(combinedU))
+  combinedU = scale(combinedU)
+#  combinedU = cbind(1,scale(combinedU))
 
   # Case 3: Y ~ X -- do principal component regression without Y
-  res = functionalRegression(Y.wide, combinedU, basis, lambda = lambda, K = K, thresh = 1e-10, maxIter = maxIter)
+  res.reg = functionalRegression(Y.wide, combinedU, basis, lambda = lambda.reg, K = K.reg, thresh = 1e-10, maxIter = maxIter, verbose = verbose)
+  res.imp = functionalMultiImputeCV(Y.wide - res.reg$fit, basis = basis, lambda = lambda, K = K, thresh = thresh, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter, verbose = verbose)
+
+  res = res.imp
+  res$res.reg = res.reg
+  res$res.imp = res.imp
+
   res$Y = t(t(Y.wide) + cmeans)
   res$X = X.wide
   res$U = combinedU
-#  res$X.models = models
-  res$fit = t(t(res$fit) + cmeans)
+  res$fit = t(t(res.reg$fit + res.imp$fit) + cmeans)
+  res$basis = basis
+  res$cmeans = cmeans
 
   res$time.grid = time.grid
   res$subj.var = subj.var

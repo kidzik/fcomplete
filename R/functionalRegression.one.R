@@ -9,7 +9,8 @@ functionalRegression.one= function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 
   Yhat = Y
   Yhat[] = 0
   err = 1e9
-  #  X = svd(X)$u
+
+  # Add an intercept
   X = cbind(1,X)
 
   dims = 1:K
@@ -27,14 +28,6 @@ functionalRegression.one= function(Y, X, basis, lambda=0, maxIter=1e5, thresh = 
     Dm = diag(D,length(D),length(D)) # allows D be 1x1
     B = Bsvd$u %*% Dm  %*% t(Bsvd$v)
     Yhat.new = X %*% B %*% t(basis)   #Ysvd$u[,dims] %*% (D * t(Ysvd$v[,dims]))
-
-    # Regularize Y?
-    # Ysvd = svd(Yfill %*% basis)
-    # B = ginv(X) %*% Ysvd$u   # The most basic multivariate regression
-    # Yu = X %*% B   #Ysvd$u[,dims] %*% (D * t(Ysvd$v[,dims]))
-    # D = Ysvd$d - lambda
-    # D[D<0] = 0
-    # Yhat.new = Yu %*% diag(D) %*% t(Ysvd$v)  %*% t(basis)
 
     ratio = norm(Yhat.new - Yhat,"F") / (norm(Yhat,type = "F") + 1e-15)
     if (ratio < thresh){

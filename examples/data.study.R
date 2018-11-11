@@ -103,9 +103,9 @@ experiment.data = function(i)
        data = data)
 }
 
-models = list()
-#models = mclapply(1:4, experiment.data, mc.cores = 4)
-models[[1]] = experiment.data(4)
+models = mclapply(1:8, experiment.data, mc.cores = 4)
+#models = list()
+#models[[1]] = experiment.data(4)
 
 plot(models[[1]]$model.fimp$fit[!is.na(models[[1]]$data$test.matrix)], models[[1]]$model.fimp$Y[!is.na(models[[1]]$data$test.matrix)])
 
