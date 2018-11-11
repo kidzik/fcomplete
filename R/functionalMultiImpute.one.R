@@ -48,7 +48,7 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda, sta
   # Repeat SVD + impute till convergence
   K = min(K,ncol(basis))
   dims = 1:K
-  err = 0
+  err = sqrt(mean( ((mean(Y,na.rm = TRUE) - Y)[!ynas])**2))
 
   for (i in 1:maxIter){
     # Fill in last prediction into NULLs
@@ -87,5 +87,5 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda, sta
   if (ncol(t(Ysvd$v[,1:ncol(basis),drop=FALSE])) == nrow(t(basis)))
     v = t(Ysvd$v[,1:ncol(basis),drop=FALSE]) %*% t(basis)
 
-  list(multiFit=fit, fit = fit[[1]], d=D, u=Ysvd$u[,dims,drop=FALSE], v=v, id=rownames(args[[i]]), grid=as.numeric(colnames(args[[i]])), err=err, lambda = lambda, data=args)
+  list(multiFit=fit, fit = fit[[1]], d=D, u=Ysvd$u[,dims,drop=FALSE], v=v[dims,,drop=FALSE], id=rownames(args[[i]]), grid=as.numeric(colnames(args[[i]])), err=err, lambda = lambda, data=args)
 }

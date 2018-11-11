@@ -1,18 +1,3 @@
-#' Project \code{Y} potentially composed of multiple variables \code{X1,X2,...,Xp}
-#' onto \code{basis^p} space
-#' @noRd
-project.on.basis = function(Y, basis){
-  ncol = dim(Y)[2]
-  nbas = dim(basis)[1]
-  res = c()
-
-  # Project each one separately
-  for (i in 1:(ncol / nbas)){
-    res = cbind(res, Y[,(i-1) * nbas + 1:nbas] %*% basis)
-  }
-  res
-}
-
 # @export
 functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIter = 1e4, thresh = 1e-5, lambda = 0, final="soft", mask = NULL, verbose = 1){
   args <- list(...)
@@ -57,7 +42,6 @@ functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIt
         err.new = err.new + sqrt(mean((args.smpl[[i]]$test - model$multiFit[[i]])[args.smpl[[i]]$test.mask]**2))
       }
 
-      print(model$err)
       if (verbose > 0)
         cat(paste("Error with lambda=",l,"\t",err.new,"\n"))
       cv.K = c(cv.K, sum(model$d > 1e-5))
@@ -92,49 +76,5 @@ functionalMultiImpute = function(..., basis = fc.basis(), K = ncol(basis), maxIt
   res = do.call(functionalMultiImpute.one, args.smpl)
   res$meta = meta
   res$err.cv = err
-  res
-}
-
-# @export
-functionalMultiImputeCV = function(..., basis = fc.basis(), K = ncol(basis), maxIter = 10e3, thresh = 10e-4, lambda = 0, final="soft", fold = 5, cv.ratio = 0.05){
-  args <- list(...)
-  meta = 0
-
-  if ( (length(lambda) == length(K)) && (length(K) == 1) ){
-    bestK = K
-    bestLambda = lambda
-  }
-  else {
-    for (i in 1:fold){
-      res = functionalMultiImpute(..., basis = basis, K=K, maxIter = maxIter, thresh = thresh, lambda = lambda, final = final) # TODO: cv.ratio goes here
-      meta = meta + res$meta
-    }
-    meta = meta / fold
-    bestLambda = meta[which.min(meta[,3]),1] # best lambda
-    bestK = floor(meta[which.min(meta[,3]),2]) # best K
-  }
-
-  args.smpl = args
-  args.smpl[["lambda"]] = bestLambda
-#  args.smpl[[1]] = fc.sample(args.smpl[[1]], cv.ratio)
-  nargs = length(args)
-
-  args.smpl[["basis"]] = basis
-  args.smpl[["K"]] = K
-  args.smpl[["maxIter"]] = maxIter
-  args.smpl[["thresh"]] = thresh
-
-  print(nargs)
-  for (i in 1:nargs){
-    args.smpl[[i]]$train = args[[i]]
-  }
-  if (final=="hard"){
-    args.smpl[["lambda"]] = 0
-    args.smpl[["K"]] = bestK
-    args.smpl[["start"]] = res$fit
-  }
-
-  res = do.call(functionalMultiImpute.one, args.smpl)
-  res$meta = meta
   res
 }

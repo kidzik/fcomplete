@@ -4,10 +4,11 @@
 \alias{fregression}
 \title{Approximate low-rank processes from sparse longitudinal observations}
 \usage{
-fregression(formula, data, bins = 51, method = c("fimpute", "fpcs", "mean"),
-  lambda = c(0), maxIter = 1e+05, lambda.reg = 0, d = 7, K = NULL,
-  K.reg = NULL, thresh = 1e-05, final = "soft", fold = 5,
-  cv.ratio = 0.05, projection = "separate")
+fregression(formula, data, covariates = NULL, bins = 51,
+  method = c("fimpute", "fpcs", "mean"), lambda = c(0), maxIter = 1e+05,
+  lambda.reg = 0, d = 7, K = NULL, K.reg = NULL, thresh = 1e-05,
+  final = "soft", fold = 5, cv.ratio = 0.05, projection = "separate",
+  verbose = 0)
 }
 \arguments{
 \item{formula}{formula describing the linear relation between processes and indicating time and grouping variables. See details}
@@ -84,17 +85,17 @@ data = simulation$data
 ftrue = simulation$ftrue
 K = simulation$params$K
 
-model.mean = fregression(Y:time ~ 1 | id, data,
+model.mean = fregression(Y ~ time | id, data,
                          method = "mean")
-model.fpca = fregression(Y:time ~ 1 | id, data,
+model.fpca = fregression(Y ~ time | id, data,
                          lambda = 0, K = c(3,4,5), thresh = 1e-7, method = "fpcs")
 
 lambdas = c(2,3,4,5,6,8,10,12,15,20)
-model.fimp = fregression(Y:time ~ 1 | id, data,
+model.fimp = fregression(Y ~ time | id, data,
                          lambda = lambdas, thresh = 1e-5, final = "hard")
-model.fcmp = fregression(0:time ~ Y + X1 + X2 | id, data,
+model.fcmp = fregression(Y + X1 + X2 ~ time | id, data,
                          lambda = lambdas, K = K, final = "hard")
-model.freg = fregression(Y:time ~ X1 + X2 | id, data,
+model.freg = fregression(Y ~ X1 + X2 + time | id, data,
                          lambda = lambdas, thresh = 1e-5,
                          lambda.reg = 0.1, method = "fpcs", K = K)
 }

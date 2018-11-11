@@ -1,4 +1,4 @@
-#' Compute row means using observed points
+#' Compute row means from observed points
 #' @noRd
 # @export
 fc.mean = function(X){

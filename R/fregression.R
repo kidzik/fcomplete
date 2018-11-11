@@ -55,24 +55,24 @@
 #' K = simulation$params$K
 #'
 # REGRESSION
-#' model.mean = fregression(Y:time ~ 1 | id, data,
+#' model.mean = fregression(Y ~ time | id, data,
 #'                          method = "mean")
-#' model.fpca = fregression(Y:time ~ 1 | id, data,
+#' model.fpca = fregression(Y ~ time | id, data,
 #'                          lambda = 0, K = c(3,4,5), thresh = 1e-7, method = "fpcs")
 #'
 #' lambdas = c(2,3,4,5,6,8,10,12,15,20)
-#' model.fimp = fregression(Y:time ~ 1 | id, data,
+#' model.fimp = fregression(Y ~ time | id, data,
 #'                          lambda = lambdas, thresh = 1e-5, final = "hard")
-#' model.fcmp = fregression(0:time ~ Y + X1 + X2 | id, data,
+#' model.fcmp = fregression(Y + X1 + X2 ~ time | id, data, covariates,
 #'                          lambda = lambdas, K = K, final = "hard")
-#' model.freg = fregression(Y:time ~ X1 + X2 | id, data,
+#' model.freg = fregression(Y ~ U1 + U2 + time | id, data, model.fcmp$u,
 #'                          lambda = lambdas, thresh = 1e-5,
 #'                          lambda.reg = 0.1, method = "fpcs", K = K)
 #' @export
-fregression = function(formula, data,
+fregression = function(formula, data, covariates = NULL,
                        bins = 51, method = c("fimpute", "fpcs", "mean"), lambda = c(0), maxIter = 1e5,
                        lambda.reg = 0, d = 7, K = NULL, K.reg = NULL, thresh = 1e-5, final="soft", fold = 5, cv.ratio = 0.05,
-                       projection = "separate")
+                       projection = "separate", verbose = 0, scale.covariates = TRUE)
 {
   if (length(method) > 1)
     method = "fimpute"
@@ -83,21 +83,22 @@ fregression = function(formula, data,
 
   vars = parse.formula(formula)
   subj.var = vars$groups
+  params = list(formula = formula, method = method, lambda = lambda, maxIter = maxIter,
+                lambda.reg = lambda.reg, d = d, K = K, K.reg = K.reg, thresh = thresh, final=final, fold = fold, cv.ratio = cv.ratio,
+                projection = projection)
 
-  if (length(vars$response) == 1)
+  time.var =  vars$covariates
+  time.var = time.var[time.var %in% names(data)][1]
+  time = data[[time.var]]
+
+#  if (length(vars$response) == 1)
   {
-    # If no Y and we do unsupervised learning
-    time.var = vars$response[1]
-  }
-  else
-  {
-    # If there is Y to regress
+    # Functional impute or regression
     y.var = vars$response[1]
-    time.var = vars$response[2]
+
     Y = na.omit(data[,c(subj.var, time.var, y.var)])
     Y.wide = fc.long2wide(Y[,1], as.numeric(Y[,2]), as.numeric(Y[,3]), bins = bins)
-
-    time = data[[time.var]]
+    params[["Y.wide"]] = Y.wide
 
     # Estimate population mean
     LE = lowess(time, data[[y.var]])
@@ -108,18 +109,23 @@ fregression = function(formula, data,
     Y.wide[!is.na(Y.wide)] = Y.wide[!is.na(Y.wide)] #/ yscale
   }
 
-  # Case 1: Y ~ 1 -- do functional impute
-  if (length(vars$covariates) == 0)
+  mint = min(time)
+  maxt = max(time)
+  time.grid = ((0:(bins - 1)) / (bins-1)) * (maxt - mint) + mint
+
+
+  # Case 1: Y ~ time : id -- do functional impute
+  if (length(vars$response) == 1 && length(vars$covariates) == 1)
   {
     if (method == "fpcs"){
       res = fc.fpca(Y, d = d, K = K, grid.l = 0:(bins-1)/(bins-1))
       # res$fit = t(t(res$fit) - cmeans) / yscale # silly but consistent
     }
     else if (method == "mean"){
-      res = list(fit = fc.mean(Y.wide))
+      res = list(fit = fc.mean(Y.wide), v = 0)
     }
     else {
-      res = functionalMultiImputeCV(Y.wide, basis = basis, lambda = lambda, K = K, thresh = thresh, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter)
+      res = functionalMultiImputeCV(Y.wide, basis = basis, lambda = lambda, K = K, thresh = thresh, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter, verbose = verbose)
     }
     if (method != "fpcs"){
       res$fit = t(t(res$fit) + cmeans)
@@ -127,7 +133,19 @@ fregression = function(formula, data,
     res$Y = t(t(Y.wide) + cmeans)
     res$cmeans = cmeans
     res$basis = basis
+
+    res$time.grid = time.grid
+    res$subj.var = subj.var
+    res$y.var = y.var
+    res$time.var = time.var
+    res$data = data
+    res$params = params
+
+    if (method != "mean"){
+      rownames(res$v) = paste("eigenfunction",1:nrow(res$v))
+    }
     row.names(res$fit) = row.names(Y.wide)
+    class(res) = "fcomplete"
     return(res)
   }
 
@@ -135,16 +153,21 @@ fregression = function(formula, data,
   X.long = list()
   X.wide = list()
 
-  nvars = length(vars$covariates)
+  nvars = length(vars$response)
   for (i in 1:nvars)
   {
-    X.long[[i]] = na.omit(data[,c(subj.var, time.var, vars$covariates[i])])
+    X.long[[i]] = na.omit(data[,c(subj.var, time.var, vars$response[i])])
     X.wide[[i]] = fc.long2wide(X.long[[i]][,1], as.numeric(X.long[[i]][,2]), as.numeric(X.long[[i]][,3]), bins = bins)
-#    print(dim(!is.na(X.wide[[i]])))
-  }
 
-  # Case 2: 1 ~ X -- do unsupervised learning
-  if (length(vars$response) == 1)
+    if (scale.covariates){
+      X.long[[i]][,3] = scale(X.long[[i]][,3], scale = FALSE)
+      X.wide[[i]][!is.na(X.wide[[i]])] = scale(X.wide[[i]][!is.na(X.wide[[i]])], scale = FALSE)
+    }
+  }
+  params[["X.wide"]] = X.wide
+
+  # Case 2: X + Y ~ time -- do unsupervised learning
+  if (length(vars$response) > 1 && length(vars$covariates) == 1)
   {
     args = X.wide
     args$basis = basis
@@ -152,71 +175,100 @@ fregression = function(formula, data,
     args$thresh = thresh
     args$final = final
     args$K = K
+    args$verbose = verbose
     res = do.call(functionalMultiImputeCV, args)
     row.names(res$fit) = row.names(Y.wide)
+
+    res$time.grid = time.grid
+    res$subj.var = subj.var
+    res$y.var = y.var
+    res$time.var = time.var
+    res$data = data
+    res$params = params
+    colnames(res$u) = paste("U",1:ncol(res$u),sep="")
+    rownames(res$u) = row.names(Y.wide)
+
+    class(res) = "fcomplete"
     return(res)
   }
 
-  # Case 3: Y ~ Y + X -- do principal component regression with Y
-  models = list()
-  combinedU = c()
+#   # Case 3: Y ~ Y + X -- do principal component regression with Y
+#   models = list()
+#   combinedU = c()
+#
+#
+#   for (i in 1:nvars)
+#   {
+#     # # skip response, it will be used separately
+#     # if (length(vars$response) == 2 && vars$response[1] != vars$covariates[i])
+#     # {
+#     X.long[[i]][,3] = scale(X.long[[i]][,3], scale = FALSE)
+#     X.wide[[i]][!is.na(X.wide[[i]])] = scale(X.wide[[i]][!is.na(X.wide[[i]])], scale = FALSE)
+#     if (method == "fpcs"){
+#       models[[i]] = fc.fpca(X.long[[i]], d = d, K = K, grid.l = 0:(bins-1)/(bins-1))
+#       combinedU = cbind(combinedU, models[[i]]$fpcs)
+#     }
+#     else {
+# #     models[[i]] = functionalMultiImpute(X.wide[[i]], basis = basis, lambda = lambda, thresh = thresh, K = K, final = final, mask = maskedY)
+# #     models[[i]] = functionalMultiImputeCV(X.wide[[i]], basis = basis, lambda = lambda, K = K, thresh = 0, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter)
+# #     print(names(X.long[[i]]))
+#       nm = names(X.long[[i]])
+#      models[[i]] = fregression(paste0(nm[3],":",nm[2]," ~ 1|",nm[1]), X.long[[i]], bins = bins, lambda = lambda, K = K, thresh = thresh, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter, method="fimpute", verbose = verbose)
+#      combinedU = cbind(combinedU, models[[i]]$u)
+#     }
+#     # }
+#     # else {
+#     #   print(paste("Skipping",vars$response[1]))
+#     # }
+#   }
+#   if (method == "fimpute" && projection == "joint"){
+#     args.smpl = X.wide
+#     args.smpl[["basis"]] = basis
+#     args.smpl[["lambda"]] = lambda
+#     args.smpl[["thresh"]] = thresh
+#     args.smpl[["K"]] = K
+#     args.smpl[["final"]] = final
+#     res = do.call(functionalMultiImpute, args.smpl)
+#     combinedU = res$u
+#   }
+#
+#   if (is.null(K.reg))
+#     K.reg = ncol(Y.wide)
 
-  maskedY = fc.sample(Y.wide, 0.05)
+#  maskedY = fc.sample(Y.wide, 0.05)
+  combinedU = covariates[,colnames(covariates) %in% vars$covariates]
+  combinedU = scale(combinedU)
+#  combinedU = cbind(1,scale(combinedU))
 
-  for (i in 1:nvars)
-  {
-    # # skip response, it will be used separately
-    # if (length(vars$response) == 2 && vars$response[1] != vars$covariates[i])
-    # {
-    X.long[[i]][,3] = scale(X.long[[i]][,3], scale = FALSE)
-    X.wide[[i]][!is.na(X.wide[[i]])] = scale(X.wide[[i]][!is.na(X.wide[[i]])], scale = FALSE)
-    if (method == "fpcs"){
-      models[[i]] = fc.fpca(X.long[[i]], d = d, K = K, grid.l = 0:(bins-1)/(bins-1))
-      combinedU = cbind(combinedU, models[[i]]$fpcs)
-    }
-    else {
-#     models[[i]] = functionalMultiImpute(X.wide[[i]], basis = basis, lambda = lambda, thresh = thresh, K = K, final = final, mask = maskedY)
-#     models[[i]] = functionalMultiImputeCV(X.wide[[i]], basis = basis, lambda = lambda, K = K, thresh = 0, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter)
-#     print(names(X.long[[i]]))
-      nm = names(X.long[[i]])
-     models[[i]] = fregression(paste0(nm[3],":",nm[2]," ~ 1|",nm[1]), X.long[[i]], bins = bins, lambda = lambda, K = K, thresh = thresh, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter, method="fimpute")
-     combinedU = cbind(combinedU, models[[i]]$u)
-    }
-    # }
-    # else {
-    #   print(paste("Skipping",vars$response[1]))
-    # }
-  }
-  if (method == "fimpute" && projection == "joint"){
-    args.smpl = X.wide
-    args.smpl[["basis"]] = basis
-    args.smpl[["lambda"]] = lambda
-    args.smpl[["thresh"]] = thresh
-    args.smpl[["K"]] = K
-    args.smpl[["final"]] = final
-    res = do.call(functionalMultiImpute, args.smpl)
-    combinedU = res$u
-  }
-
-  if (is.null(K.reg))
-    K.reg = ncol(Y.wide)
-
-  combinedU = cbind(1,scale(combinedU))
   # Case 3: Y ~ X -- do principal component regression without Y
-  print("Case 3")
-  res = functionalRegression(Y.wide, combinedU, basis, lambda = lambda.reg, K = K.reg, thresh = 1e-10, mask = maskedY, maxIter = maxIter)
+  res.reg = functionalRegression(Y.wide, combinedU, basis, lambda = lambda.reg, K = K.reg, thresh = 1e-10, maxIter = maxIter, verbose = verbose)
+  res.imp = functionalMultiImputeCV(Y.wide - res.reg$fit, basis = basis, lambda = lambda, K = K, thresh = thresh, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter, verbose = verbose)
+
+  res = res.imp
+  res$res.reg = res.reg
+  res$res.imp = res.imp
+
   res$Y = t(t(Y.wide) + cmeans)
   res$X = X.wide
   res$U = combinedU
-  res$X.models = models
-  res$fit = t(t(res$fit) + cmeans)
+  res$fit = t(t(res.reg$fit + res.imp$fit) + cmeans)
+  res$basis = basis
+  res$cmeans = cmeans
+
+  res$time.grid = time.grid
+  res$subj.var = subj.var
+  res$y.var = y.var
+  res$time.var = time.var
+  res$data = data
+  res$params = params
+
   row.names(res$fit) = row.names(Y.wide)
+  class(res) = "fcomplete"
   return(res)
 }
 
 # case4 = function(){
 #   # Case 4 experimental: Y ~ Y + X -- do principal component regression with Y
-#   print("Case 4")
 #   Y.tmp = Y.wide
 #
 #   lastFitR = 0

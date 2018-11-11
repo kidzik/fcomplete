@@ -61,11 +61,11 @@ experiment.data = function(i)
   K = d
 
   # IMPUTE
-  model.impute = fregression(as.formula(paste0(var,":age ~ 1 | Patient_ID")), data$train,
+  model.impute = fregression(as.formula(paste0(var," ~ age | Patient_ID")), data$train,
                              lambda= lambdas[[var]], thresh = 1e-10, maxIter = 10000,
                              method = "fimpute", final = "soft",
                              K=1, d=d, fold = 5)
-  model.impute.fpcs = fregression(as.formula(paste0(var,":age ~ 1 | Patient_ID")), data$train, lambda= c(7.5), thresh = 1e-4, method = "fpcs", K=2:2, d=d)
+  model.impute.fpcs = fregression(as.formula(paste0(var," ~ age | Patient_ID")), data$train, lambda= c(7.5), thresh = 1e-4, method = "fpcs", K=2:2, d=d)
 
   # lambdas[["bmi"]] = 0.25
   # X = list(train = data$train.matrix)
@@ -76,13 +76,17 @@ experiment.data = function(i)
 
   # REGRESSION
   # lambdas.reg = seq(0,1,length.out = 5)
-  model.regression = fregression(GDI:age ~ GDI + O2cost + speed | Patient_ID, data$train,
+
+  model.covariates = fregression(GDI + O2cost + speed ~ age  | Patient_ID, data$train,
+                                 method = "fimpute", thresh=1e-10, maxIter = 5000,
+                                 lambda = lambdas[[var]] / sqrt(120),
+                                 d=d,
+                                 K=1)
+  model.regression = fregression(GDI ~ age + U1 | Patient_ID, data$train, model.covariates$u,
                                 method = "fimpute", thresh=1e-10, maxIter = 5000,
-                                K.reg = 1,
-                                lambda = lambdas[[var]] / sqrt(120),
-                                lambda.reg = 1,
-                                d=d,
-                                K=1)
+                                K = 1,
+                                lambda = 1,
+                                d=d)
 
   errors = c(mean((model.regression$fit - data$test.matrix)**2, na.rm = TRUE),
     mean((model.impute$fit - data$test.matrix)**2, na.rm = TRUE),
@@ -99,9 +103,9 @@ experiment.data = function(i)
        data = data)
 }
 
-models = list()
-#models = mclapply(1:4, experiment.data, mc.cores = 4)
-models[[1]] = experiment.data(4)
+models = mclapply(1:8, experiment.data, mc.cores = 4)
+#models = list()
+#models[[1]] = experiment.data(4)
 
 plot(models[[1]]$model.fimp$fit[!is.na(models[[1]]$data$test.matrix)], models[[1]]$model.fimp$Y[!is.na(models[[1]]$data$test.matrix)])
 

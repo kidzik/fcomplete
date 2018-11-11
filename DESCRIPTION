@@ -13,5 +13,10 @@ Depends:
     mvtnorm,
     fda,
     fpca,
-    clusterGeneration
+    ggplot2,
+    clusterGeneration,
+    ElemStatLearn,
+    tidyr
+Suggests:
+    dplyr
 Roxygen: list(markdown = TRUE)

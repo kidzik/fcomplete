@@ -3,7 +3,6 @@ install(".")
 library("fcomplete")
 library("ggplot2")
 library("mclust")
-source("tests/plot.helpers.R")
 
 # Load simulated 'toy' data
 data = read.table("examples/simulated.Rda")
@@ -12,11 +11,11 @@ data = read.table("examples/simulated.Rda")
 head(data)
 
 # Run our model
-model = fregression(Y:time ~ 1|id, data, bins = 41, K = 3)
+model = fregression(Y ~ time|id, data, bins = 41, K = 3)
 
 # Make some diagnostics plots
 idx = 1:5
-plot_preds(model$Y[idx,], model$fit[idx,], NULL,
+fcomplete:::plot.fcomplete(model$Y[idx,], model$fit[idx,], NULL,
            filename="pred-mean", title = "True curves & observations")
 
 # Some output elements (basically the SVD decomposition)
@@ -36,3 +35,5 @@ summary(fit) # display the best model
 
 # Get cluster means in functional space
 matplot( t(t(fit$parameters$mean) %*% model$v[1:3,]), t='l')
+
+devtools::install_github('IRkernel/IRkernel')
