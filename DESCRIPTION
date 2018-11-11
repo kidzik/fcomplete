@@ -16,6 +16,7 @@ Depends:
     ggplot2,
     clusterGeneration,
     ElemStatLearn,
-    tidyr,
+    tidyr
+Suggests:
     dplyr
 Roxygen: list(markdown = TRUE)

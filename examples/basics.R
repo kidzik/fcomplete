@@ -11,7 +11,7 @@ data = read.table("examples/simulated.Rda")
 head(data)
 
 # Run our model
-model = fregression(Y:time ~ 1|id, data, bins = 41, K = 3)
+model = fregression(Y ~ time|id, data, bins = 41, K = 3)
 
 # Make some diagnostics plots
 idx = 1:5
