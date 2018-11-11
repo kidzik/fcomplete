@@ -1,4 +1,4 @@
-# `fcomplete` - Functional matrix completion
+# `fcomplete` - Longitudinal data analysis using matrix completion
 
 ## Installation
 
