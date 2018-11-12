@@ -2,13 +2,15 @@
 
 Suppose we observe N subjects, each subject at multiple timepoints and we want to estimate a trajectory of progression of measurements in individual subjects. For example, suppose you observe BMI of N children at different ages, as presented below
 
-<div style="text-align: center"><img src="https://s3-eu-west-1.amazonaws.com/kidzinski/kidzinski/fcomplete/grouped.png" width="350" /></div>
+<p align="center">
+   <img src="https://s3-eu-west-1.amazonaws.com/kidzinski/kidzinski/fcomplete/grouped.png" width=450 />
+</div>
 
 Here, the connected dots come from individual subjects and the black thick line corresponds to the population mean.
 
 In this package we follow the methodology from [Kidziński, Hastie (2018)](https://arxiv.org/abs/1809.08771) to fit trajectories using matrix completion. To this end, we discretize the time grid some continous basis and find a low-rank decomposition of the dense matrix.
 
-![](https://s3-eu-west-1.amazonaws.com/kidzinski/kidzinski/fcomplete/intro-1.png)
+![Matrix completion and sparse longitudinal completion](https://s3-eu-west-1.amazonaws.com/kidzinski/kidzinski/fcomplete/intro-1.png)
 
 In classical matrix completion, we look for matrices `W` and `A` that fit the observed points in `Y` (green points in the image above). In our method, in order to impose smoothness, we additionaly assume the basis `B` and again we look for the reprezentation minimizing the errror. 
 
