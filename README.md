@@ -1,5 +1,22 @@
 # `fcomplete` - Longitudinal data analysis using matrix completion
 
+Suppose you observe N subjects, each at some different timepoints and you want to estimate a trajectory of how measurements evolve for individual subjects. For example, suppose you observe BMI of N children at different ages, as presented below
+
+<div style="text-align: center"><img src="https://s3-eu-west-1.amazonaws.com/kidzinski/kidzinski/fcomplete/grouped.png" width="350" /></div>
+
+In this package we follow the methodology from [Kidziński, Hastie (2018)](https://arxiv.org/abs/1809.08771) to fit the trajectories using matrix completion. We discretize the time grid some continous basis and find a low rank decompozition
+
+![](https://s3-eu-west-1.amazonaws.com/kidzinski/kidzinski/fcomplete/intro-1.png)
+
+The interface of the package is based on the mixed-effect models in \verb|R|. In particular, if your temporal observations `Y` are in the long format with columns `id`, `age` and `bmi`, while additional covariates `X`, constant over time are given as a data frame with columns `id` and, say, `gender`, you can fit the model by writing
+
+```R
+model = fregression(bmi ~ age + gender | id, data = Y, covariates = X)
+print(model)
+```
+
+For more information, please refer to the manual and to [vignettes](https://github.com/kidzik/fcomplete/tree/master/vignettes).
+
 ## Installation
 
 ```R
