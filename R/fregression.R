@@ -16,9 +16,9 @@
 #' and remaining columns are covariates \code{X1, ..., Xp}. Each row corresponds to one observation for one subject.
 #'
 #' There are three possible \code{formula}s:
-#' * \code{Y:time ~ X1 + X2 | subjectID} executes functional regression
-#' * \code{1:time ~ Y + X1 + X2 | subjectID} executes dimensionality reduction
-#' * \code{Y:time ~ 1 | subjectID} executes functional impute or functional PCA depending on the choice of \code{method} parameter
+#' * \code{Y ~ time + X1 + X2 | subjectID} executes functional regression
+#' * \code{Y + X1 + X2 ~ time | subjectID} executes dimensionality reduction
+#' * \code{Y ~ time | subjectID} executes functional impute or functional PCA depending on the choice of \code{method} parameter
 #'
 #' @title Approximate low-rank processes from sparse longitudinal observations
 #'

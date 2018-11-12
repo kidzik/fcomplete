@@ -8,7 +8,7 @@ fregression(formula, data, covariates = NULL, bins = 51,
   method = c("fimpute", "fpcs", "mean"), lambda = c(0), maxIter = 1e+05,
   lambda.reg = 0, d = 7, K = NULL, K.reg = NULL, thresh = 1e-05,
   final = "soft", fold = 5, cv.ratio = 0.05, projection = "separate",
-  verbose = 0)
+  verbose = 0, scale.covariates = TRUE)
 }
 \arguments{
 \item{formula}{formula describing the linear relation between processes and indicating time and grouping variables. See details}
@@ -73,9 +73,9 @@ and remaining columns are covariates \code{X1, ..., Xp}. Each row corresponds to
 
 There are three possible \code{formula}s:
 \itemize{
-\item \code{Y:time ~ X1 + X2 | subjectID} executes functional regression
-\item \code{1:time ~ Y + X1 + X2 | subjectID} executes dimensionality reduction
-\item \code{Y:time ~ 1 | subjectID} executes functional impute or functional PCA depending on the choice of \code{method} parameter
+\item \code{Y ~ time + X1 + X2 | subjectID} executes functional regression
+\item \code{Y + X1 + X2 ~ time | subjectID} executes dimensionality reduction
+\item \code{Y ~ time | subjectID} executes functional impute or functional PCA depending on the choice of \code{method} parameter
 }
 }
 \examples{
@@ -93,9 +93,9 @@ model.fpca = fregression(Y ~ time | id, data,
 lambdas = c(2,3,4,5,6,8,10,12,15,20)
 model.fimp = fregression(Y ~ time | id, data,
                          lambda = lambdas, thresh = 1e-5, final = "hard")
-model.fcmp = fregression(Y + X1 + X2 ~ time | id, data,
+model.fcmp = fregression(Y + X1 + X2 ~ time | id, data, covariates,
                          lambda = lambdas, K = K, final = "hard")
-model.freg = fregression(Y ~ X1 + X2 + time | id, data,
+model.freg = fregression(Y ~ U1 + U2 + time | id, data, model.fcmp$u,
                          lambda = lambdas, thresh = 1e-5,
                          lambda.reg = 0.1, method = "fpcs", K = K)
 }
