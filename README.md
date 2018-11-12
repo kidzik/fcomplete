@@ -12,7 +12,7 @@ In this package we follow the methodology from [Kidziński, Hastie (2018)](https
 
 ![Matrix completion and sparse longitudinal completion](https://s3-eu-west-1.amazonaws.com/kidzinski/kidzinski/fcomplete/intro-1.png)
 
-In classical matrix completion, we look for matrices `W` and `A` that fit the observed points in `Y` (green points in the image above). In our method, in order to impose smoothness, we additionaly assume the basis `B` and again we look for the reprezentation minimizing the errror. 
+In the classical matrix completion, we look for matrices `W` and `A` that fit the observed points in `Y` (green points in the image above). In our method, in order to impose smoothness, we additionaly assume the basis `B` and again we look for the reprezentation minimizing the errror. 
 
 The interface of the package is based on the mixed-effect models in `R`. In particular, if we are given temporal observations `Y` in the long format with columns `id`, `age` and `bmi`, while additional covariates `X`, constant over time are given as a data frame with columns `id` and, say, `gender`, we can fit the model by writing
 
