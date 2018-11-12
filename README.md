@@ -21,7 +21,7 @@ model = fregression(bmi ~ age + gender | id, data = Y, covariates = X)
 print(model)
 ```
 
-For more information, please refer to the manual and to [vignettes](https://github.com/kidzik/fcomplete/tree/master/vignettes).
+For more information, please refer to [the manual](https://s3-eu-west-1.amazonaws.com/kidzinski/kidzinski/fcomplete/fcomplete.pdf) and to [vignettes](https://github.com/kidzik/fcomplete/tree/master/vignettes).
 
 ## Installation
 
