@@ -1,4 +1,4 @@
-# `fcomplete` - Longitudinal data analysis using matrix completion
+# `Longitudinal data analysis using matrix completion
 
 Suppose you observe N subjects, each at some different timepoints and you want to estimate a trajectory of how measurements evolve for individual subjects. For example, suppose you observe BMI of N children at different ages, as presented below
 
