@@ -54,8 +54,15 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda, sta
     # Fill in last prediction into NULLs
     Yfill[ynas] = Yhat[ynas]
 
+    projected.hat = project.on.basis(Yhat, basis)
+    projected.res = project.on.basis(Yfill - Yhat, basis)
+
+#    weights = diag(sqrt(nrow(basis))/rowSums(!ynas))
+#    weights = diag(1/rowSums(!ynas))
+    weights = sqrt(nrow(basis)) #* diag(1/nrow(projected.res))
+
     # Run SVD on the filled matrix
-    Ysvd = svd(project.on.basis(Yfill, basis))
+    Ysvd = svd(projected.hat + weights*projected.res)
 
     # Threshold SVD
     D = Ysvd$d[dims]- lambda
@@ -66,10 +73,14 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda, sta
 
     # Check if converged
     ratio = norm(Yhat.new - Yhat,"F") / (norm(Yhat,type = "F") + 1e-15)
-    if (verbose && (i %% 100 == 0))
+    if (verbose && (i %% 100 == 0)){
+      print(thresh)
       print(ratio)
-    if (ratio < thresh)
+    }
+    if (ratio < thresh){
+      print(i)
       break
+    }
     Yhat = Yhat.new
 
     # Remember the error
