@@ -12,13 +12,13 @@ source("tests/plot.helpers.R")
 # PREPARE DATA #
 ################
 if (!("all.data" %in% ls())){
-  all.data = read.csv("/home/kidzik/Dropbox/DATA/CP/alldata.csv")
-  gait.cycles = t(read.csv("/home/kidzik/Dropbox/DATA/CP/G_avg_CP.csv"))
-  gdi = read.csv("/home/kidzik/Dropbox/DATA/CP/gdi.csv")
+  all.data = read.csv("/media/kidzik/f96ff1a1-911f-413f-8548-f759a75a4fdd/home/kidzik/Dropbox/DATA/CP/alldata.csv")
+  gait.cycles = t(read.csv("/media/kidzik/f96ff1a1-911f-413f-8548-f759a75a4fdd/home/kidzik/Dropbox/DATA/CP/G_avg_CP.csv"))
+  gdi = read.csv("/media/kidzik/f96ff1a1-911f-413f-8548-f759a75a4fdd/home/kidzik/Dropbox/DATA/CP/gdi.csv")
   pcas = prcomp(gait.cycles)
   all.data = cbind(all.data, pcas$x[,1:10])
   all.data = merge(all.data, gdi,by = c("Patient_ID","examid","side"))
-  trialInfo = read.csv("/home/kidzik/Dropbox/DATA/CP/trialInfo_CP.csv")
+  trialInfo = read.csv("/media/kidzik/f96ff1a1-911f-413f-8548-f759a75a4fdd/home/kidzik/Dropbox/DATA/CP/trialInfo_CP.csv")
 #  all.data = read.csv("/home/lukasz/alldata.csv")
 #  gait.cycles = t(read.csv("/home/lukasz/G_avg_CP.csv"))
 }

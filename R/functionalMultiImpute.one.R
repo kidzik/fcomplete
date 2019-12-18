@@ -30,9 +30,10 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda, sta
     Y = cbind(Y, args[[i]]$train)
   }
 
-  ynas = is.na(Y)
-  Yfill = Y
-  Yhat = Y
+  yobs = !is.na(Y)
+  Yres = Y
+  Yres[] = 0
+  Yhat = project.on.basis(Y, basis)
   Yhat[] = 0
   err = 1e9
 
@@ -48,28 +49,29 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda, sta
   # Repeat SVD + impute till convergence
   K = min(K,ncol(basis))
   dims = 1:K
-  err = sqrt(mean( ((mean(Y,na.rm = TRUE) - Y)[!ynas])**2))
+  err = sqrt(mean( ((mean(Y,na.rm = TRUE) - Y)[yobs])**2))
 
   for (i in 1:maxIter){
-    # Fill in last prediction into NULLs
-    Yfill[ynas] = Yhat[ynas]
+    Yhat.curves = project.on.basis(Yhat, t(basis))
 
-    projected.hat = project.on.basis(Yhat, basis)
-    projected.res = project.on.basis(Yfill - Yhat, basis)
+    # Compute residuals of the latest prediction
+    Yres[yobs] = Y[yobs] - Yhat.curves[yobs]
 
-#    weights = diag(sqrt(nrow(basis))/rowSums(!ynas))
-#    weights = diag(1/rowSums(!ynas))
-    weights = sqrt(nrow(basis)) #* diag(1/nrow(projected.res))
+    # get gradient
+    projected.res = project.on.basis(Yres, basis)
 
-    # Run SVD on the filled matrix
-    Ysvd = svd(projected.hat + weights*projected.res)
+    # weight the gradient
+    weights = 1
+
+    # Run SVD on the current solution + gradient
+    Ysvd = svd(Yhat + weights*projected.res)
 
     # Threshold SVD
-    D = Ysvd$d[dims]- lambda
+    D = Ysvd$d[dims] - lambda
     D[D<0] = 0
 
     # Predict
-    Yhat.new = project.on.basis(Ysvd$u[,dims] %*% (D * t(Ysvd$v[,dims])), t(basis))
+    Yhat.new = Ysvd$u[,dims] %*% (D * t(Ysvd$v[,dims]))
 
     # Check if converged
     ratio = norm(Yhat.new - Yhat,"F") / (norm(Yhat,type = "F") + 1e-15)
@@ -83,20 +85,23 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda, sta
     }
     Yhat = Yhat.new
 
-    # Remember the error
-    err = sqrt(mean( ((Yhat - Y)[!ynas])**2))
   }
+  numIter = i
+  Yhat.curves = project.on.basis(Yhat, t(basis))
+
+  # Remember the error
+  err = sqrt( mean( (Yhat.curves - Y)[yobs]**2))
 
   # Rearange output depending on the number of variables
   fit= list()
   ncol = dim(args[[1]]$train)[2]
   for (i in 1:length(args)){
-    fit[[i]] = Yhat[,(i-1)*ncol + 1:ncol]
+    fit[[i]] = Yhat.curves[,(i-1)*ncol + 1:ncol]
   }
 
   v = NULL
   if (ncol(t(Ysvd$v[,1:ncol(basis),drop=FALSE])) == nrow(t(basis)))
     v = t(Ysvd$v[,1:ncol(basis),drop=FALSE]) %*% t(basis)
 
-  list(multiFit=fit, fit = fit[[1]], d=D, u=Ysvd$u[,dims,drop=FALSE], v=v[dims,,drop=FALSE], id=rownames(args[[i]]), grid=as.numeric(colnames(args[[i]])), err=err, lambda = lambda, data=args)
+  list(multiFit=fit, numIter = numIter, fit = fit[[1]], d=D, u=Ysvd$u[,dims,drop=FALSE], v=v[dims,,drop=FALSE], id=rownames(args[[i]]), grid=as.numeric(colnames(args[[i]])), err=err, lambda = lambda, data=args)
 }

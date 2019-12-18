@@ -5,10 +5,10 @@
 \title{Approximate low-rank processes from sparse longitudinal observations}
 \usage{
 fregression(formula, data, covariates = NULL, bins = 51,
-  method = c("fimpute", "fpcs", "mean"), lambda = c(0), maxIter = 1e+05,
-  lambda.reg = 0, d = 7, K = NULL, K.reg = NULL, thresh = 1e-05,
-  final = "soft", fold = 5, cv.ratio = 0.05, projection = "separate",
-  verbose = 0, scale.covariates = TRUE)
+  method = c("fimpute", "fpcs", "mean"), lambda = c(0),
+  maxIter = 1e+05, lambda.reg = 0, d = 7, K = NULL, K.reg = NULL,
+  thresh = 1e-05, final = "soft", fold = 5, cv.ratio = 0.05,
+  projection = "separate", verbose = 0, scale.covariates = TRUE)
 }
 \arguments{
 \item{formula}{formula describing the linear relation between processes and indicating time and grouping variables. See details}

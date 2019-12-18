@@ -1,12 +1,12 @@
 Package: fcomplete
 Type: Package
-Date: 2017-08-14
+Date: 2019-12-17
 Title: Trajectory estimation for sparsely observed longitudinal data
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(person("Lukasz", "Kidzinski", email = "lukasz.kidzinski@stanford.edu", role = c("aut", "cre")), person("Trevor", "Hastie", email = "hastie@stanford.edu", role = c("aut")))
 License: GPL-3
 LazyData: TRUE
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1
 Depends:
     R (>= 2.15.0),
     MASS,

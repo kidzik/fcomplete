@@ -5,7 +5,7 @@
 \title{Simulate data}
 \usage{
 fsimulate(n = 100, d = 7, K = 3, dgrid = 51, clear = 0.85,
-  noise.mag = 0.1)
+  num_points = NULL, noise.mag = 0.1)
 }
 \arguments{
 \item{n}{number of observations}
@@ -17,6 +17,8 @@ fsimulate(n = 100, d = 7, K = 3, dgrid = 51, clear = 0.85,
 \item{dgrid}{size of the grid}
 
 \item{clear}{fraction of observations to remove}
+
+\item{num_points}{number of points observed per curve}
 
 \item{noise_mag}{the magnitude of noise}
 }

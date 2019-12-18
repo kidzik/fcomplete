@@ -5,7 +5,8 @@
 \title{Plots the fcomplete fit object}
 \usage{
 \method{plot}{fcomplete}(model, rows = 1, true = NULL, test = NULL,
-  title = NULL, filename = NULL, ylim = NULL, width = 10, height = 10)
+  title = NULL, filename = NULL, ylim = NULL, width = 10,
+  height = 10)
 }
 \arguments{
 \item{n}{number of observations}
