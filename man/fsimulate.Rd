@@ -4,8 +4,15 @@
 \alias{fsimulate}
 \title{Simulate data}
 \usage{
-fsimulate(n = 100, d = 7, K = 3, dgrid = 51, clear = 0.85,
-  num_points = NULL, noise.mag = 0.1)
+fsimulate(
+  n = 100,
+  d = 7,
+  K = 3,
+  dgrid = 51,
+  clear = 0.85,
+  num_points = NULL,
+  noise.mag = 0.1
+)
 }
 \arguments{
 \item{n}{number of observations}

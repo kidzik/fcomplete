@@ -72,14 +72,15 @@
 fregression = function(formula, data, covariates = NULL,
                        bins = 51, method = c("fimpute", "fpcs", "mean"), lambda = c(0), maxIter = 1e5,
                        lambda.reg = 0, d = 7, K = NULL, K.reg = NULL, thresh = 1e-5, final="soft", fold = 5, cv.ratio = 0.05,
-                       projection = "separate", verbose = 0, scale.covariates = TRUE)
+                       projection = "separate", verbose = 0, scale.covariates = TRUE, basis.type = "splines", lr = 1)
 {
   if (length(method) > 1)
     method = "fimpute"
 
   if (is.null(K))
     K = d
-  basis = fc.basis(d = d, dgrid = bins)
+  fcb = fc.basis(d = d, dgrid = bins, type = basis.type)
+  basis = fcb$discrete
 
   vars = parse.formula(formula)
   subj.var = vars$groups
@@ -91,28 +92,24 @@ fregression = function(formula, data, covariates = NULL,
   time.var = time.var[time.var %in% names(data)][1]
   time = data[[time.var]]
 
-#  if (length(vars$response) == 1)
-  {
-    # Functional impute or regression
-    y.var = vars$response[1]
+  # Functional impute or regression
+  y.var = vars$response[1]
 
-    Y = na.omit(data[,c(subj.var, time.var, y.var)])
-    Y.wide = fc.long2wide(Y[,1], as.numeric(Y[,2]), as.numeric(Y[,3]), bins = bins)
-    params[["Y.wide"]] = Y.wide
+  Y = na.omit(data[,c(subj.var, time.var, y.var)])
+  Y.wide = fc.long2wide(Y[,1], as.numeric(Y[,2]), as.numeric(Y[,3]), bins = bins)
+  params[["Y.wide"]] = Y.wide
 
-    # Estimate population mean
-    LE = lowess(time, data[[y.var]])
-    cmeans = approx(x = LE$x, y = LE$y, xout = seq(min(time),max(time),length.out = bins))$y
+  # Estimate population mean
+  LE = lowess(time, data[[y.var]])
+  cmeans = approx(x = LE$x, y = LE$y, xout = seq(min(time),max(time),length.out = bins))$y
 
-    Y.wide = t(t(Y.wide) - cmeans)
+  Y.wide = t(t(Y.wide) - cmeans)
 #    yscale = sd(Y.wide[!is.na(Y.wide)])
-    Y.wide[!is.na(Y.wide)] = Y.wide[!is.na(Y.wide)] #/ yscale
-  }
+  Y.wide[!is.na(Y.wide)] = Y.wide[!is.na(Y.wide)] #/ yscale
 
   mint = min(time)
   maxt = max(time)
   time.grid = ((0:(bins - 1)) / (bins-1)) * (maxt - mint) + mint
-
 
   # Case 1: Y ~ time : id -- do functional impute
   if (length(vars$response) == 1 && length(vars$covariates) == 1)
@@ -121,13 +118,21 @@ fregression = function(formula, data, covariates = NULL,
       res = fc.fpca(Y, d = d, K = K, grid.l = 0:(bins-1)/(bins-1))
       # res$fit = t(t(res$fit) - cmeans) / yscale # silly but consistent
     }
+    else if (method == "proximal_grad") {
+      rangeval = c(min(data[[time.var]],na.rm=TRUE),max(data[[time.var]],na.rm=TRUE))
+      fcb = fc.basis(d = d, dgrid = bins, type = basis.type, rangeval = rangeval)
+      res = nogrid.fimpute.fit(data = data, value.vars = c(y.var), id.var = subj.var,
+                                 time.var = time.var, basis = fcb$basis, lambda = lambda, niter = maxIter,
+                                 pp = K, lr = lr, tol = thresh, dgrid = bins)
+      res$fit = res$fit[[1]]
+    }
     else if (method == "mean"){
       res = list(fit = fc.mean(Y.wide), v = 0)
     }
     else {
       res = functionalMultiImputeCV(Y.wide, basis = basis, lambda = lambda, K = K, thresh = thresh, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter, verbose = verbose)
     }
-    if (method != "fpcs"){
+    if (!(method  %in% c("fpcs", "proximal_grad"))){
       res$fit = t(t(res$fit) + cmeans)
     }
     res$Y = t(t(Y.wide) + cmeans)
