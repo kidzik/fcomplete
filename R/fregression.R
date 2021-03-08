@@ -121,9 +121,13 @@ fregression = function(formula, data, covariates = NULL,
     else if (method == "proximal_grad") {
       rangeval = c(min(data[[time.var]],na.rm=TRUE),max(data[[time.var]],na.rm=TRUE))
       fcb = fc.basis(d = d, dgrid = bins, type = basis.type, rangeval = rangeval)
-      res = nogrid.fimpute.fit(data = data, value.vars = c(y.var), id.var = subj.var,
-                                 time.var = time.var, basis = fcb$basis, lambda = lambda, niter = maxIter,
-                                 pp = K, lr = lr, tol = thresh, dgrid = bins)
+      res = cv.nogrid.fimpute(data = data, value.vars = c(y.var), id.var = subj.var,
+                              time.var = time.var, basis = fcb$basis, lambdas = lambda, niter = maxIter,
+                              pp = K, lr = lr, tol = thresh, dgrid = bins, val.ratio = 0.05)
+#      res = nogrid.fimpute.fit(data = data, value.vars = c(y.var), id.var = subj.var,
+#                              time.var = time.var, basis = fcb$basis, lambda = lambda, niter = maxIter,
+#                              pp = K, lr = lr, tol = thresh, dgrid = bins)
+      res = res$model
       res$fit = res$fit[[1]]
     }
     else if (method == "mean"){

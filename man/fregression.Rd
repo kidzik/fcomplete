@@ -23,7 +23,8 @@ fregression(
   projection = "separate",
   verbose = 0,
   scale.covariates = TRUE,
-  basis.type = "splines"
+  basis.type = "splines",
+  lr = 1
 )
 }
 \arguments{

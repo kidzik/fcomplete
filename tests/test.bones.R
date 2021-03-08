@@ -6,7 +6,7 @@ library("ggplot2")
 spnbmd = ElemStatLearn::bone
 
 model.proxgrad = fregression(as.formula(paste0("spnbmd ~ age | idnum")), spnbmd,
-                           lambda= 1, thresh = 1e-10, maxIter = 10000,
+                           lambda= c(1,2), thresh = 1e-10, maxIter = 100,
                            method = "proximal_grad", final = "soft",
                            K=2, d=7, fold = 5, lr = 0.1)
 

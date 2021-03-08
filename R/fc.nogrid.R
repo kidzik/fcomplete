@@ -26,6 +26,7 @@ nogrid.fimpute.fit = function(data,
                        tol = 1e-7,
                        dgrid = 100
 ){
+#  cat(value.vars, time.var, id.var, tol)
 
   # Prepare a grid and a basis
   rangeval = c(min(data[[time.var]],na.rm=TRUE),max(data[[time.var]],na.rm=TRUE))
@@ -151,7 +152,7 @@ predict.fimpute = function(fit,grid,newdata,time.var,id.var){
   preds
 }
 
-cv.fimpute = function(data,
+cv.nogrid.fimpute = function(data,
                       value.vars,
                       time.var,
                       id.var,
@@ -172,18 +173,17 @@ cv.fimpute = function(data,
   test.mask = 1:length(data[[id.var]]) %in% test.idx
 
   for (lambda in lambdas){
-    model = fimpute.fit(data[!test.mask,],
+    model = nogrid.fimpute.fit(data[!test.mask,],
                         value.vars,
                         time.var,
                         id.var,
                         ...,
                         lambda=lambda)
-    print(dim(data[test.mask,]))
 
     # TODO: for each var
     l = 0
     for (value.var in value.vars){
-      l = l + sum((data[test.mask,] - predict.fimpute(model$functions[[value.var]], model$grid, data[test.mask,], time.var, id.var))**2,na.rm=TRUE)
+      l = l + sum((data[test.mask,] - predict.fimpute(model$fit[[value.var]], model$grid, data[test.mask,], time.var, id.var))**2,na.rm=TRUE)
     }
 
     ## For tests when ground truth is known
@@ -191,9 +191,17 @@ cv.fimpute = function(data,
     loss = c(loss, l)
     if (l < bestL){
       bestL = l
+      bestLambda = lambda
       bestModel = model
     }
   }
-  list(model=bestModel, loss=loss)
+  model = nogrid.fimpute.fit(data,
+                             value.vars,
+                             time.var,
+                             id.var,
+                             ...,
+                             lambda=bestLambda)
+
+  list(model=model, loss=loss)
 }
 
