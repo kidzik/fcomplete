@@ -185,7 +185,20 @@ fregression = function(formula, data, covariates = NULL,
     args$final = final
     args$K = K
     args$verbose = verbose
-    res = do.call(functionalMultiImputeCV, args)
+
+    if (method == "proximal_grad") {
+      rangeval = c(min(data[[time.var]],na.rm=TRUE),max(data[[time.var]],na.rm=TRUE))
+      fcb = fc.basis(d = d, dgrid = bins, type = basis.type, rangeval = rangeval)
+      res = cv.nogrid.fimpute(data = data, value.vars = vars$response, id.var = subj.var,
+                            time.var = time.var, basis = fcb$basis, lambdas = lambda, niter = maxIter,
+                            pp = K, lr = lr, tol = thresh, dgrid = bins, val.ratio = 0.05)
+      res$multiFit = res$model$fit
+      res$fit = res$multiFit[[1]]
+      res$u = res$model$u
+    }
+    else {
+      res = do.call(functionalMultiImputeCV, args)
+    }
     row.names(res$fit) = row.names(Y.wide)
 
     res$time.grid = time.grid
