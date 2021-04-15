@@ -127,8 +127,10 @@ fregression = function(formula, data, covariates = NULL,
 #      res = nogrid.fimpute.fit(data = data, value.vars = c(y.var), id.var = subj.var,
 #                              time.var = time.var, basis = fcb$basis, lambda = lambda, niter = maxIter,
 #                              pp = K, lr = lr, tol = thresh, dgrid = bins)
+      loss = res$loss
       res = res$model
       res$fit = res$fit[[1]]
+      res$loss = loss
     }
     else if (method == "mean"){
       res = list(fit = fc.mean(Y.wide), v = 0)

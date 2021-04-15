@@ -12,13 +12,13 @@ source("tests/plot.helpers.R")
 # PREPARE DATA #
 ################
 if (!("all.data" %in% ls())){
-  all.data = read.csv("/media/kidzik/f96ff1a1-911f-413f-8548-f759a75a4fdd/home/kidzik/Dropbox/DATA/CP/alldata.csv")
-  gait.cycles = t(read.csv("/media/kidzik/f96ff1a1-911f-413f-8548-f759a75a4fdd/home/kidzik/Dropbox/DATA/CP/G_avg_CP.csv"))
-  gdi = read.csv("/media/kidzik/f96ff1a1-911f-413f-8548-f759a75a4fdd/home/kidzik/Dropbox/DATA/CP/gdi.csv")
+  all.data = read.csv("/media/kidzik/DATA/Dropbox-tmp/DATA/CP/alldata.csv")
+  gait.cycles = t(read.csv("/media/kidzik/DATA/Dropbox-tmp/DATA/CP/G_avg_CP.csv"))
+  gdi = read.csv("/media/kidzik/DATA/Dropbox-tmp/DATA/CP/gdi.csv")
   pcas = prcomp(gait.cycles)
   all.data = cbind(all.data, pcas$x[,1:10])
   all.data = merge(all.data, gdi,by = c("Patient_ID","examid","side"))
-  trialInfo = read.csv("/media/kidzik/f96ff1a1-911f-413f-8548-f759a75a4fdd/home/kidzik/Dropbox/DATA/CP/trialInfo_CP.csv")
+  trialInfo = read.csv("/media/kidzik/DATA/Dropbox-tmp/DATA/CP/trialInfo_CP.csv")
 #  all.data = read.csv("/home/lukasz/alldata.csv")
 #  gait.cycles = t(read.csv("/home/lukasz/G_avg_CP.csv"))
 }
@@ -67,6 +67,11 @@ experiment.data = function(i)
                              K=1, d=d, fold = 5)
   model.impute.fpcs = fregression(as.formula(paste0(var," ~ age | Patient_ID")), data$train, lambda= c(7.5), thresh = 1e-4, method = "fpcs", K=2:2, d=d)
 
+  model.impute.pg = fregression(as.formula(paste0(var," ~ age | Patient_ID")), data$train,
+                             lambda= lambdas[[var]], thresh = 1e-10, maxIter = 10000,
+                             method = "proximal_grad",
+                             K=1, d=d, fold = 5)
+
   # lambdas[["bmi"]] = 0.25
   # X = list(train = data$train.matrix)
   # model.impute = fcomplete:::functionalMultiImpute.one(X, basis=model.impute.fpcs$basis, K=1, maxIter=10000, thresh=1e-10, lambda=lambdas[[var]])
@@ -89,11 +94,12 @@ experiment.data = function(i)
                                 d=d)
 
   errors = c(mean((model.regression$fit - data$test.matrix)**2, na.rm = TRUE),
-    mean((model.impute$fit - data$test.matrix)**2, na.rm = TRUE),
-    mean((model.impute.fpcs$fit - data$test.matrix)**2, na.rm = TRUE),
+             mean((model.impute$fit - data$test.matrix)**2, na.rm = TRUE),
+             mean((model.impute.pg$fit - data$test.matrix)**2, na.rm = TRUE),
+             mean((model.impute.fpcs$fit - data$test.matrix)**2, na.rm = TRUE),
     mean((mean(data$train.matrix,na.rm=TRUE) - data$test.matrix)**2, na.rm = TRUE)
     )
-  names(errors) = c("reg","impute","fPCA","mean")
+  names(errors) = c("reg","impute","impute.pg","fPCA","mean")
   print(errors)
   list(errors = errors,
        model.fimp = model.impute,

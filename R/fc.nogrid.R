@@ -62,7 +62,7 @@ nogrid.fimpute.fit = function(data,
   pp = min(pp, df*nvars)
 
   # Store solution matrix
-  Wold = matrix(0,n,df*nvars)
+  Wold = matrix(rnorm(n*df*nvars)/100,n,df*nvars)
 
   # Evaluate basis on the observe timpoints and normalize variables
   basis_evals = list()
@@ -171,6 +171,8 @@ cv.nogrid.fimpute = function(data,
     test.idx = c(test.idx, sample(which(data[[id.var]] == subj))[1])
   }
   test.mask = 1:length(data[[id.var]]) %in% test.idx
+
+
 
   for (lambda in lambdas){
     model = nogrid.fimpute.fit(data[!test.mask,],
