@@ -13,7 +13,7 @@ d = 7
 
 # SIMULATE DATA
 test.experiment = function(exp.id){
-set.seed(30 + exp.id)
+set.seed(35 + exp.id)
 #simulation = fsimulate(dgrid = dgrid,clear = 0.9, n = 50, noise.mag = 0.3, d = d, K = 2)
 simulation = fsimulate(dgrid = dgrid,num_points = 3, n = 100, noise.mag = 0.3, d = d, K = 2)
 data = simulation$data
@@ -28,7 +28,8 @@ lambdas.pca = seq(0.1,5,length.out = 15)
 
 model.mean = fregression(Y ~ time | id, data, method = "mean", bins = dgrid)
 model.fpca = fregression(Y ~ time | id, data, lambda = 0, K = 2:d, thresh = 1e-4, method = "fpcs", bins = dgrid, maxIter = 1000)
-model.fimp = fregression(Y ~ time | id, data, lambda = lambdas.pca, thresh = 1e-4, final = "soft", maxIter = 10000, fold = 5, cv.ratio = 0.05, bins = dgrid, verbose = 0)
+#model.fimp = fregression(Y ~ time | id, data, lambda = lambdas.pca, thresh = 1e-4, final = "soft", maxIter = 10000, fold = 5, cv.ratio = 0.05, bins = dgrid, verbose = 0)
+model.fimp = fregression(Y ~ time | id, data, method="proximal_grad_grid", lambda = lambdas.pca*sqrt(dgrid)/20, lr = 1/sqrt(dgrid), thresh = 1e-4, final = "soft", maxIter = 10000, fold = 5, cv.ratio = 0.05, bins = dgrid, verbose = 0)
 model.fimp.pg = fregression(Y ~ time | id, data, method="proximal_grad", lambda = lambdas.pca*sqrt(dgrid)/20, lr = 1/sqrt(dgrid), thresh = 1e-4, final = "soft", maxIter = 10000, fold = 5, cv.ratio = 0.05, bins = dgrid, verbose = 0)
 mean(((ftrue - model.fimp$fit)[!is.na(simulation$fobs)])**2)
 mean(((ftrue - model.fimp.pg$fit)[!is.na(simulation$fobs)])**2)

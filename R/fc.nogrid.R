@@ -24,7 +24,8 @@ nogrid.fimpute.fit = function(data,
                        lr = 0.05,
                        lambda = 1,
                        tol = 1e-7,
-                       dgrid = 100
+                       dgrid = 100,
+                       nogrid = TRUE
 ){
 #  cat(value.vars, time.var, id.var, tol)
 
@@ -69,6 +70,7 @@ nogrid.fimpute.fit = function(data,
   slices = list()
   mm = list()
   ssd = list()
+  Y = list()
 
   for (value.var in value.vars){
     slices[[value.var]] = data_long[["measurement"]] == value.var
@@ -79,27 +81,50 @@ nogrid.fimpute.fit = function(data,
 
     #    basis_evals[[value.var]] = predict(basis,
     #                                       data_long[[time.var]][slices[[value.var]]])
-    basis_evals[[value.var]] = eval.basis(data_long[[time.var]][slices[[value.var]]], basis)
+
+    if(nogrid == TRUE){
+      basis_evals[[value.var]] = eval.basis(data_long[[time.var]][slices[[value.var]]], basis)
+    }
+    else {
+      basis_evals[[value.var]] = eval.basis(grid, basis)
+#      M = data.frame(idx = data_long$idx[slices[[value.var]]],
+#        vals = data_long$value[slices[[value.var]]],
+#        time = sapply(data_long$time[slices[[value.var]]], function(x){ which.min(abs(x-grid)) }))
+      Y[[value.var]] = fcomplete:::fc.long2wide(data_long$idx[slices[[value.var]]], data_long$time[slices[[value.var]]], data_long$value[slices[[value.var]]], bins = length(grid))
+    }
   }
 
+  ## Estimate W directly (no grid)
   for (i in 1:niter){
-
     total_grad = Wold
     total_grad[] = 0
     total_res = 0
 
     for (j in 1:nvars){
       value.var = value.vars[j]
-      res.update = gradient.clean(basis_evals[[value.var]],
+      if (nogrid == TRUE){
+        res.update = gradient.clean(basis_evals[[value.var]],
                                    Wold[,((j-1)*df+1):(j*df)],
                                    data_long[["value"]][slices[[value.var]]],
                                    data_long$idx[slices[[value.var]]])
-      total_res = total_res + res.update$res
+      }
+      else {
+        # Get current estimate using W
+        Yhat = Wold[,((j-1)*df+1):(j*df)] %*% t(basis_evals[[value.var]])
+        yobs = !is.na(Y[[value.var]])
+        Yres = Yhat
+        Yres[] = 0
+        Yres[yobs] = Y[[value.var]][yobs] - Yhat[yobs]
+        res.update = list()
+        res.update$grad = fcomplete:::project.on.basis(Yres, basis_evals[[value.var]])
+        res.update$res = sum(Yres) / length(yobs)
+      }
       total_grad[unique(data_long$idx[slices[[value.var]]]),((j-1)*df+1):(j*df)] = res.update$grad
+      total_res = total_res + res.update$res
     }
     W = Wold + total_grad*lr
 
-    if (i %% 100 == 0){
+    if (i %% 1 == 0){
       print(paste("Iter",i,"Fit:", total_res, ", obj:", total_res + lambda*norm(W)))
     }
 
@@ -118,6 +143,7 @@ nogrid.fimpute.fit = function(data,
       break
     Wold = W
   }
+
 
   model_functions = list()
   for (j in 1:nvars){

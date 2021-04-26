@@ -118,12 +118,15 @@ fregression = function(formula, data, covariates = NULL,
       res = fc.fpca(Y, d = d, K = K, grid.l = 0:(bins-1)/(bins-1))
       # res$fit = t(t(res$fit) - cmeans) / yscale # silly but consistent
     }
-    else if (method == "proximal_grad") {
+    else if (method == "proximal_grad" || method == "proximal_grad_grid") {
+      nogrid = TRUE
+      if (method == "proximal_grad_grid")
+        nogrid = FALSE
       rangeval = c(min(data[[time.var]],na.rm=TRUE),max(data[[time.var]],na.rm=TRUE))
       fcb = fc.basis(d = d, dgrid = bins, type = basis.type, rangeval = rangeval)
       res = cv.nogrid.fimpute(data = data, value.vars = c(y.var), id.var = subj.var,
                               time.var = time.var, basis = fcb$basis, lambdas = lambda, niter = maxIter,
-                              pp = K, lr = lr, tol = thresh, dgrid = bins, val.ratio = 0.05)
+                              pp = K, lr = lr, tol = thresh, dgrid = bins, val.ratio = 0.05, nogrid = nogrid)
 #      res = nogrid.fimpute.fit(data = data, value.vars = c(y.var), id.var = subj.var,
 #                              time.var = time.var, basis = fcb$basis, lambda = lambda, niter = maxIter,
 #                              pp = K, lr = lr, tol = thresh, dgrid = bins)

@@ -37,3 +37,19 @@ summary(fit) # display the best model
 matplot( t(t(fit$parameters$mean) %*% model$v[1:3,]), t='l')
 
 devtools::install_github('IRkernel/IRkernel')
+
+
+#### TESTS for NOGRID
+model = nogrid.fimpute.fit(data,
+                              "Y",
+                              "time",
+                              "id",
+                              basis = NULL,
+                              niter = 50,
+                              pp = 10,
+                              lr = 0.05,
+                              lambda = 1,
+                              tol = 1e-7,
+                              dgrid = 100,
+                              nogrid = TRUE
+)
