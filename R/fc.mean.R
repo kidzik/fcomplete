@@ -6,3 +6,4 @@ fc.mean = function(X){
   X[] = ms
   X
 }
+

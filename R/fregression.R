@@ -116,7 +116,6 @@ fregression = function(formula, data, covariates = NULL,
   {
     if (method == "fpcs"){
       res = fc.fpca(Y, d = d, K = K, grid.l = 0:(bins-1)/(bins-1))
-      # res$fit = t(t(res$fit) - cmeans) / yscale # silly but consistent
     }
     else if (method == "proximal_grad" || method == "proximal_grad_grid") {
       nogrid = TRUE
@@ -126,14 +125,15 @@ fregression = function(formula, data, covariates = NULL,
       fcb = fc.basis(d = d, dgrid = bins, type = basis.type, rangeval = rangeval)
       res = cv.nogrid.fimpute(data = data, value.vars = c(y.var), id.var = subj.var,
                               time.var = time.var, basis = fcb$basis, lambdas = lambda, niter = maxIter,
-                              pp = K, lr = lr, tol = thresh, dgrid = bins, val.ratio = 0.05, nogrid = nogrid)
+                              pp = K, lr = lr, tol = thresh, dgrid = bins, val.ratio = 0.05, nogrid = nogrid, verbose = verbose)
 #      res = nogrid.fimpute.fit(data = data, value.vars = c(y.var), id.var = subj.var,
 #                              time.var = time.var, basis = fcb$basis, lambda = lambda, niter = maxIter,
 #                              pp = K, lr = lr, tol = thresh, dgrid = bins)
-      loss = res$loss
-      res = res$model
-      res$fit = res$fit[[1]]
-      res$loss = loss
+#      loss = res$loss
+#      res = res$model
+      res$fit = res$model$fit[[1]]
+      res$v = res$model$v
+      #      res$loss = loss
     }
     else if (method == "mean"){
       res = list(fit = fc.mean(Y.wide), v = 0)

@@ -61,7 +61,7 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda, sta
     projected.res = project.on.basis(Yres, basis)
 
     # weight the gradient
-    weights = 1
+    weights = sqrt(ncol(basis))/10
 
     # Run SVD on the current solution + gradient
     Ysvd = svd(Yhat + weights*projected.res)

@@ -25,7 +25,8 @@ nogrid.fimpute.fit = function(data,
                        lambda = 1,
                        tol = 1e-7,
                        dgrid = 100,
-                       nogrid = TRUE
+                       nogrid = TRUE,
+                       verbose = FALSE
 ){
 #  cat(value.vars, time.var, id.var, tol)
 
@@ -124,7 +125,7 @@ nogrid.fimpute.fit = function(data,
     }
     W = Wold + total_grad*lr
 
-    if (i %% 1 == 0){
+    if (i %% 1 == 0 && verbose){
       print(paste("Iter",i,"Fit:", total_res, ", obj:", total_res + lambda*norm(W)))
     }
 
@@ -139,7 +140,7 @@ nogrid.fimpute.fit = function(data,
 
     W = as.matrix(ss$u) %*% dd %*% t(as.matrix(ss$v))
 
-    if ( sum((W-Wold)**2) / sum(Wold**2) < tol)
+    if ( sum((W-Wold)**2) <= tol * sum(Wold**2))
       break
     Wold = W
   }
@@ -171,8 +172,12 @@ predict.fimpute = function(fit,grid,newdata,time.var,id.var){
   preds = c()
   for (i in 1:nrow(newdata)){
     g = which(grid > newdata[i,time.var])[1]
-    if (g > ncol(fit))
+    if (is.null(g) || is.na(g)){
+      g = 1
+    }
+    else if(g > ncol(fit)){
       g = ncol(fit)
+    }
     preds = c(preds, fit[newdata[i,id.var],g])
   }
   preds
@@ -184,35 +189,42 @@ cv.nogrid.fimpute = function(data,
                       id.var,
                       ...,
                       lambdas=c(0,1),
-                      val.ratio=0.05){
+                      val.ratio=0.05,
+                      nreps = 5){
   bestModel = NULL
   bestL = 1e10
   loss = c()
   #  functions.on.grid = t(eval.fd(0:99/99,functions))
 
   nsubj = length(unique(data[[id.var]]))
-  test.subjects = 1:nsubj %in% sample(1:nsubj)[1:floor(nsubj*val.ratio)]
-  test.idx = c()
-  for (subj in test.subjects){
-    test.idx = c(test.idx, sample(which(data[[id.var]] == subj))[1])
+  test.masks = list()
+
+  for (i in 1:nreps){
+    test.subjects = 1:nsubj %in% sample(1:nsubj)[1:floor(nsubj*val.ratio)]
+    test.idx = c()
+    for (subj in test.subjects){
+      test.idx = c(test.idx, sample(which(data[[id.var]] == subj))[1])
+    }
+    test.masks[[i]] = 1:length(data[[id.var]]) %in% test.idx
   }
-  test.mask = 1:length(data[[id.var]]) %in% test.idx
-
-
 
   for (lambda in lambdas){
-    model = nogrid.fimpute.fit(data[!test.mask,],
-                        value.vars,
-                        time.var,
-                        id.var,
-                        ...,
-                        lambda=lambda)
-
-    # TODO: for each var
     l = 0
-    for (value.var in value.vars){
-      l = l + sum((data[test.mask,] - predict.fimpute(model$fit[[value.var]], model$grid, data[test.mask,], time.var, id.var))**2,na.rm=TRUE)
+    for (i in 1:nreps){
+      test.mask = test.masks[[i]]
+      model = nogrid.fimpute.fit(data[!test.mask,],
+                          value.vars,
+                          time.var,
+                          id.var,
+                          ...,
+                          lambda=lambda)
+
+      # TODO: for each var
+      for (value.var in value.vars){
+        l = l + sum((data[test.mask,] - predict.fimpute(model$fit[[value.var]], model$grid, data[test.mask,], time.var, id.var))**2,na.rm=TRUE)
+      }
     }
+    l = l / nreps
 
     ## For tests when ground truth is known
     # l = mean((functions.on.grid - model$functions$measurement)**2) / mean((functions.on.grid - 0)**2)
@@ -220,7 +232,7 @@ cv.nogrid.fimpute = function(data,
     if (l < bestL){
       bestL = l
       bestLambda = lambda
-      bestModel = model
+#      bestModel = model
     }
   }
   model = nogrid.fimpute.fit(data,
