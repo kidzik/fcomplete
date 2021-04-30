@@ -15,7 +15,7 @@ d = 7
 test.experiment = function(exp.id){
 #set.seed(35 + exp.id)
 #simulation = fsimulate(dgrid = dgrid,clear = 0.9, n = 50, noise.mag = 0.3, d = d, K = 2)
-simulation = fsimulate(dgrid = dgrid,num_points = 3, n = 150, noise.mag = 0.1, d = d, K = 4)
+simulation = fsimulate(dgrid = dgrid,num_points = 3, n = 100, noise.mag = 0.1, d = d, K = 4)
 data = simulation$data
 ftrue = simulation$ftrue
 K = simulation$params$K
@@ -51,16 +51,16 @@ mean(((ftrue - model.fimp.pg$fit)[!is.na(simulation$fobs)])**2)
 #model.fslr = fregression(Y ~ time + U1 + U2 + U3 + U4 | id, data, model.X1$u, K=3, thresh = 1e-10, lambda = lambdas.reg, method = "fimpute", bins = dgrid, maxIter = 5000)
 
 # REPORT RESULTS
+vv = mean((ftrue - mean(data$Y))**2)
 errors = c(
-  mean((ftrue - mean(data$Y))**2),
-  mean((ftrue - model.fpca$fit)**2),
-  mean((ftrue - model.fimp$fit)**2),
-  mean((ftrue - model.fimp.pg$fit)**2)
+  mean((ftrue - model.fpca$fit)**2) / vv,
+  mean((ftrue - model.fimp$fit)**2) / vv,
+  mean((ftrue - model.fimp.pg$fit)**2) / vv
   #  mean((ftrue - model.fslr$fit)**2)
 )
 list(errors = errors, time= c(time.fpca, time.fimp, time.fimp.pg))
 }
-res = mclapply(1:8, test.experiment, mc.cores = 8)
+res = mclapply(1:32, test.experiment, mc.cores = 8)
 
 errors = c()
 for (i in 1:length(res)){
@@ -73,15 +73,15 @@ for (i in 1:length(res)){
 print(errors)
 colMeans(errors)
 
-colnames(errors) = c("mean",
-                     "fpca",
+colnames(errors) = c("fPCA",
                      "fimpute",
-                     "fimpute.pg"
-)
-colnames(times) = c( "fpca",
-                     "fimpute",
-                     "fimpute.pg"
-)
+                     "fimpute pg")
+colnames(times) = colnames(errors)
 
-boxplot(errors)
-boxplot(log(times))
+pdf("figures/simulation-errors.pdf",width=5,height=5)
+boxplot(errors,ylim=c(0,1))
+dev.off()
+pdf("figures/simulation-times.pdf",width=5,height=5)
+boxplot(times)
+dev.off()
+

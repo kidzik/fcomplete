@@ -12,13 +12,13 @@ source("tests/plot.helpers.R")
 # PREPARE DATA #
 ################
 if (!("all.data" %in% ls())){
-  all.data = read.csv("/media/kidzik/DATA/Dropbox-tmp/DATA/CP/alldata.csv")
-  gait.cycles = t(read.csv("/media/kidzik/DATA/Dropbox-tmp/DATA/CP/G_avg_CP.csv"))
-  gdi = read.csv("/media/kidzik/DATA/Dropbox-tmp/DATA/CP/gdi.csv")
+  all.data = read.csv("/home/kidzik/Dropbox/DATA/CP/alldata.csv")
+  gait.cycles = t(read.csv("/home/kidzik/Dropbox/DATA/CP/G_avg_CP.csv"))
+  gdi = read.csv("/home/kidzik/Dropbox/DATA/CP/gdi.csv")
   pcas = prcomp(gait.cycles)
   all.data = cbind(all.data, pcas$x[,1:10])
   all.data = merge(all.data, gdi,by = c("Patient_ID","examid","side"))
-  trialInfo = read.csv("/media/kidzik/DATA/Dropbox-tmp/DATA/CP/trialInfo_CP.csv")
+  trialInfo = read.csv("/home/kidzik/Dropbox/DATA/CP/trialInfo_CP.csv")
 #  all.data = read.csv("/home/lukasz/alldata.csv")
 #  gait.cycles = t(read.csv("/home/lukasz/G_avg_CP.csv"))
 }
@@ -258,14 +258,23 @@ dd = all.data.filtered[,c("Patient_ID","age","bmi","GDI")]
 dd$Patient_ID = as.factor(dd$Patient_ID)
 dd = dd[dd$bmi > 10,]
 
+data_highlight=dd[dd$Patient_ID,]
+
 # Figure 1: BMI over time
 pp = ggplot(aes(x = age, y = GDI, color = Patient_ID), data = dd[1:200,]) + ylab("GDI") +
-  geom_point(size = 3) + theme_set(theme_grey(base_size = 26)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
+  theme_set(theme_grey(base_size = 26)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
   stat_function(fun = approxfun(lowess(dd$age,dd$GDI)), size = 1.5, colour = "#000000")+ scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0))
-pp
-ggsave("docs/plots/points.pdf",width=7,height=5)
-pp + geom_line(size=0.7)
-ggsave("docs/plots/grouped.pdf",width=7,height=5)
+pp + geom_point(size = 1.5,alpha=0.5)
+ggsave("figures/data-points.pdf",width=7,height=5)
+
+pp1 = pp + geom_line(size=0.7,alpha=0.05) + geom_point(size = 1.5, alpha=0.05)
+pats = c(3995, 4241, 4215)
+colors = c("#ff0000","#00ff00","#0000ff")
+for (i in 1:3){
+  pp1 = pp1 + geom_line(size=0.7,alpha=0.9, data = dd[dd$Patient_ID == pats[i], ], colour = colors[i]) + geom_point(size = 1.5, alpha=0.9, data = dd[dd$Patient_ID == pats[i], ], colour = colors[i])
+}
+pp1
+ggsave("figures/data-grouped.pdf",width=7,height=5)
 
 # # The palette with grey:
 # # The palette with black:
