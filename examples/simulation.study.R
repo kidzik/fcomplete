@@ -74,14 +74,26 @@ print(errors)
 colMeans(errors)
 
 colnames(errors) = c("fPCA",
-                     "fimpute",
-                     "fimpute pg")
+                     "SLI",
+                     "PG")
 colnames(times) = colnames(errors)
 
-pdf("figures/simulation-errors.pdf",width=5,height=5)
-boxplot(errors,ylim=c(0,1))
-dev.off()
-pdf("figures/simulation-times.pdf",width=5,height=5)
-boxplot(times)
-dev.off()
+library(tidyr)
+errors.long = data.frame(errors) %>% gather(method, value)
 
+theme_set(theme_grey(base_size = 26))
+dev.new()
+p <- ggplot(errors.long, aes(x=method, y=value)) +
+  theme(plot.title = element_text(hjust = 0.5), legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
+  ylab("NMSE") + xlab("") + ggtitle("Model performance") + ylim(c(0,0.8)) +
+  geom_boxplot()
+p
+ggsave("figures/simulation-errors.pdf",width=7,height=5)
+
+times.long = data.frame(log(times)) %>% gather(method, value)
+p <- ggplot(times.long, aes(x=method, y=value)) +
+  theme(plot.title = element_text(hjust = 0.5), legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
+  ylab("time [ln(s)]") + xlab("") + ggtitle("Computation time") +
+  geom_boxplot()
+p
+ggsave("figures/simulation-times.pdf",width=7,height=5)

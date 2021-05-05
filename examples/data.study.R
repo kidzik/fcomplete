@@ -2,7 +2,7 @@ library("devtools")
 # library("roxygen2")
 # roxygenise()
 library("fpca")
-install(".")
+#install(".")
 library("fcomplete")
 library("ggplot2")
 library("parallel")
@@ -42,101 +42,6 @@ pats = table(all.data.filtered$Patient_ID)
 pats = names(pats[pats>=3])
 all.data.filtered.sample = all.data.filtered[all.data.filtered$Patient_ID %in% pats,]
 
-#################
-# RUN CROSS-VAL #
-#################
-experiment.data = function(i)
-{
-  set.seed(i+20)
-  # Sample data for testing
-
-  var = "GDI"
-  data = sample.long(all.data.filtered.sample, "Patient_ID", "age", var, ratio = 0.05, min.per.sbj = 3)
-
-  # Set up parameters
-  lambdas = list()
-  lambdas[["GDI"]] = 5#seq(18,22,length.out = 5)
-  lambdas[["bmi"]] = seq(1,2,length.out = 5)
-  d = 6
-  K = d
-
-  # IMPUTE
-  model.impute = fregression(as.formula(paste0(var," ~ age | Patient_ID")), data$train,
-                             lambda= lambdas[[var]], thresh = 1e-10, maxIter = 10000,
-                             method = "fimpute", final = "soft",
-                             K=1, d=d, fold = 5)
-  model.impute.fpcs = fregression(as.formula(paste0(var," ~ age | Patient_ID")), data$train, lambda= c(7.5), thresh = 1e-4, method = "fpcs", K=2:2, d=d)
-
-  model.impute.pg = fregression(as.formula(paste0(var," ~ age | Patient_ID")), data$train,
-                             lambda= lambdas[[var]], thresh = 1e-10, maxIter = 10000,
-                             method = "proximal_grad",
-                             K=1, d=d, fold = 5)
-
-  # lambdas[["bmi"]] = 0.25
-  # X = list(train = data$train.matrix)
-  # model.impute = fcomplete:::functionalMultiImpute.one(X, basis=model.impute.fpcs$basis, K=1, maxIter=10000, thresh=1e-10, lambda=lambdas[[var]])
-
-
-#  model.mean = fregression(GDI:age ~ 1 | Patient_ID, data$train,  method = "mean")
-
-  # REGRESSION
-  # lambdas.reg = seq(0,1,length.out = 5)
-
-  model.covariates = fregression(GDI + O2cost + speed ~ age  | Patient_ID, data$train,
-                                 method = "fimpute", thresh=1e-10, maxIter = 5000,
-                                 lambda = lambdas[[var]] / sqrt(120),
-                                 d=d,
-                                 K=1)
-  model.regression = fregression(GDI ~ age + U1 | Patient_ID, data$train, model.covariates$u,
-                                method = "fimpute", thresh=1e-10, maxIter = 5000,
-                                K = 1,
-                                lambda = 1,
-                                d=d)
-
-  errors = c(mean((model.regression$fit - data$test.matrix)**2, na.rm = TRUE),
-             mean((model.impute$fit - data$test.matrix)**2, na.rm = TRUE),
-             mean((model.impute.pg$fit - data$test.matrix)**2, na.rm = TRUE),
-             mean((model.impute.fpcs$fit - data$test.matrix)**2, na.rm = TRUE),
-    mean((mean(data$train.matrix,na.rm=TRUE) - data$test.matrix)**2, na.rm = TRUE)
-    )
-  names(errors) = c("reg","impute","impute.pg","fPCA","mean")
-  print(errors)
-  list(errors = errors,
-       model.fimp = model.impute,
-       model.fpca = model.impute.fpcs,
-       model.fslr = model.regression,
-#       model.mean = model.mean,
-       data = data)
-}
-
-models = mclapply(1:8, experiment.data, mc.cores = 4)
-#models = list()
-#models[[1]] = experiment.data(4)
-
-plot(models[[1]]$model.fimp$fit[!is.na(models[[1]]$data$test.matrix)], models[[1]]$model.fimp$Y[!is.na(models[[1]]$data$test.matrix)])
-
-pred = models[[1]]$model.fimp$u[] %*% models[[1]]$model.fimp$d[1] %*% models[[1]]$model.fimp$v[1,]
-mean((pred - models[[1]]$data$test.matrix)**2, na.rm = TRUE)
-models[[1]]$errors
-
-#df.quadtmp = data.frame(Patient_id = all.data$Patient_ID, quadriplegic = all.data$isQuadriplegic, triplegic = all.data$isTriplegic)
-#df.quad = aggregate(list(quadriplegic = df.quadtmp$quadriplegic, triplegic = df.quadtmp$triplegic), list(df.quadtmp$Patient_id), max)
-df.quad = aggregate(list(dxmod = as.character(trialInfo$dxmod)), list(Patient_id = trialInfo$Patient_ID), function(x){unique(x)[1]})
-#names(df.quad) = c("Patient_id", "quadriplegic_bin","triplegic_bin")
-df = data.frame(Patient_id = row.names(models[[1]]$data$train.matrix), trend.pc1 = models[[1]]$model.fimp$u)
-df.quad$dxmod = as.character(df.quad$dxmod)
-df.quad = df.quad[df.quad$dxmod != "Femoral anteversion",]
-df.quad = df.quad[df.quad$dxmod != "Hemiplegia type I",]
-
-df.merged = merge(df,df.quad)
-summary(lm(df.merged$trend.pc1 ~ df.merged$dxmod))
-
-plt <- ggplot(df.merged, aes(x=df.merged$dxmod, y=df.merged$trend.pc1)) +
-  geom_boxplot() +
-  weartals_theme +
-  xlab("Subtype of the paralysis") +
-  ylab("Score of the first PC")
-print(plt)
 ggsave(plt, filename = "docs/paper/images/paralysis-subtypes.pdf",width = 10, height = 6)
 
 library(ggplot2)
@@ -261,8 +166,8 @@ dd = dd[dd$bmi > 10,]
 data_highlight=dd[dd$Patient_ID,]
 
 # Figure 1: BMI over time
-pp = ggplot(aes(x = age, y = GDI, color = Patient_ID), data = dd[1:200,]) + ylab("GDI") +
-  theme_set(theme_grey(base_size = 26)) + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
+theme_set(theme_grey(base_size = 26))
+pp = ggplot(aes(x = age, y = GDI, color = Patient_ID), data = dd[1:200,]) + ylab("GDI") + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
   stat_function(fun = approxfun(lowess(dd$age,dd$GDI)), size = 1.5, colour = "#000000")+ scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0))
 pp + geom_point(size = 1.5,alpha=0.5)
 ggsave("figures/data-points.pdf",width=7,height=5)
@@ -271,7 +176,7 @@ pp1 = pp + geom_line(size=0.7,alpha=0.05) + geom_point(size = 1.5, alpha=0.05)
 pats = c(3995, 4241, 4215)
 colors = c("#ff0000","#00ff00","#0000ff")
 for (i in 1:3){
-  pp1 = pp1 + geom_line(size=0.7,alpha=0.9, data = dd[dd$Patient_ID == pats[i], ], colour = colors[i]) + geom_point(size = 1.5, alpha=0.9, data = dd[dd$Patient_ID == pats[i], ], colour = colors[i])
+  pp1 = pp1 + geom_line(size=1,alpha=0.9, data = dd[dd$Patient_ID == pats[i], ], colour = colors[i]) + geom_point(size = 1.5, alpha=0.9, data = dd[dd$Patient_ID == pats[i], ], colour = colors[i])
 }
 pp1
 ggsave("figures/data-grouped.pdf",width=7,height=5)
