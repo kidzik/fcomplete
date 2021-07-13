@@ -80,7 +80,6 @@ functionalMultiImpute.one = function(..., basis, K, maxIter, thresh, lambda, sta
       print(ratio)
     }
     if (ratio < thresh){
-      print(i)
       break
     }
     Yhat = Yhat.new
