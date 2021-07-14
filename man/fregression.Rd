@@ -9,7 +9,7 @@ fregression(
   data,
   covariates = NULL,
   bins = 51,
-  method = c("fimpute", "fpcs", "mean"),
+  method = c("fimpute", "fpcs", "mean", "pg"),
   lambda = c(0),
   maxIter = 1e+05,
   lambda.reg = 0,
@@ -30,12 +30,12 @@ fregression(
 \arguments{
 \item{formula}{formula describing the linear relation between processes and indicating time and grouping variables. See details}
 
-\item{data}{data in the long format. Use \code{\link{fc.long2wide}} and \code{\link{fc.wide2long}} for conversions}
+\item{data}{data in the long format.}
 
 \item{bins}{number of bins for matrix representation of the data}
 
-\item{method}{method for functional impute: \code{fpca} for functional principal components,
-\code{mean} for mean impute and \code{fimpute} for functional impute}
+\item{method}{algorithm to use for finding model parameters: \code{fpca} for functional principal components,
+\code{mean} for mean impute, \code{fimpute} for functional impute, \code{pg} for proximal gradient}
 
 \item{lambda}{lambdas for SVD regularization in functional impute}
 
@@ -66,25 +66,25 @@ Returns a list
 In case of multidimensional SVD and simultanious approximation of \code{Y,X1,X2,...,Xp}, \code{$fit} is a list of models for \code{Y,X1,X2,...,Xp}.
 }
 \description{
-Method approximates a process from sparse observations. Suppose, that for a certain subject one or multiple observations
-are measured at some irregular timepoints. We assume that these are noise observations of some underlying process and we want
-to approximate this process for each individual.
+Method approximates individual trajectories from sparse noisy observations. Suppose, that we measure progression of a certain measurment
+over time at some irregular timepoints for multiple subjects. We want to approximate the progression process for each individual.
 }
 \details{
 For a subject \eqn{i}, we observe \eqn{Y^{i}(t),X_1^{i}(t),...,X_p^{i}(t)} at irregular subject specific \eqn{t \in t_1,...,t_p}, where \eqn{0 < t_j < T}.
 We can bin the time interval \eqn{[0,T]} and represent each individual as a vector of fixed length with missing values.
 Let \code{Y, X1, ..., Xp} be such matrices. Columns correspond to timepoints and rows to subjects.
 
-There are mulitple methods of approximating the process \code{Y}, we can:
+There are multitple methods for approximating the process \code{Y}, we can:
 \itemize{
 \item regress \code{Y} on \code{X_1,X_2,...,X_p}, we can use sparse functional regression
 \item project each subject into latent space and impute \code{Y, X_1,X_2,...,X_p} simultaniously
 \item use only information from \code{Y}, we can use functional PCA method or functional impute.
 }
 
-Function \code{fregression} enables all three scenarios. Suppose \code{data} contains information in the long format, i.e. \code{data} is a
-matrix with \eqn{p + 3} columns, where \code{data[,1]} is a \code{subjectID}, \code{data[,2]} is \code{time},  \code{data[,3]} is a value observation of \code{Y}
-and remaining columns are covariates \code{X1, ..., Xp}. Each row corresponds to one observation for one subject.
+Function \code{fregression} is an interface for fitting models for all three scenarios. Suppose \code{data} is a data
+matrix in the long format, i.e. \code{data} is a matrix with \eqn{p + 3} columns, where \code{data[,1]} is a \code{subjectID},
+\code{data[,2]} is \code{time},  \code{data[,3]} is a value observation of \code{Y} and remaining columns are
+covariates \code{X1, ..., Xp}. Each row corresponds to one observation for one subject.
 
 There are three possible \code{formula}s:
 \itemize{
@@ -118,4 +118,8 @@ model.freg = fregression(Y ~ U1 + U2 + time | id, data, model.fcmp$u,
 James, Gareth M., Trevor J. Hastie, and Catherine A. Sugar.
 \emph{Principal component models for sparse functional data.}
 Biometrika 87.3 (2000): 587-602.
+
+Lukasz Kidzinski and Trevor J. Hastie.
+\emph{Modeling longitudinal data using matrix completion.}
+Under review (2021)
 }

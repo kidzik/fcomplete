@@ -13,6 +13,10 @@
 #' @param clear fraction of observations to remove
 #' @param num_points number of points observed per curve
 #' @param noise_mag the magnitude of noise
+#' @references
+#' Lukasz Kidzinski and Trevor J. Hastie.
+#' \emph{Modeling longitudinal data using matrix completion.}
+#' Under review (2021)
 #' @export
 fsimulate = function(
   n = 100,
