@@ -36,6 +36,11 @@ Function simulates data from the paper
 The function simulates data as described in the paper.
 Generates observations \code{X1,X2} and a \code{Y = X1 + X2 + noise}
 }
+\references{
+Lukasz Kidzinski and Trevor J. Hastie.
+\emph{Modeling longitudinal data using matrix completion.}
+Under review (2021)
+}
 \seealso{
 \code{\link{fregression}}
 }
