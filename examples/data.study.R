@@ -1,12 +1,14 @@
-library("devtools")
-# library("roxygen2")
-# roxygenise()
-library("fpca")
-#install(".")
 library("fcomplete")
 library("ggplot2")
 library("parallel")
-source("tests/plot.helpers.R")
+library("metafolio")
+library("ggplot2")
+library("ggthemes")
+library("RColorBrewer")
+
+sample_ratio = 1 # 1 for results from the study
+
+clean_theme = theme_classic() + theme(text = element_text(size=18), panel.border = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1))
 
 ################
 # PREPARE DATA #
@@ -19,13 +21,9 @@ if (!("all.data" %in% ls())){
   all.data = cbind(all.data, pcas$x[,1:10])
   all.data = merge(all.data, gdi,by = c("Patient_ID","examid","side"))
   trialInfo = read.csv("/home/kidzik/Dropbox/DATA/CP/trialInfo_CP.csv")
-#  all.data = read.csv("/home/lukasz/alldata.csv")
-#  gait.cycles = t(read.csv("/home/lukasz/G_avg_CP.csv"))
 }
 
 all.data.subset = all.data[all.data$side == "L",]
-# all.data.subset = all.data.subset[all.data.subset$age < 18,] # remove outliers
-# all.data.subset = all.data.subset[all.data.subset$age > 5,] # remove outliers
 all.data.subset = all.data.subset[all.data.subset$bmi > 5,] # remove outliers
 all.data.subset = all.data.subset[all.data.subset$bmi < 25,] # remove outliers
 
@@ -40,20 +38,96 @@ all.data.filtered = na.omit(all.data.filtered)
 all.data.filtered = all.data.filtered[!is.nan(all.data.filtered$GDI),]
 pats = table(all.data.filtered$Patient_ID)
 pats = names(pats[pats>=3])
+
+pats = sample(pats)[1:floor(length(pats)*sample_ratio)]
 all.data.filtered.sample = all.data.filtered[all.data.filtered$Patient_ID %in% pats,]
 
-ggsave(plt, filename = "docs/paper/images/paralysis-subtypes.pdf",width = 10, height = 6)
+#################
+# RUN CROSS-VAL #
+#################
+experiment.data = function(i)
+{
+  set.seed(i+100)
+  # Sample data for testing
 
-library(ggplot2)
-source("tests/plot.helpers.R")
+  var = "GDI"
+  data = sample.long(all.data.filtered.sample, "Patient_ID", "age", var, ratio = 0.05, min.per.sbj = 3)
 
-ind = 1:2 + 60
-plt = plot_preds(models[[1]]$model.fimp$Y[ind,], NULL, models[[1]]$model.fimp$fit[ind,],
-                 filename="pred-freg-data", title = "Sparse Functional Impute")
-plt = plot_preds(models[[1]]$model.fslr$Y[ind,], NULL, models[[1]]$model.fslr$fit[ind,],
-                 filename="pred-freg-data", title = "Sparse Functional Regression")
-plt = plot_preds(models[[1]]$model.fpca$Y[ind,], NULL, models[[1]]$model.fpca$fit[ind,],
-                 filename="pred-freg-data", title = "Functional Principal Components")
+  # Set up parameters
+  lambdas = list()
+  lambdas[["GDI"]] = seq(4,9,length.out = 6)
+  lambdas[["bmi"]] = seq(1,2,length.out = 5)
+  d = 6
+  K = 2
+
+  # IMPUTE
+  model.impute = fregression(as.formula(paste0(var," ~ age | Patient_ID")), data$train,
+                             lambda= lambdas[["GDI"]], thresh = 1e-4, maxIter = 10000,
+                             method = "fimpute", final = "soft",
+                             K=K, d=d, fold = 5)
+
+  model.impute.fpcs = fregression(as.formula(paste0(var," ~ age | Patient_ID")), data$train,
+                                  thresh = 1e-4, method = "fpcs", K=K, d=d)
+
+  # model.covariates = fregression(GDI + O2cost + speed ~ age  | Patient_ID, data$train,
+  #                                method = "fimpute", thresh=1e-10, maxIter = 5000,
+  #                                lambda = lambdas[[var]] / sqrt(120),
+  #                                d=d,
+  #                                K = 2)
+
+  # model.regression = fregression(GDI ~ age + U1 | Patient_ID, data$train, model.covariates$u,
+  #                                method = "fimpute", thresh=1e-10, maxIter = 5000,
+  #                                K = 2,
+  #                                lambda = 1,
+  #                                d=d)
+
+  errors = c(#mean((model.regression$fit - data$test.matrix)**2, na.rm = TRUE),
+             mean((model.impute$fit - data$test.matrix)**2, na.rm = TRUE),
+             mean((model.impute.fpcs$fit - data$test.matrix)**2, na.rm = TRUE),
+             mean((mean(data$train.matrix,na.rm=TRUE) - data$test.matrix)**2, na.rm = TRUE)
+  )
+
+  names(errors) = c(#"reg",
+                    "SLI",
+                    "fPCA",
+                    "mean")
+  print(errors)
+  list(errors = errors,
+       model.fimp = model.impute,
+       model.fpca = model.impute.fpcs,
+       #model.fslr = model.regression,
+       #       model.mean = model.mean,
+       data = data)
+}
+models = mclapply(1:20, experiment.data, mc.cores = 20)
+
+
+
+plot(models[[1]]$model.fimp$fit[!is.na(models[[1]]$data$test.matrix)], models[[1]]$model.fimp$Y[!is.na(models[[1]]$data$test.matrix)])
+
+pred = models[[1]]$model.fimp$u[] %*% models[[1]]$model.fimp$d[1] %*% models[[1]]$model.fimp$v[1,]
+mean((pred - models[[1]]$data$test.matrix)**2, na.rm = TRUE)
+models[[1]]$errors
+
+#df.quadtmp = data.frame(Patient_id = all.data$Patient_ID, quadriplegic = all.data$isQuadriplegic, triplegic = all.data$isTriplegic)
+#df.quad = aggregate(list(quadriplegic = df.quadtmp$quadriplegic, triplegic = df.quadtmp$triplegic), list(df.quadtmp$Patient_id), max)
+df.quad = aggregate(list(dxmod = as.character(trialInfo$dxmod)), list(Patient_id = trialInfo$Patient_ID), function(x){unique(x)[1]})
+#names(df.quad) = c("Patient_id", "quadriplegic_bin","triplegic_bin")
+df = data.frame(Patient_id = row.names(models[[1]]$data$train.matrix), trend.pc1 = models[[1]]$model.fimp$u[,1])
+df.quad$dxmod = as.character(df.quad$dxmod)
+df.quad = df.quad[df.quad$dxmod != "Femoral anteversion",]
+df.quad = df.quad[df.quad$dxmod != "Hemiplegia type I",]
+
+df.merged = merge(df,df.quad)
+summary(lm(df.merged$trend.pc1 ~ df.merged$dxmod))
+
+plt <- ggplot(df.merged, aes(x=df.merged$dxmod, y=df.merged$trend.pc1)) +
+  geom_boxplot() +
+  clean_theme +
+  xlab("Subtype of the paralysis") +
+  ylab("Score of the first PC")
+print(plt)
+ggsave(plt, filename = "figures/paralysis-subtypes.pdf",width = 10, height = 6)
 
 age.min = min(all.data.filtered.sample$age)
 age.max = max(all.data.filtered.sample$age)
@@ -63,31 +137,29 @@ age = age.min + (age.max - age.min) * ((0:50)/50)
 df1 = data.frame(age = age, GDI = models[[1]]$model.fimp$v[1,], component = "1")
 df2 = data.frame(age = age, GDI = models[[1]]$model.fimp$v[2,], component = "2")
 df = rbind(df1,df2)
-plt = ggplot(df, aes(x = age, y = GDI, group = component, color = component)) + weartals_theme + geom_line(size=1.5)
+plt = ggplot(df, aes(x = age, y = GDI, group = component, color = component)) + clean_theme + geom_line(size=1.5)
 print(plt)
-ggsave(plt, filename = "docs/paper/images/data-components.pdf",width = 6, height = 4)
+ggsave(plt, filename = "figures/data-components.pdf",width = 6, height = 4)
 
 ## FPCA
 df1 = data.frame(age = age, GDI = models[[1]]$model.fpca$v[1,], component = "1")
-df2 = data.frame(age = age, GDI = models[[1]]$model.fimp$v[2,], component = "2")
+df2 = data.frame(age = age, GDI = models[[1]]$model.fpca$v[2,], component = "2")
 df = rbind(df1,df2)
-plt = ggplot(df, aes(x = age, y = GDI, group = component, color = component)) + weartals_theme + geom_line(size=1.5)
+plt = ggplot(df, aes(x = age, y = GDI, group = component, color = component)) + clean_theme + geom_line(size=1.5)
 print(plt)
-ggsave(plt, filename = "docs/paper/images/data-components-FPCA.pdf",width = 6, height = 4)
+ggsave(plt, filename = "figures/data-components-FPCA.pdf",width = 6, height = 4)
 
 df1 = data.frame(age = age, GDI = models[[1]]$model.fimp$cmeans + 10*models[[1]]$model.fimp$v[1,], curve = "mean + PC1")
 df2 = data.frame(age = age, GDI = models[[1]]$model.fimp$cmeans, curve = "mean")
 df3 = data.frame(age = age, GDI = models[[1]]$model.fimp$cmeans - 10*models[[1]]$model.fimp$v[1,], curve = "mean - PC1")
 df = rbind(df1,df2,df3)
 colors = gg_color_hue(3)
-plt = ggplot(df, aes(x = age, y = GDI, group = curve, color = curve)) + weartals_theme +
+plt = ggplot(df, aes(x = age, y = GDI, group = curve, color = curve)) + clean_theme +
   geom_line(aes(linetype=curve, color=curve), size=1.5) +
-  scale_linetype_manual(values=c("dashed", "solid", "dashed")) +
-  scale_color_manual(values=c(colors[1], "black", colors[2]))
+  scale_linetype_manual(values=c("solid", "dashed", "dashed")) +
+  scale_color_manual(values=c("black", colors[1], colors[2]))
 print(plt)
-ggsave(plt, filename = "docs/paper/images/data-components-added.pdf",width = 6, height = 4)
-
-
+ggsave(plt, filename = "figures/data-components-added.pdf",width = 6, height = 4)
 
 if (length(models))
   save(models, file="data-study.Rda")
@@ -135,19 +207,6 @@ apply(res,FUN=sd,1))
 colnames(res) = paste("run",1:length(models))
 ind = row.names(models[[i]]$data$test.matrix) %in% models[[i]]$data$X$Patient_ID[models[[i]]$data$test.ob[1:3]]
 
-# Figure 7: Boxplot of results
-library(tidyr)
-tmp = t(res)
-rownames(tmp) = 1:nrow(tmp)
-tmp = 100*(1 - t(t(tmp[,1:3]) / tmp[,4]))
-tmp[tmp[,3] < 0,3]= 0
-methodStats = gather(data.frame(tmp), method, varexp, SLR:fPCA, factor_key = FALSE)
-
-pp = ggplot(methodStats, aes(x = method, y = varexp)) + paper.theme + labs(x="Method",y="MSE") +
-  geom_boxplot()
-pp
-myggsave(filename=paste0("docs/plots/data-boxplot.pdf"), plot=pp, width = 10, height = 8)
-
 # Lambdas
 models[[exp.id]]$model.fimp$meta
 models[[exp.id]]$model.fpca$selected_model
@@ -155,9 +214,6 @@ models[[exp.id]]$model.fpca$selected_model
 #############################
 # OTHER PLOTS FOR THE PAPER #
 #############################
-library("ggplot2")
-library("ggthemes")
-library(RColorBrewer)
 
 dd = all.data.filtered[,c("Patient_ID","age","bmi","GDI")]
 dd$Patient_ID = as.factor(dd$Patient_ID)
