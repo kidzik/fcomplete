@@ -145,7 +145,7 @@ fregression = function(formula, data, covariates = NULL,
     else {
       res = functionalMultiImputeCV(Y.wide, basis = basis, lambda = lambda, K = K, thresh = thresh, final = final, fold = fold, cv.ratio = cv.ratio, maxIter = maxIter, verbose = verbose)
     }
-    if (!(method  %in% c("fpcs", "proximal_grad"))){
+    if (!(method  %in% c("fpcs", "pg"))){
       res$fit = t(t(res$fit) + cmeans)
     }
     res$Y = t(t(Y.wide) + cmeans)
@@ -195,7 +195,7 @@ fregression = function(formula, data, covariates = NULL,
     args$K = K
     args$verbose = verbose
 
-    if (method == "proximal_grad") {
+    if (method == "pg") {
       rangeval = c(min(data[[time.var]],na.rm=TRUE),max(data[[time.var]],na.rm=TRUE))
       fcb = fc.basis(d = d, dgrid = bins, type = basis.type, rangeval = rangeval)
       res = cv.nogrid.fimpute(data = data, value.vars = vars$response, id.var = subj.var,
