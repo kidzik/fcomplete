@@ -9,9 +9,9 @@ res = list()
 
 dgrid = 51 # number of grid points
 d = 7 # number of splines
-ns = c(100,500,1000,3000) # number of subjects
-nexperiments = 15 # set to 1000 for reproducing results from the paper
-ncores = 15 # number of cores to use for the experiment
+ns = c(100) # number of subjects
+nexperiments = 5 # set to 1000 for reproducing results from the paper
+ncores = 5 # number of cores to use for the experiment
 
 # Run one series of experiments with different number of subjects as in the ns variable
 test.experiment = function(exp.id){
@@ -119,3 +119,4 @@ p <- ggplot(times.long, aes(x=n, y=value, color=method, background="white")) +
   geom_line(size=1) + geom_point(size=1.5)
 p
 ggsave("figures/simulation-times-n.pdf",width=9,height=5)
+
