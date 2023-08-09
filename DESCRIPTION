@@ -18,5 +18,8 @@ Depends:
     tidyr
 Suggests:
     ElemStatLearn,
-    dplyr
+    dplyr,
+    face,
+    mfaces,
+    fdapace
 Roxygen: list(markdown = TRUE)

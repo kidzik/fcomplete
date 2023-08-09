@@ -1,14 +1,14 @@
 library("fcomplete")
 library("ggplot2")
 library("parallel")
-library("metafolio")
+#library("metafolio")
 library("ggplot2")
 library("ggthemes")
 library("RColorBrewer")
 
 sample_ratio = 1 # sample patients from the  full dataset: 1 for results from the study, smaller numbers for quick tests
-nexperiments = 20 # number of resampling experiments (100 for results in the paper)
-ncores = 20 # number of cores for parallel runs
+nexperiments = 2 # number of resampling experiments (100 for results in the paper)
+ncores = 2 # number of cores for parallel runs
 
 # theme for ggplot
 clean_theme = theme_classic() + theme(text = element_text(size=18), panel.border = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1))
@@ -31,9 +31,9 @@ experiment.data = function(i)
   data = sample.long(all.data.filtered.sample, "Patient_ID", "age", var, ratio = 0.05, min.per.sbj = 3)
 
   # Set up parameters
-  lambdas = seq(10,20,length.out = 6)
+  lambdas = seq(1,20,length.out = 10)
   d = 6
-  K = 3
+  K = 5
 
   # IMPUTE
   model.impute = fregression(as.formula(paste0(var," ~ age | Patient_ID")), data$train,
@@ -120,8 +120,10 @@ dd$Patient_ID = as.factor(dd$Patient_ID)
 dd = dd[dd$bmi > 10,]
 
 # GDI over time
-theme_set(theme_grey(base_size = 26))
-pp = ggplot(aes(x = age, y = GDI, color = Patient_ID), data = dd[1:200,]) + ylab("GDI") + theme(legend.position="none", panel.background = element_rect(fill = "white",linetype = 1,colour = "grey50",size = 1,)) +
+theme_set(theme_classic(base_size = 26))
+pp = ggplot(aes(x = age, y = GDI, color = Patient_ID), data = dd[1:200,]) + ylab("GDI") +
+  theme(axis.line.x.bottom=element_line(size=0.5), axis.line.y.left=element_line(size=0.5),
+        legend.position="none", panel.background = element_rect(fill = "white",linetype = 0,colour = "grey50",size = 1,)) +
   stat_function(fun = approxfun(lowess(dd$age,dd$GDI)), size = 1.5, colour = "#000000")+ scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0))
 pp + geom_point(size = 1.5,alpha=0.5)
 ggsave("figures/data-points.pdf",width=7,height=5)
@@ -135,3 +137,20 @@ for (i in 1:3){
 }
 pp1
 ggsave("figures/data-grouped.pdf",width=7,height=5)
+
+
+# Review: Data generation process
+
+Ds = c()
+for (i in 1:nexperiments){
+  Ds = rbind(Ds, models[[i]]$model.fimp$d)
+}
+cm = colMeans(Ds)
+
+pdf("figures/revision-decomposition.pdf",height = 5, width = 8)
+boxplot(Ds/cm[1])
+title("Diagonal of the spectral decomposition",xlab = "index",ylab="normalized value")
+svals = ((1/3) * c(1, 0.6, 0.3, 0.2 *exp(-3), 0.1 *exp(-4)) + (2/3) * c(1.3,0.4, 0.2, 0.2 *exp(-3), 0.1 *exp(-4)))
+points(  svals/svals[1], col="blue", lwd=7)
+lines(  svals/svals[1], col="blue")
+dev.off()
