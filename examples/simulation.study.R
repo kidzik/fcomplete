@@ -15,7 +15,7 @@ dgrid = 51 # number of grid points
 d = 7 # number of splines
 ns = c(100, 500, 1000, 3000) # number of subjects
 nexperiments = 10 # set to 1000 for reproducing results from the paper
-ncores = 10 # number of cores to use for the experiment
+ncores = 5 # number of cores to use for the experiment
 
 # Load data
 load("data/gdi.Rda")
